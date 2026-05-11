@@ -182,119 +182,134 @@ export default function CarbonLogPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-[#fdfdfd] pb-24 relative overflow-hidden">
+    <div className="min-h-[100dvh] bg-slate-950 pb-28 relative overflow-hidden">
       {/* Background Mesh */}
-      <div className="fixed top-0 right-0 w-[50%] h-[40%] rounded-full bg-green-50/50 blur-[100px] z-0" />
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-0 right-0 w-[50%] h-[40%] rounded-full bg-green-500/5 blur-[120px]" />
+        <div className="absolute bottom-0 left-0 w-[50%] h-[40%] rounded-full bg-blue-500/5 blur-[120px]" />
+      </div>
 
       {/* HEADER */}
-      <header className="sticky top-0 z-50 px-5 py-4 backdrop-blur-lg bg-white/70 border-b border-gray-100 flex items-center justify-between">
+      <header className="sticky top-0 z-50 px-6 py-4 backdrop-blur-xl bg-slate-950/80 border-b border-white/5 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => navigate(-1)}
-            className="p-2 rounded-xl bg-gray-50 border border-gray-100"
+            className="p-2.5 rounded-2xl bg-white/5 border border-white/10"
           >
-            <ArrowLeft size={20} className="text-gray-600" />
+            <ArrowLeft size={20} className="text-gray-400" />
           </motion.button>
-          <h1 className="text-xl font-black text-gray-900 tracking-tight">Daily Log</h1>
+          <h1 className="text-xl font-black text-white tracking-tight">Daily Log</h1>
         </div>
         <div className="flex flex-col items-end">
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Today</span>
-          <span className="text-xs font-black text-green-600">{new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}</span>
+          <span className="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em]">Temporal Node</span>
+          <span className="text-xs font-black text-green-500 tracking-tighter">
+            {new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }).toUpperCase()}
+          </span>
         </div>
       </header>
 
-      <main className="px-5 pt-6 relative z-10 max-w-lg mx-auto">
+      <main className="px-6 pt-6 relative z-10 max-w-lg mx-auto">
         {/* LIVE SCORE CARD */}
         <motion.div 
           layout
-          className="bg-slate-900 rounded-[32px] p-6 mb-8 shadow-xl shadow-slate-900/10 relative overflow-hidden"
+          className="bg-slate-900 rounded-[40px] p-8 mb-10 border border-white/10 shadow-2xl shadow-black/50 relative overflow-hidden"
         >
-          <div className="absolute top-0 right-0 p-4 opacity-10">
-            <Sparkles size={60} className="text-green-400" />
-          </div>
-          <div className="flex items-center justify-between gap-6">
+          <div className="absolute top-[-20%] right-[-10%] w-48 h-48 rounded-full bg-green-500/10 blur-[60px]" />
+          
+          <div className="flex items-center justify-between gap-8 relative z-10">
             <div className="flex-1">
-              <p className="text-[10px] font-bold text-green-400 uppercase tracking-[0.2em] mb-2">Real-time Stats</p>
-              <h2 className="text-3xl font-black text-white mb-2">{ecoScore}%</h2>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="h-1.5 flex-1 bg-white/10 rounded-full overflow-hidden">
+              <p className="text-[10px] font-black text-green-500 uppercase tracking-[0.3em] mb-3">Impact Matrix</p>
+              <h2 className="text-4xl font-black text-white mb-2 leading-none tracking-tighter">{ecoScore}%</h2>
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-6">Efficiency Quotient</p>
+              
+              <div className="space-y-4">
+                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${ecoScore}%` }}
-                    className="h-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"
+                    transition={{ duration: 1, ease: 'circOut' }}
+                    className="h-full bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.6)]"
                   />
                 </div>
+                <div className="flex justify-between items-center text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                  <span>Carbon Load</span>
+                  <span className="text-white">{totalKg.toFixed(2)} KG CO2</span>
+                </div>
               </div>
-              <p className="text-xs text-gray-400 font-medium leading-relaxed">
-                Estimated Impact: <span className="text-white font-bold">{totalKg.toFixed(2)} kg CO2</span>
-              </p>
             </div>
-            <div className="flex-shrink-0">
-              <EcoScoreRing score={ecoScore} size={90} strokeWidth={8} showLabel={false} animated={true} />
+            <div className="flex-shrink-0 relative">
+              <EcoScoreRing score={ecoScore} size={100} strokeWidth={10} showLabel={false} animated={true} />
+              <div className="absolute inset-0 flex items-center justify-center">
+                 <Sparkles size={24} className="text-green-500/40" />
+              </div>
             </div>
           </div>
         </motion.div>
 
         {/* LOGGING SECTIONS */}
-        <section className="flex flex-col gap-1">
+        <section className="space-y-2">
           <AccordionSection 
-            title="Transport & Commute" 
+            title="Transport Node" 
             icon={Bus} 
             isOpen={openSection === 'transport'}
             onToggle={() => toggleSection('transport')}
             isComplete={form.transport[0]?.km > 0}
           >
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="grid grid-cols-2 gap-4 mb-6">
               {Object.keys(TRANSPORT_FACTORS).map(mode => (
                 <button
                   key={mode}
                   onClick={() => setTransportMode(mode)}
-                  className={`p-3 rounded-2xl text-xs font-bold transition-all border ${
+                  className={`p-4 rounded-3xl border transition-all text-center group ${
                     form.transport[0]?.mode === mode 
-                      ? 'bg-green-600 text-white border-green-600 shadow-lg shadow-green-600/20' 
-                      : 'bg-gray-50 text-gray-500 border-gray-100 hover:border-green-200'
+                      ? 'bg-green-600 border-green-600 text-white shadow-lg shadow-green-600/20' 
+                      : 'bg-white/5 border-white/5 text-gray-500 hover:border-white/10'
                   }`}
                 >
-                  {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                  <span className="block text-xs font-black uppercase tracking-widest mb-1 group-hover:scale-110 transition-transform">
+                    {mode.replace('_', ' ')}
+                  </span>
                 </button>
               ))}
             </div>
-            <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Distance Traveled (km)</label>
-              <input 
-                type="number" 
-                value={form.transport[0]?.km} 
+            <div className="bg-white/5 rounded-3xl p-5 border border-white/5">
+              <div className="flex justify-between items-center mb-3">
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Distance Log (KM)</label>
+                <span className="text-sm font-black text-white">{form.transport[0]?.km} km</span>
+              </div>
+              <input
+                type="range" min="0" max="100" step="1"
+                value={form.transport[0]?.km}
                 onChange={e => setTransportKm(e.target.value)}
-                className="w-full bg-transparent text-xl font-black text-gray-900 outline-none"
-                placeholder="0.0"
+                className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-green-500"
               />
             </div>
           </AccordionSection>
 
           <AccordionSection 
-            title="Meals & Food" 
+            title="Nutrition Intake" 
             icon={Utensils} 
             isOpen={openSection === 'meals'}
             onToggle={() => toggleSection('meals')}
             isComplete={true}
           >
-            <div className="flex flex-col gap-4">
-              {['breakfast', 'lunch', 'dinner'].map(slot => (
-                <div key={slot} className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">{slot}</p>
-                  <div className="flex gap-2">
-                    {['vegetarian', 'non_vegetarian', 'vegan'].map(type => (
+            <div className="space-y-6">
+              {MEAL_SLOTS.map(slot => (
+                <div key={slot} className="space-y-3">
+                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1">{slot}</p>
+                  <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+                    {FOOD_TYPES.map(type => (
                       <button
                         key={type}
                         onClick={() => setMeal(slot, type)}
-                        className={`flex-1 py-2 rounded-xl text-[10px] font-bold transition-all border ${
+                        className={`flex-shrink-0 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${
                           form.meals[slot] === type 
-                            ? 'bg-slate-900 text-white border-slate-900' 
-                            : 'bg-white text-gray-500 border-gray-100'
+                            ? 'bg-green-600 border-green-600 text-white shadow-lg' 
+                            : 'bg-white/5 border-white/5 text-gray-500'
                         }`}
                       >
-                        {type.split('_')[0].toUpperCase()}
+                        {type}
                       </button>
                     ))}
                   </div>
@@ -304,27 +319,29 @@ export default function CarbonLogPage() {
           </AccordionSection>
 
           <AccordionSection 
-            title="Electricity & Devices" 
+            title="Energy Consumption" 
             icon={Zap} 
-            isOpen={openSection === 'electricity'}
-            onToggle={() => toggleSection('electricity')}
+            isOpen={openSection === 'devices'}
+            onToggle={() => toggleSection('devices')}
             isComplete={form.devices.length > 0}
           >
-            <div className="grid grid-cols-2 gap-3">
-              {Object.keys(DEVICE_FACTORS).map(device => {
-                const isActive = form.devices.some(d => d.device_key === device)
+            <div className="grid grid-cols-2 gap-4">
+              {Object.keys(DEVICE_FACTORS).map(key => {
+                const isSelected = form.devices.find(d => d.device_key === key)
                 return (
                   <button
-                    key={device}
-                    onClick={() => toggleDevice(device)}
-                    className={`p-4 rounded-2xl flex flex-col items-center gap-2 transition-all border ${
-                      isActive 
-                        ? 'bg-purple-50 border-purple-200 text-purple-700' 
-                        : 'bg-gray-50 border-gray-100 text-gray-500'
+                    key={key}
+                    onClick={() => toggleDevice(key)}
+                    className={`p-5 rounded-[32px] border transition-all text-left flex flex-col gap-3 group ${
+                      isSelected 
+                        ? 'bg-green-600 border-green-600 text-white shadow-lg shadow-green-600/20' 
+                        : 'bg-white/5 border-white/5 text-gray-500'
                     }`}
                   >
-                    <Zap size={18} className={isActive ? 'text-purple-500' : 'text-gray-300'} />
-                    <span className="text-[10px] font-bold uppercase">{device.replace('_', ' ')}</span>
+                    <Zap size={18} className={isSelected ? 'text-white' : 'text-gray-600'} />
+                    <span className="text-[10px] font-black uppercase tracking-widest">
+                      {key.replace('_', ' ')}
+                    </span>
                   </button>
                 )
               })}
@@ -332,70 +349,102 @@ export default function CarbonLogPage() {
           </AccordionSection>
 
           <AccordionSection 
-            title="Water & Waste" 
+            title="Hydration & Flow" 
             icon={Droplets} 
             isOpen={openSection === 'water'}
             onToggle={() => toggleSection('water')}
             isComplete={true}
           >
-             <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 mb-4">
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Shower Type</p>
-              <div className="flex gap-2">
-                {['bucket_bath', 'short_shower', 'long_shower'].map(type => (
+             <div className="space-y-6">
+                <div className="space-y-4">
+                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1">Shower Duration</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    {['short_shower', 'bucket_bath'].map(type => (
+                      <button
+                        key={type}
+                        onClick={() => setForm(f => ({ ...f, shower_type: type }))}
+                        className={`p-4 rounded-3xl border transition-all text-center text-[10px] font-black uppercase tracking-widest ${
+                          form.shower_type === type 
+                            ? 'bg-green-600 border-green-600 text-white shadow-lg' 
+                            : 'bg-white/5 border-white/5 text-gray-500'
+                        }`}
+                      >
+                        {type.replace('_', ' ')}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1">General Usage</p>
+                  <div className="flex gap-3">
+                    {['low', 'medium', 'high'].map(level => (
+                      <button
+                        key={level}
+                        onClick={() => setForm(f => ({ ...f, general_water: level }))}
+                        className={`flex-1 py-3 rounded-2xl border transition-all text-[10px] font-black uppercase tracking-widest ${
+                          form.general_water === level 
+                            ? 'bg-green-600 border-green-600 text-white shadow-lg' 
+                            : 'bg-white/5 border-white/5 text-gray-500'
+                        }`}
+                      >
+                        {level}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+             </div>
+          </AccordionSection>
+
+          <AccordionSection 
+            title="Material Lifecycle" 
+            icon={Trash2} 
+            isOpen={openSection === 'waste'}
+            onToggle={() => toggleSection('waste')}
+            isComplete={form.waste.length > 0}
+          >
+            <div className="grid grid-cols-2 gap-4">
+              {WASTE_TYPES.map(type => {
+                const isSelected = form.waste.find(w => w.type === type)
+                return (
                   <button
                     key={type}
-                    onClick={() => setForm(f => ({ ...f, shower_type: type }))}
-                    className={`flex-1 py-2 rounded-xl text-[10px] font-bold transition-all border ${
-                      form.shower_type === type 
-                        ? 'bg-blue-600 text-white border-blue-600' 
-                        : 'bg-white text-gray-500 border-gray-100'
+                    onClick={() => toggleWaste(type)}
+                    className={`p-5 rounded-[32px] border transition-all text-left flex flex-col gap-3 ${
+                      isSelected 
+                        ? 'bg-green-600 border-green-600 text-white shadow-lg' 
+                        : 'bg-white/5 border-white/5 text-gray-500'
                     }`}
                   >
-                    {type.split('_')[0].toUpperCase()}
+                    <Trash2 size={18} className={isSelected ? 'text-white' : 'text-gray-600'} />
+                    <span className="text-[10px] font-black uppercase tracking-widest">{type}</span>
                   </button>
-                ))}
-              </div>
-            </div>
-            <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Waste Produced</p>
-              <div className="flex flex-wrap gap-2">
-                {Object.keys(WASTE_TYPES).map(type => {
-                  const isActive = form.waste.some(w => w.type === type)
-                  return (
-                    <button
-                      key={type}
-                      onClick={() => toggleWaste(type)}
-                      className={`px-4 py-2 rounded-xl text-[10px] font-bold transition-all border ${
-                        isActive 
-                          ? 'bg-orange-600 text-white border-orange-600' 
-                          : 'bg-white text-gray-500 border-gray-100'
-                      }`}
-                    >
-                      {type.toUpperCase()}
-                    </button>
-                  )
-                })}
-              </div>
+                )
+              })}
             </div>
           </AccordionSection>
         </section>
 
         {/* SUBMIT BUTTON */}
         <motion.button
-          whileTap={{ scale: 0.95 }}
-          disabled={submitting}
+          whileTap={{ scale: 0.98 }}
           onClick={handleSubmit}
-          className="w-full mt-8 py-5 rounded-[24px] bg-green-600 text-white font-black text-lg shadow-xl shadow-green-600/30 flex items-center justify-center gap-3 disabled:opacity-50"
+          disabled={submitting}
+          className="w-full mt-12 py-5 bg-green-600 hover:bg-green-500 text-white rounded-[32px] font-black text-sm uppercase tracking-[0.3em] shadow-2xl shadow-green-600/30 transition-all flex items-center justify-center gap-4 relative overflow-hidden"
         >
           {submitting ? (
-            <div className="w-6 h-6 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+             <div className="flex items-center gap-3">
+                <div className="w-5 h-5 border-3 border-white/20 border-t-white rounded-full animate-spin" />
+                <span>Processing...</span>
+             </div>
           ) : (
-            <>Save Daily Log <Send size={20} /></>
+            <>
+              Sync Data <Send size={18} />
+            </>
           )}
         </motion.button>
 
-        <p className="mt-6 text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center justify-center gap-2">
-          <Info size={12} /> Data is secured by Campus Eco-Chain
+        <p className="text-center text-[10px] font-black text-gray-600 uppercase tracking-[0.4em] mt-10 opacity-50">
+           Project InstitutePulse • Nexus Node
         </p>
       </main>
 
@@ -406,297 +455,77 @@ export default function CarbonLogPage() {
 
 function SuccessOverlay({ ecoScore, ecoPoints, aiTips, onDone, onHistory }) {
   return (
-    <div className="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center p-6 overflow-y-auto">
-      <motion.div 
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="w-24 h-24 rounded-[32px] bg-green-100 text-green-600 flex items-center justify-center mb-8"
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-center p-6 text-center"
+    >
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[50%] rounded-full bg-green-500/10 blur-[120px]" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[50%] rounded-full bg-blue-500/10 blur-[120px]" />
+      </div>
+
+      <motion.div
+        initial={{ scale: 0.8, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        className="relative z-10 w-full max-w-sm"
       >
-        <CheckCircle2 size={48} strokeWidth={3} />
-      </motion.div>
-      
-      <h1 className="text-3xl font-black text-gray-900 text-center mb-2">Log Saved!</h1>
-      <p className="text-gray-500 font-medium text-center mb-8">You're doing great for the planet today.</p>
-      
-      <div className="grid grid-cols-2 gap-4 w-full max-w-sm mb-10">
-        <div className="bg-gray-50 rounded-[24px] p-5 text-center border border-gray-100">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Eco Score</p>
-          <p className="text-2xl font-black text-gray-900">{ecoScore}%</p>
-        </div>
-        <div className="bg-green-50 rounded-[24px] p-5 text-center border border-green-100">
-          <p className="text-[10px] font-bold text-green-600 uppercase tracking-widest mb-1">Points</p>
-          <p className="text-2xl font-black text-green-700">+{ecoPoints}</p>
-        </div>
-      </div>
-
-      <div className="bg-slate-900 rounded-[32px] p-6 w-full max-w-sm mb-10 relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-4 opacity-10">
-          <Sparkles size={40} className="text-green-400" />
-        </div>
-        <p className="text-[10px] font-bold text-green-400 uppercase tracking-[0.2em] mb-3">AI Recommendation</p>
-        <p className="text-sm text-gray-200 leading-relaxed font-medium">
-          {aiTips || "Continue your eco-friendly habits to save more CO2 tomorrow!"}
-        </p>
-      </div>
-
-      <div className="flex flex-col gap-3 w-full max-w-sm">
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          onClick={onDone}
-          className="w-full py-4 rounded-2xl bg-green-600 text-white font-bold shadow-lg shadow-green-600/20"
-        >
-          Back to Home
-        </motion.button>
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          onClick={onHistory}
-          className="w-full py-4 rounded-2xl bg-white text-gray-600 font-bold border border-gray-100"
-        >
-          View Log History
-        </motion.button>
-      </div>
-    </div>
-  )
-}
-
-            <div>
-              <span className="text-lg font-black" style={{ color }}>{totalKg.toFixed(2)} kg CO2</span>
-              <span className="text-xs text-gray-400 ml-2">Total today</span>
-            </div>
-            <div className="text-right">
-              <div className="text-sm font-bold" style={{ color }}>Score: {ecoScore}</div>
-              <div className="text-xs text-gray-400">{grade}</div>
-            </div>
-          </div>
-          <div className="flex flex-col gap-1">
-            {barData.map(b => (
-              <div key={b.label} className="flex items-center gap-2">
-                <span className="text-xs text-gray-500 w-28 flex-shrink-0">{b.label}</span>
-                <div className="progress-bar flex-1">
-                  <div className="progress-fill" style={{ width: `${Math.min(100, (b.kg / b.max) * 100)}%` }} />
-                </div>
-                <span className="text-xs font-medium text-gray-600 w-12 text-right">{b.kg.toFixed(2)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="page-container">
-        {/* TRANSPORT */}
-        <AccordionSection title="Transportation" emoji="🚗" isOpen={openSection === 'transport'} onToggle={() => toggleSection('transport')} isComplete={transportKg >= 0}>
-          <p className="text-xs text-gray-500 mb-3">How did you commute today?</p>
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            {TRANSPORT_MODES.map(m => (
-              <button key={m.key} onClick={() => setTransportMode(m.key)}
-                className={`mode-tile ${form.transport[0]?.mode === m.key ? 'selected' : ''}`}>
-                <span className="text-xl">{m.emoji}</span>
-                <span className="text-xs">{m.label}</span>
-                {m.eco && <span className="text-green-500" style={{ fontSize: '9px' }}>ECO ✓</span>}
-              </button>
-            ))}
-          </div>
-          {!['bicycle', 'walking'].includes(form.transport[0]?.mode) && (
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-2">Distance (km)</label>
-              <input type="number" min="0" max="100" step="0.5"
-                value={form.transport[0]?.km || 0}
-                onChange={e => setTransportKm(e.target.value)}
-                className="input-field" />
-              <p className="text-xs text-green-600 mt-1 font-medium">
-                = {transportKg.toFixed(3)} kg CO2 (calc: {form.transport[0]?.km} km × {TRANSPORT_FACTORS[form.transport[0]?.mode]})
-              </p>
-            </div>
-          )}
-          {form.transport[0]?.mode === 'college_bus' && (
-            <div className="mt-2 p-2 rounded-lg text-xs font-medium" style={{ background: '#f0fdf4', color: '#16a34a' }}>
-              🎉 +12 eco-points for taking the college bus!
-            </div>
-          )}
-        </AccordionSection>
-
-        {/* FOOD */}
-        <AccordionSection title="Food Consumption" emoji="🍽️" isOpen={openSection === 'food'} onToggle={() => toggleSection('food')} isComplete={true}>
-          {MEAL_SLOTS.map(slot => (
-            <div key={slot} className="mb-4">
-              <p className="text-xs font-semibold text-gray-700 mb-2 capitalize">{slot}</p>
-              <div className="flex gap-2 overflow-x-auto no-scrollbar">
-                {FOOD_TYPES.map(f => (
-                  <button key={f.key}
-                    onClick={() => setMeal(slot, f.key)}
-                    className="flex-shrink-0 px-3 py-2 rounded-xl border-2 text-xs font-medium flex flex-col items-center gap-1 min-w-[60px] transition-all"
-                    style={{
-                      borderColor: form.meals[slot] === f.key ? '#16a34a' : '#e2e8f0',
-                      background: form.meals[slot] === f.key ? '#f0fdf4' : 'white',
-                      color: form.meals[slot] === f.key ? '#16a34a' : '#64748b',
-                    }}>
-                    <span className="text-lg">{f.emoji}</span>
-                    <span>{f.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-          <p className="text-xs text-gray-500 mt-1">Food CO2: <strong>{foodKg.toFixed(2)} kg</strong></p>
-        </AccordionSection>
-
-        {/* ELECTRICITY */}
-        <AccordionSection title="Electricity Usage" emoji="⚡" isOpen={openSection === 'electricity'} onToggle={() => toggleSection('electricity')} isComplete={form.devices.length > 0}>
-          <p className="text-xs text-gray-500 mb-3">Select devices used today and set hours</p>
-          <div className="grid grid-cols-2 gap-2 mb-3">
-            {Object.entries(DEVICE_FACTORS).map(([key, d]) => {
-              const selected = form.devices.find(x => x.device_key === key)
-              return (
-                <button key={key} onClick={() => toggleDevice(key)}
-                  className="flex items-center gap-2 p-2 rounded-xl border-2 text-xs text-left transition-all"
-                  style={{
-                    borderColor: selected ? '#16a34a' : '#e2e8f0',
-                    background: selected ? '#f0fdf4' : 'white',
-                  }}>
-                  <span>{d.emoji}</span>
-                  <span className="font-medium text-gray-800">{d.label}</span>
-                </button>
-              )
-            })}
-          </div>
-          {form.devices.map(dev => {
-            const d = DEVICE_FACTORS[dev.device_key]
-            return (
-              <div key={dev.device_key} className="mb-2">
-                <label className="text-xs text-gray-600 mb-1 block">{d?.emoji} {d?.label} — {dev.hours}h = {(d?.co2_per_hour * dev.hours).toFixed(3)} kg CO2</label>
-                <input type="range" min="0" max="12" step="0.5" value={dev.hours}
-                  onChange={e => setDeviceHours(dev.device_key, e.target.value)}
-                  className="w-full h-11 accent-green-600" />
-              </div>
-            )
-          })}
-          <p className="text-xs text-gray-500">Electricity CO2: <strong>{electricityKg.toFixed(3)} kg</strong></p>
-        </AccordionSection>
-
-        {/* WATER */}
-        <AccordionSection title="Water Usage" emoji="💧" isOpen={openSection === 'water'} onToggle={() => toggleSection('water')} isComplete={true}>
-          <p className="text-xs font-medium text-gray-700 mb-2">Shower type</p>
-          <div className="grid grid-cols-2 gap-2 mb-4">
-            {[
-              { key: 'short_shower', label: 'Short Shower (5 min)', emoji: '🚿' },
-              { key: 'medium_shower', label: 'Medium (10 min)', emoji: '🚿' },
-              { key: 'long_shower', label: 'Long (15+ min)', emoji: '🚿' },
-              { key: 'bucket_bath', label: 'Bucket Bath', emoji: '🪣' },
-            ].map(s => (
-              <button key={s.key}
-                onClick={() => setForm(f => ({ ...f, shower_type: s.key }))}
-                className="p-2 rounded-xl border-2 text-xs font-medium transition-all text-center"
-                style={{
-                  borderColor: form.shower_type === s.key ? '#0ea5e9' : '#e2e8f0',
-                  background: form.shower_type === s.key ? '#eff6ff' : 'white',
-                  color: form.shower_type === s.key ? '#0ea5e9' : '#64748b',
-                }}>
-                <span>{s.emoji}</span> {s.label}
-              </button>
-            ))}
-          </div>
-          <p className="text-xs font-medium text-gray-700 mb-2">General daily usage</p>
-          <div className="flex gap-2">
-            {['low', 'medium', 'high'].map(l => (
-              <button key={l}
-                onClick={() => setForm(f => ({ ...f, general_water: l }))}
-                className="flex-1 py-2 rounded-xl border-2 text-xs font-semibold capitalize transition-all"
-                style={{
-                  borderColor: form.general_water === l ? '#0ea5e9' : '#e2e8f0',
-                  background: form.general_water === l ? '#eff6ff' : 'white',
-                  color: form.general_water === l ? '#0ea5e9' : '#64748b',
-                }}>
-                {l}
-              </button>
-            ))}
-          </div>
-          <p className="text-xs text-gray-500 mt-2">Water CO2: <strong>{waterKg.toFixed(3)} kg</strong></p>
-        </AccordionSection>
-
-        {/* WASTE */}
-        <AccordionSection title="Waste Generation" emoji="🗑️" isOpen={openSection === 'waste'} onToggle={() => toggleSection('waste')} isComplete={form.waste.length > 0}>
-          <p className="text-xs text-gray-500 mb-3">What types of waste did you generate today?</p>
-          <div className="grid grid-cols-2 gap-2 mb-3">
-            {WASTE_TYPES.map(w => {
-              const selected = form.waste.find(x => x.type === w.key)
-              return (
-                <button key={w.key} onClick={() => toggleWaste(w.key)}
-                  className="flex items-center gap-2 p-2 rounded-xl border-2 text-xs text-left transition-all"
-                  style={{
-                    borderColor: selected ? '#16a34a' : '#e2e8f0',
-                    background: selected ? '#f0fdf4' : 'white',
-                  }}>
-                  <span>{w.emoji}</span>
-                  <div>
-                    <p className="font-medium">{w.label}</p>
-                    {w.eco && <p style={{ color: '#16a34a' }}>ECO ✓</p>}
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-          {form.waste.map(w => {
-            const wt = WASTE_TYPES.find(x => x.key === w.type)
-            return (
-              <div key={w.type} className="mb-2">
-                <label className="text-xs text-gray-600 mb-1 block">{wt?.emoji} {wt?.label} — {w.kg}kg</label>
-                <input type="range" min="0.1" max="3" step="0.1" value={w.kg}
-                  onChange={e => setWasteKgVal(w.type, e.target.value)}
-                  className="w-full h-11 accent-green-600" />
-              </div>
-            )
-          })}
-          <p className="text-xs text-gray-500">Waste CO2: <strong>{wasteKg.toFixed(3)} kg</strong></p>
-        </AccordionSection>
-      </div>
-
-      {/* STICKY SUBMIT */}
-      <div className="fixed bottom-16 left-0 right-0 px-4 py-3" style={{ background: 'rgba(248,250,252,0.95)', backdropFilter: 'blur(10px)', borderTop: '1px solid #e2e8f0' }}>
-        <button onClick={handleSubmit} disabled={submitting} className="btn-primary w-full text-base py-4">
-          {submitting ? <><span className="spinner mr-2" /> Saving...</> : '💾 Save Today\'s Carbon Log'}
-        </button>
-      </div>
-
-      <BottomTabBar />
-    </div>
-  )
-}
-
-function SuccessOverlay({ ecoScore, ecoPoints, aiTips, onDone, onHistory }) {
-  const { grade, color, label } = getScoreGrade(ecoScore)
-
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-10 animate-fade-in"
-      style={{ background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)' }}>
-      <div className="w-full max-w-sm text-center">
-        <div className="text-6xl mb-4 animate-count-up">✅</div>
-        <h2 className="text-2xl font-black text-gray-900 mb-1">Today's Log Saved!</h2>
-        <p className="text-green-600 font-medium mb-6">🌿 Great job tracking your carbon footprint!</p>
-
-        <div className="card p-6 mb-4">
-          <div className="flex justify-center mb-3">
-            <EcoScoreRing score={ecoScore} size={140} strokeWidth={10} />
-          </div>
-          <div className="badge-chip mx-auto text-sm py-2 px-4">+{ecoPoints} eco-points earned! 🎉</div>
+        <div className="w-24 h-24 rounded-[40px] bg-green-600/20 border border-green-500/30 flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-green-500/10">
+          <CheckCircle2 size={48} className="text-green-500" />
         </div>
 
-        {aiTips && aiTips.length > 0 && (
-          <div className="card p-4 mb-4 text-left">
-            <p className="text-xs font-bold text-green-700 mb-3">🤖 AI Eco Tips for Tomorrow</p>
-            {aiTips.map((tip, i) => (
-              <div key={i} className="flex gap-2 mb-2">
-                <span className="text-green-500 flex-shrink-0">✦</span>
-                <p className="text-xs text-gray-700 leading-relaxed">{tip}</p>
-              </div>
-            ))}
+        <h1 className="text-4xl font-black text-white tracking-tighter mb-2 uppercase">Log Synced</h1>
+        <p className="text-gray-500 font-bold uppercase tracking-[0.2em] mb-12 text-xs">Ecosystem Data Processed</p>
+
+        <div className="grid grid-cols-2 gap-4 mb-12">
+          <div className="bg-white/5 border border-white/10 rounded-[32px] p-6">
+            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Eco Score</p>
+            <p className="text-3xl font-black text-white">{ecoScore}%</p>
           </div>
+          <div className="bg-white/5 border border-white/10 rounded-[32px] p-6">
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">XP Gained</p>
+            <p className="text-3xl font-black text-green-500">+{ecoPoints}</p>
+          </div>
+        </div>
+
+        {aiTips && (
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4 }}
+            className="bg-slate-900 border border-white/5 rounded-[40px] p-8 text-left mb-12 relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 p-4 opacity-5">
+              <Sparkles size={60} className="text-green-500" />
+            </div>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-2xl bg-green-500/10 flex items-center justify-center border border-green-500/20">
+                <Sparkles size={20} className="text-green-400" />
+              </div>
+              <p className="text-[10px] font-black text-green-400 uppercase tracking-[0.2em]">Neural Recommendation</p>
+            </div>
+            <p className="text-sm text-gray-400 leading-relaxed font-medium">
+              {aiTips}
+            </p>
+          </motion.div>
         )}
 
-        <div className="flex flex-col gap-3">
-          <button onClick={onHistory} className="btn-ghost w-full">📊 View My History</button>
-          <button onClick={onDone} className="btn-primary w-full">🏠 Back to Dashboard</button>
+        <div className="space-y-4">
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={onDone}
+            className="w-full py-5 bg-green-600 text-white rounded-[32px] font-black text-sm uppercase tracking-[0.3em] shadow-xl shadow-green-600/20 flex items-center justify-center gap-3"
+          >
+            Return to Nexus <ArrowRight size={18} />
+          </motion.button>
+          <button
+            onClick={onHistory}
+            className="w-full py-4 text-gray-500 font-black text-[10px] uppercase tracking-[0.4em] hover:text-white transition-colors"
+          >
+            View Historical Data
+          </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }
