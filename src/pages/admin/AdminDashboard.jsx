@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Users, Leaf, Bus, TrendingDown, Award, ShoppingCart, AlertCircle } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts'
+import { Link } from 'react-router-dom'
+import { Users, Leaf, Bus, TrendingDown, Award, ShoppingCart, AlertCircle, Zap, Clock, ShieldCheck, ShieldAlert } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts'
 import { supabase } from '../../lib/supabase'
 import AdminLayout from './AdminLayout'
+import { motion } from 'framer-motion'
 
 const MOCK_STATS = {
   totalStudents: 1240,
@@ -25,24 +27,30 @@ const MOCK_TREND = [
   { day: 'Sun', co2: 2.2, score: 86, logs: 540 },
 ]
 
-function StatCard({ icon: Icon, label, value, sub, color = '#16a34a' }) {
+function StatCard({ icon: Icon, label, value, sub, color = '#16a34a', delay = 0 }) {
   return (
-    <div className="card p-4 flex items-center gap-4">
-      <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-        style={{ background: color + '15' }}>
-        <Icon size={22} style={{ color }} />
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay }}
+      className="glass-card p-6 flex items-center gap-6 group hover:border-green-500/30 overflow-hidden relative"
+    >
+      <div className="absolute top-0 left-0 w-full h-[1px] bg-green-500/10 animate-scan pointer-events-none" />
+      <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:rotate-12"
+        style={{ background: color + '15', border: `1px solid ${color}30` }}>
+        <Icon size={24} style={{ color }} />
       </div>
       <div>
-        <p className="text-xs text-gray-500 mb-0.5">{label}</p>
-        <p className="text-xl font-black text-gray-900">{value}</p>
-        {sub && <p className="text-xs text-gray-400">{sub}</p>}
+        <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-1">{label}</p>
+        <p className="text-2xl font-black text-white tracking-tighter">{value}</p>
+        {sub && <p className="text-[10px] font-bold text-gray-500 mt-1 uppercase tracking-widest">{sub}</p>}
       </div>
-    </div>
+    </motion.div>
   )
 }
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState(MOCK_STATS)
+  const [stats] = useState(MOCK_STATS)
   const [todayLogs, setTodayLogs] = useState([])
   const [recentComplaints, setRecentComplaints] = useState([])
 
@@ -63,91 +71,181 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout>
-      <div className="max-w-5xl mx-auto">
+      <div className="nexus-container">
         {/* GREETING */}
-        <div className="mb-6">
-          <h2 className="text-xl font-black text-gray-900">Campus Overview 🌿</h2>
-          <p className="text-gray-500 text-sm">{new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+        <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-[10px] font-black text-green-500 uppercase tracking-[0.3em]">Real-time Nexus Telemetry</span>
+            </div>
+            <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Campus Core</h2>
+            <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mt-3">
+              {new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </p>
+          </div>
+          <div className="flex gap-3">
+             <button className="px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">
+                Export Data
+             </button>
+             <button className="px-5 py-2.5 rounded-xl bg-green-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-green-500 shadow-lg shadow-green-600/20 transition-all">
+                System Refresh
+             </button>
+          </div>
         </div>
 
         {/* STAT GRID */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-          <StatCard icon={Users} label="Total Students" value={stats.totalStudents.toLocaleString()} color="#16a34a" />
-          <StatCard icon={Leaf} label="Today's Logs" value={stats.todayLogs} sub={`Avg score: ${stats.avgEcoScore}/100`} color="#22c55e" />
-          <StatCard icon={TrendingDown} label="Campus Avg CO2" value={`${stats.campusAvgCo2} kg`} sub="daily per student" color="#0ea5e9" />
-          <StatCard icon={Bus} label="Buses On Route" value={`${stats.busesOnRoute}/4`} color="#f59e0b" />
-          <StatCard icon={Award} label="Active Challengers" value={stats.activeChallengers} color="#a855f7" />
-          <StatCard icon={ShoppingCart} label="Pending Orders" value={stats.pendingOrders} color="#f97316" />
-          <StatCard icon={AlertCircle} label="Open Complaints" value={stats.openComplaints} color="#ef4444" />
-          <StatCard icon={Leaf} label="Target Budget" value="5 kg/day" sub="per student" color="#166534" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+          <StatCard icon={Users} label="Total Population" value={stats.totalStudents.toLocaleString()} color="#16a34a" delay={0.05} />
+          <StatCard icon={Leaf} label="Live Activity" value={stats.todayLogs} sub={`Efficiency: ${stats.avgEcoScore}%`} color="#22c55e" delay={0.1} />
+          <StatCard icon={TrendingDown} label="Carbon Flux" value={`${stats.campusAvgCo2} kg`} sub="Avg / Node" color="#0ea5e9" delay={0.15} />
+          <StatCard icon={Bus} label="Transit Nodes" value={`${stats.busesOnRoute}/4`} sub="Active Link" color="#f59e0b" delay={0.2} />
+          <StatCard icon={Award} label="Challengers" value={stats.activeChallengers} color="#a855f7" delay={0.25} />
+          <StatCard icon={ShoppingCart} label="Resource Requisitions" value={stats.pendingOrders} color="#f97316" delay={0.3} />
+          <StatCard icon={AlertCircle} label="System Alerts" value={stats.openComplaints} color="#ef4444" delay={0.35} />
+          <StatCard icon={ShieldCheck} label="Budget Status" value="5.0 kg" sub="Safe Threshold" color="#166534" delay={0.4} />
         </div>
 
         {/* CHARTS */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div className="card p-4">
-            <h3 className="text-sm font-bold text-gray-800 mb-3">📊 Avg CO2 — 7 Days</h3>
-            <ResponsiveContainer width="100%" height={180}>
-              <LineChart data={MOCK_TREND}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0fdf4" />
-                <XAxis dataKey="day" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} domain={[2, 4]} />
-                <Tooltip formatter={v => [`${v} kg`, 'Avg CO2']} />
-                <Line type="monotone" dataKey="co2" stroke="#16a34a" strokeWidth={2.5} dot={{ fill: '#16a34a', r: 3 }} />
-              </LineChart>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="glass-card p-8 relative overflow-hidden"
+          >
+            <div className="absolute top-0 left-0 w-full h-[1px] bg-green-500/10 animate-scan pointer-events-none" />
+            <div className="flex items-center justify-between mb-8">
+               <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Environmental Impact</h3>
+               <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-green-500" /> <span className="text-[9px] font-black uppercase text-gray-500">CO2 Flow</span></div>
+               </div>
+            </div>
+            <ResponsiveContainer width="100%" height={250}>
+              <AreaChart data={MOCK_TREND}>
+                <defs>
+                  <linearGradient id="colorCo2" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#16a34a" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#16a34a" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 'bold' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 'bold' }} />
+                <Tooltip 
+                  contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '10px' }}
+                  itemStyle={{ fontWeight: 'bold' }}
+                />
+                <Area type="monotone" dataKey="co2" stroke="#16a34a" strokeWidth={3} fillOpacity={1} fill="url(#colorCo2)" />
+              </AreaChart>
             </ResponsiveContainer>
-          </div>
-          <div className="card p-4">
-            <h3 className="text-sm font-bold text-gray-800 mb-3">📈 Daily Logs Count</h3>
-            <ResponsiveContainer width="100%" height={180}>
+          </motion.div>
+
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="glass-card p-8 relative overflow-hidden"
+          >
+            <div className="absolute top-0 left-0 w-full h-[1px] bg-blue-500/10 animate-scan pointer-events-none" />
+            <div className="flex items-center justify-between mb-8">
+               <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Telemetry Volume</h3>
+               <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-blue-500" /> <span className="text-[9px] font-black uppercase text-gray-500">Log Intake</span></div>
+               </div>
+            </div>
+            <ResponsiveContainer width="100%" height={250}>
               <BarChart data={MOCK_TREND}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0fdf4" />
-                <XAxis dataKey="day" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip formatter={v => [v, 'Logs']} />
-                <Bar dataKey="logs" fill="#16a34a" radius={[4, 4, 0, 0]} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 'bold' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 'bold' }} />
+                <Tooltip 
+                  cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                  contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '10px' }}
+                />
+                <Bar dataKey="logs" fill="#3b82f6" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
-          </div>
+          </motion.div>
         </div>
 
-        {/* RECENT COMPLAINTS */}
-        <div className="card p-4 mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold text-gray-800">🧾 Open Complaints</h3>
-            <a href="/admin/complaints" className="text-xs font-semibold" style={{ color: '#16a34a' }}>View all →</a>
-          </div>
-          {recentComplaints.length === 0 ? (
-            <p className="text-xs text-gray-400">No open complaints. Great campus management! 🌿</p>
-          ) : (
-            recentComplaints.map(c => (
-              <div key={c.id} className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
-                <div className="w-2 h-2 rounded-full" style={{ background: c.priority === 'urgent' ? '#ef4444' : c.priority === 'high' ? '#f59e0b' : '#22c55e' }} />
-                <p className="text-sm text-gray-700 flex-1 truncate">{c.title}</p>
-                <span className="text-xs text-gray-400">{c.category}</span>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* TODAY'S TOP LOGS */}
-        <div className="card p-4">
-          <h3 className="text-sm font-bold text-gray-800 mb-3">🌱 Today's Carbon Logs (Preview)</h3>
-          {todayLogs.length === 0 ? (
-            <p className="text-xs text-gray-400">No logs yet today. Encourage students to log! 🌿</p>
-          ) : (
-            todayLogs.map(log => (
-              <div key={log.id} className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                  style={{ background: log.eco_score >= 80 ? '#16a34a' : log.eco_score >= 60 ? '#f59e0b' : '#ef4444' }}>
-                  {log.eco_score}
+        <div className="nexus-grid">
+          {/* RECENT COMPLAINTS */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass-card p-8 relative overflow-hidden"
+          >
+            <div className="absolute top-0 left-0 w-full h-[1px] bg-red-500/10 animate-scan pointer-events-none" />
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Distress Signals</h3>
+              <Link to="/12345678/admin/complaints" className="text-[9px] font-black text-green-500 uppercase tracking-widest hover:text-green-400 transition-all">Command Link →</Link>
+            </div>
+            <div className="space-y-4">
+              {recentComplaints.length === 0 ? (
+                <div className="py-8 text-center">
+                  <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em]">Zero Anomalies Detected</p>
                 </div>
-                <p className="text-sm text-gray-700">{log.total_kg?.toFixed(2)} kg CO2</p>
-                <span className="text-xs text-gray-400 ml-auto">{log.log_date}</span>
+              ) : (
+                recentComplaints.map(c => (
+                  <div key={c.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/[0.08] transition-all">
+                    <div className="w-2 h-2 rounded-full flex-shrink-0 animate-pulse" 
+                      style={{ background: c.priority === 'urgent' ? '#ef4444' : c.priority === 'high' ? '#f59e0b' : '#22c55e' }} 
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-black text-white truncate uppercase tracking-tight">{c.title}</p>
+                      <p className="text-[9px] font-bold text-gray-500 mt-1 uppercase tracking-widest">{c.category}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </motion.div>
+
+          {/* TODAY'S TOP LOGS */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass-card p-8 lg:col-span-2 relative overflow-hidden"
+          >
+            <div className="absolute top-0 left-0 w-full h-[1px] bg-green-500/10 animate-scan pointer-events-none" />
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Ingestion Preview</h3>
+              <div className="flex items-center gap-2">
+                 <Clock size={12} className="text-gray-500" />
+                 <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Temporal Log</span>
               </div>
-            ))
-          )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {todayLogs.length === 0 ? (
+                <div className="py-8 text-center col-span-2">
+                  <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em]">Awaiting Data Streams</p>
+                </div>
+              ) : (
+                todayLogs.map(log => (
+                  <div key={log.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/[0.08] transition-all">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black text-white shadow-inner"
+                      style={{ background: log.eco_score >= 80 ? 'rgba(22, 163, 74, 0.2)' : log.eco_score >= 60 ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)', border: `1px solid ${log.eco_score >= 80 ? '#16a34a' : log.eco_score >= 60 ? '#f59e0b' : '#ef4444'}50` }}>
+                      {log.eco_score}
+                    </div>
+                    <div>
+                      <p className="text-xs font-black text-white uppercase tracking-tight">{log.total_kg?.toFixed(2)} kg CO2</p>
+                      <p className="text-[9px] font-bold text-gray-500 mt-1 uppercase tracking-widest">Intake: {log.log_date}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </motion.div>
         </div>
       </div>
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes scan {
+          0% { transform: translateY(0); }
+          100% { transform: translateY(300px); }
+        }
+        .animate-scan {
+          animation: scan 4s linear infinite;
+        }
+      `}} />
     </AdminLayout>
   )
 }

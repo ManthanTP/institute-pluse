@@ -126,8 +126,16 @@ export default function RegisterPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[32px] p-8 shadow-2xl shadow-black/40"
+          className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[32px] p-8 shadow-2xl shadow-black/40 relative"
         >
+          {/* Back Button */}
+          <button 
+            onClick={() => navigate(-1)}
+            className="absolute top-8 left-8 p-2 rounded-xl bg-white/5 border border-white/10 text-gray-500 hover:text-white transition-colors lg:-left-20 lg:top-0"
+          >
+            <ArrowRight size={20} className="rotate-180" />
+          </button>
+
           {error && (
             <motion.div 
               initial={{ opacity: 0, scale: 0.9 }}
@@ -139,7 +147,7 @@ export default function RegisterPage() {
           )}
 
           <form onSubmit={handleRegister} className="space-y-5">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="space-y-5">
                <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Full Name</label>
                   <div className="relative group">
@@ -151,6 +159,7 @@ export default function RegisterPage() {
                     />
                   </div>
                </div>
+
                <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">College Email</label>
                   <div className="relative group">
@@ -162,59 +171,63 @@ export default function RegisterPage() {
                     />
                   </div>
                </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="space-y-1.5">
+                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Phone</label>
+                     <div className="relative group">
+                       <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-500 transition-colors" />
+                       <input 
+                         type="tel" value={form.phone} onChange={e => update('phone', e.target.value)}
+                         className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white placeholder:text-gray-600 outline-none focus:border-green-500/50 focus:bg-white/[0.08] transition-all"
+                         placeholder="+91 00000 00000"
+                       />
+                     </div>
+                  </div>
+                  <div className="space-y-1.5">
+                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Department</label>
+                     <div className="relative group">
+                       <Building size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-500 transition-colors" />
+                       <select 
+                         value={form.department} onChange={e => update('department', e.target.value)}
+                         className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-green-500/50 appearance-none transition-all cursor-pointer"
+                       >
+                         {DEPARTMENTS.map(d => <option key={d} value={d} className="bg-slate-900">{d}</option>)}
+                       </select>
+                     </div>
+                  </div>
+               </div>
+
                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Phone</label>
+                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Password</label>
+                 <div className="relative group">
+                   <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-500 transition-colors" />
+                   <input 
+                     type={showPw ? 'text' : 'password'} value={form.password} onChange={e => update('password', e.target.value)}
+                     className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-12 text-sm text-white placeholder:text-gray-600 outline-none focus:border-green-500/50 focus:bg-white/[0.08] transition-all"
+                     placeholder="Enter Password" required
+                   />
+                   <button 
+                     type="button" onClick={() => setShowPw(!showPw)}
+                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+                   >
+                     {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
+                   </button>
+                 </div>
+                 <PasswordStrength password={form.password} />
+               </div>
+
+               <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Verify Password</label>
                   <div className="relative group">
-                    <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-500 transition-colors" />
+                    <ShieldCheck size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-500 transition-colors" />
                     <input 
-                      type="tel" value={form.phone} onChange={e => update('phone', e.target.value)}
+                      type="password" value={form.confirm_password} onChange={e => update('confirm_password', e.target.value)}
                       className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white placeholder:text-gray-600 outline-none focus:border-green-500/50 focus:bg-white/[0.08] transition-all"
-                      placeholder="+91 00000 00000"
+                      placeholder="Confirm Password" required
                     />
                   </div>
                </div>
-               <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Department</label>
-                  <div className="relative group">
-                    <Building size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-500 transition-colors" />
-                    <select 
-                      value={form.department} onChange={e => update('department', e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-green-500/50 appearance-none transition-all cursor-pointer"
-                    >
-                      {DEPARTMENTS.map(d => <option key={d} value={d} className="bg-slate-900">{d}</option>)}
-                    </select>
-                  </div>
-               </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Password</label>
-              <div className="relative group">
-                <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-500 transition-colors" />
-                <input 
-                  type={showPw ? 'text' : 'password'} value={form.password} onChange={e => update('password', e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-12 text-sm text-white placeholder:text-gray-600 outline-none focus:border-green-500/50 focus:bg-white/[0.08] transition-all"
-                  placeholder="Enter Password" required
-                />
-                <button 
-                  type="button" onClick={() => setShowPw(!showPw)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
-                >
-                  {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-              <PasswordStrength password={form.password} />
-            </div>
-
-            <div className="relative group pt-1">
-               <input 
-                 type="password" value={form.confirm_password} onChange={e => update('confirm_password', e.target.value)}
-                 className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-5 text-sm text-white placeholder:text-gray-600 outline-none focus:border-green-500/50 focus:bg-white/[0.08] transition-all"
-                 placeholder="Confirm Password" required
-               />
             </div>
 
             <label className="flex items-start gap-3 cursor-pointer group py-2">

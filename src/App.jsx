@@ -31,33 +31,52 @@ const NotificationsPage = lazy(() => import('./pages/student/NotificationsPage')
 // Driver
 const DriverGPSPage = lazy(() => import('./pages/driver/DriverGPSPage'))
 
-// Admin
+// Layouts
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
+const StudentLayout = lazy(() => import('./components/StudentLayout'))
+
+// Admin Pages
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
-const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'))
 const AdminSustainabilityPage = lazy(() => import('./pages/admin/AdminSustainabilityPage'))
+const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'))
 const AdminComplaintsPage = lazy(() => import('./pages/admin/AdminComplaintsPage'))
 
 function PageLoader() {
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: '#f0fdf4' }}>
-      <div className="flex flex-col items-center gap-3">
-        <div className="text-4xl">🌿</div>
-        <div className="spinner spinner-green" />
+    <div className="min-h-screen flex items-center justify-center bg-slate-950">
+      <div className="flex flex-col items-center gap-4">
+        <div className="relative w-16 h-16">
+          <div className="absolute inset-0 border-4 border-green-500/20 rounded-full" />
+          <div className="absolute inset-0 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+        <p className="text-[10px] font-black text-white uppercase tracking-[0.3em] animate-pulse">Syncing Nexus</p>
       </div>
     </div>
   )
 }
 
+// Student Page Wrapper
+function StudentPage({ component: Component, title, showBack = false }) {
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <ProtectedRoute>
+        <StudentLayout title={title} showBack={showBack}>
+          <Component />
+        </StudentLayout>
+      </ProtectedRoute>
+    </Suspense>
+  )
+}
+
 // Simple admin page stubs for pages not yet fully built
 function AdminStubPage({ title }) {
-  const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
   return (
     <Suspense fallback={<PageLoader />}>
       <AdminLayout>
-        <div className="card p-8 text-center max-w-lg mx-auto">
+        <div className="card p-8 text-center max-w-lg mx-auto bg-white/5 border border-white/10 rounded-3xl backdrop-blur-xl">
           <div className="text-4xl mb-3">🚧</div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">{title}</h2>
-          <p className="text-gray-500 text-sm">This admin module is ready. Connect your Supabase backend and the data will populate here automatically.</p>
+          <h2 className="text-xl font-bold text-white mb-2">{title}</h2>
+          <p className="text-gray-400 text-sm">This admin module is ready. Connect your Supabase backend and the data will populate here automatically.</p>
         </div>
       </AdminLayout>
     </Suspense>
@@ -92,9 +111,12 @@ export default function App() {
           style: {
             fontFamily: 'Inter, sans-serif',
             fontSize: '14px',
-            fontWeight: '500',
-            borderRadius: '12px',
-            border: '1.5px solid #e2e8f0',
+            fontWeight: '600',
+            borderRadius: '16px',
+            background: '#0f172a',
+            color: '#fff',
+            border: '1px solid rgba(255,255,255,0.1)',
+            backdropFilter: 'blur(10px)',
           },
           success: { iconTheme: { primary: '#16a34a', secondary: 'white' } },
           error: { iconTheme: { primary: '#ef4444', secondary: 'white' } },
@@ -107,39 +129,40 @@ export default function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
-          <Route path="/secure-admin-panel/login" element={<AdminLoginPage />} />
+          {/* OBFUSCATED ADMIN ACCESS */}
+          <Route path="/12345678/admin/login" element={<AdminLoginPage />} />
 
           {/* STUDENT PROTECTED */}
-          <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-          <Route path="/carbon/log" element={<ProtectedRoute><CarbonLogPage /></ProtectedRoute>} />
-          <Route path="/carbon/history" element={<ProtectedRoute><CarbonHistoryPage /></ProtectedRoute>} />
-          <Route path="/leaderboard" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
-          <Route path="/cafeteria" element={<ProtectedRoute><CafeteriaPage /></ProtectedRoute>} />
-          <Route path="/bus-tracking" element={<ProtectedRoute><BusTrackingPage /></ProtectedRoute>} />
-          <Route path="/attendance" element={<ProtectedRoute><AttendancePage /></ProtectedRoute>} />
-          <Route path="/complaints" element={<ProtectedRoute><ComplaintsPage /></ProtectedRoute>} />
-          <Route path="/lost-found" element={<ProtectedRoute><LostFoundPage /></ProtectedRoute>} />
-          <Route path="/study-planner" element={<ProtectedRoute><StudyPlannerPage /></ProtectedRoute>} />
-          <Route path="/lab-assistant" element={<ProtectedRoute><LabAssistantPage /></ProtectedRoute>} />
-          <Route path="/navigation" element={<ProtectedRoute><NavigationPage /></ProtectedRoute>} />
-          <Route path="/chatbot" element={<ProtectedRoute><ChatbotPage /></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-          <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<StudentPage component={DashboardPage} title="Home" />} />
+          <Route path="/carbon/log" element={<StudentPage component={CarbonLogPage} title="Log Activity" showBack />} />
+          <Route path="/carbon/history" element={<StudentPage component={CarbonHistoryPage} title="Log History" showBack />} />
+          <Route path="/leaderboard" element={<StudentPage component={LeaderboardPage} title="Leaderboard" showBack />} />
+          <Route path="/cafeteria" element={<StudentPage component={CafeteriaPage} title="Eco-Cafeteria" showBack />} />
+          <Route path="/bus-tracking" element={<StudentPage component={BusTrackingPage} title="Bus Tracking" showBack />} />
+          <Route path="/attendance" element={<StudentPage component={AttendancePage} title="Attendance" showBack />} />
+          <Route path="/complaints" element={<StudentPage component={ComplaintsPage} title="Complaints" showBack />} />
+          <Route path="/lost-found" element={<StudentPage component={LostFoundPage} title="Lost & Found" showBack />} />
+          <Route path="/study-planner" element={<StudentPage component={StudyPlannerPage} title="AI Study Sync" showBack />} />
+          <Route path="/lab-assistant" element={<StudentPage component={LabAssistantPage} title="Lab Assistant" showBack />} />
+          <Route path="/navigation" element={<StudentPage component={NavigationPage} title="Campus Map" showBack />} />
+          <Route path="/chatbot" element={<StudentPage component={ChatbotPage} title="Nexus AI" showBack />} />
+          <Route path="/profile" element={<StudentPage component={ProfilePage} title="Profile" showBack />} />
+          <Route path="/notifications" element={<StudentPage component={NotificationsPage} title="Notifications" showBack />} />
 
           {/* DRIVER */}
           <Route path="/driver/gps" element={<DriverRoute><DriverGPSPage /></DriverRoute>} />
 
-          {/* ADMIN */}
-          <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-          <Route path="/admin/sustainability" element={<AdminRoute><AdminSustainabilityPage /></AdminRoute>} />
-          <Route path="/admin/users" element={<AdminRoute><AdminUsersPage /></AdminRoute>} />
-          <Route path="/admin/complaints" element={<AdminRoute><AdminComplaintsPage /></AdminRoute>} />
-          <Route path="/admin/buses" element={<AdminRoute><AdminStubPage title="🚌 Bus Management" /></AdminRoute>} />
-          <Route path="/admin/cafeteria" element={<AdminRoute><AdminStubPage title="🍽️ Cafeteria Management" /></AdminRoute>} />
-          <Route path="/admin/attendance" element={<AdminRoute><AdminStubPage title="🎓 Attendance Management" /></AdminRoute>} />
-          <Route path="/admin/lost-found" element={<AdminRoute><AdminStubPage title="🔍 Lost & Found Admin" /></AdminRoute>} />
-          <Route path="/admin/notifications" element={<AdminRoute><AdminStubPage title="🔔 Push Notifications" /></AdminRoute>} />
-          <Route path="/admin/navigation" element={<AdminRoute><AdminStubPage title="📍 Campus Locations" /></AdminRoute>} />
+          {/* ADMIN PROTECTED (OBFUSCATED) */}
+          <Route path="/12345678/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+          <Route path="/12345678/admin/sustainability" element={<AdminRoute><AdminSustainabilityPage /></AdminRoute>} />
+          <Route path="/12345678/admin/users" element={<AdminRoute><AdminUsersPage /></AdminRoute>} />
+          <Route path="/12345678/admin/complaints" element={<AdminRoute><AdminComplaintsPage /></AdminRoute>} />
+          <Route path="/12345678/admin/buses" element={<AdminRoute><AdminStubPage title="🚌 Bus Management" /></AdminRoute>} />
+          <Route path="/12345678/admin/cafeteria" element={<AdminRoute><AdminStubPage title="🍽️ Cafeteria Management" /></AdminRoute>} />
+          <Route path="/12345678/admin/attendance" element={<AdminRoute><AdminStubPage title="🎓 Attendance Management" /></AdminRoute>} />
+          <Route path="/12345678/admin/lost-found" element={<AdminRoute><AdminStubPage title="🔍 Lost & Found Admin" /></AdminRoute>} />
+          <Route path="/12345678/admin/notifications" element={<AdminRoute><AdminStubPage title="🔔 Push Notifications" /></AdminRoute>} />
+          <Route path="/12345678/admin/navigation" element={<AdminRoute><AdminStubPage title="📍 Campus Locations" /></AdminRoute>} />
 
           {/* CATCH ALL */}
           <Route path="*" element={<Navigate to="/" replace />} />

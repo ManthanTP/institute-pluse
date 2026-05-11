@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, Key, Mail, Lock } from 'lucide-react'
+import { Eye, EyeOff, Key, Mail, Lock, ShieldAlert, ArrowRight, Zap, ShieldCheck } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store/index'
+import { motion, AnimatePresence } from 'framer-motion'
+import toast from 'react-hot-toast'
 
 const ADMIN_KEY = import.meta.env.VITE_ADMIN_SECRET_KEY || 'admin-secret-2026'
 const MAX_ATTEMPTS = 3
@@ -42,8 +44,11 @@ export default function AdminLoginPage() {
     if (adminKey !== ADMIN_KEY) {
       const newAttempts = attempts + 1
       setAttempts(newAttempts)
-      if (newAttempts >= MAX_ATTEMPTS) setLockout(LOCKOUT_SECONDS)
-      setError('Authentication failed.')
+      if (newAttempts >= MAX_ATTEMPTS) {
+        setLockout(LOCKOUT_SECONDS)
+        toast.error('System lockout active.')
+      }
+      setError('Unauthorized access key detected.')
       return
     }
 
@@ -55,108 +60,181 @@ export default function AdminLoginPage() {
       const profile = await fetchProfile(data.user.id)
       if (!profile || profile.role !== 'admin') {
         await supabase.auth.signOut()
-        throw new Error('Access denied.')
+        throw new Error('Access denied. Admin privileges required.')
       }
 
       useAuthStore.setState({ user: data.user })
-      navigate('/admin/dashboard')
+      toast.success('Admin Core Synchronized 🛡️')
+      navigate('/12345678/admin/dashboard')
     } catch (err) {
       const newAttempts = attempts + 1
       setAttempts(newAttempts)
       if (newAttempts >= MAX_ATTEMPTS) setLockout(LOCKOUT_SECONDS)
-      setError('Authentication failed.')
+      setError(err.message || 'Authentication failed.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden bg-slate-950">
+    <div className="min-h-[100dvh] bg-slate-950 flex flex-col items-center justify-center p-6 relative overflow-hidden">
       {/* Background decoration */}
-      <div className="absolute top-[20%] left-[-10%] w-[40%] h-[40%] rounded-full opacity-20 blur-[100px]" style={{ background: '#3b82f6' }} />
-      <div className="absolute bottom-[20%] right-[-10%] w-[40%] h-[40%] rounded-full opacity-10 blur-[100px]" style={{ background: '#8b5cf6' }} />
+      <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[50%] rounded-full bg-red-500/5 blur-[120px] z-0" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[50%] rounded-full bg-blue-500/5 blur-[120px] z-0" />
 
       {/* Loading Overlay */}
-      {loading && (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-          <div className="spinner spinner-large border-slate-500 border-top-slate-300 mb-4" />
-          <p className="text-slate-300 font-bold tracking-wide">Authenticating Admin...</p>
-        </div>
-      )}
+      <AnimatePresence>
+        {loading && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-950/95 backdrop-blur-xl"
+          >
+            <div className="relative w-24 h-24">
+               <div className="absolute inset-0 border-4 border-red-500/20 rounded-full" />
+               <div className="absolute inset-0 border-4 border-red-500 border-t-transparent rounded-full animate-spin" />
+               <div className="absolute inset-0 flex items-center justify-center">
+                 <ShieldAlert size={32} className="text-red-500 animate-pulse" />
+               </div>
+            </div>
+            <p className="mt-8 text-[10px] font-black text-white uppercase tracking-[0.4em] animate-pulse">Scanning Nexus Root</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <div className="w-full max-w-xs animate-fade-in-up relative z-10">
-        <div className="text-center mb-10 flex flex-col items-center">
-          <img src="/logo_no_bg.png" alt="InstitutePulse Logo" className="brand-logo mb-6 opacity-90 w-16 h-16 object-contain drop-shadow-[0_0_15px_rgba(239,68,68,0.2)]" />
-          <h1 className="text-2xl font-black text-white tracking-tighter uppercase leading-none">Nexus Root</h1>
-          <p className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em] mt-2">Admin Core Entry</p>
-        </div>
+      <div className="w-full max-w-sm relative z-10">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-10"
+        >
+          <div className="relative inline-block">
+            <img src="/logo_no_bg.png" alt="Logo" className="w-24 h-24 mx-auto mb-8 drop-shadow-[0_0_30px_rgba(239,68,68,0.3)] grayscale opacity-80" />
+            <div className="absolute inset-0 bg-red-500/10 blur-3xl rounded-full scale-150 animate-pulse" />
+          </div>
+          <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Nexus Root</h1>
+          <p className="text-red-500 text-[10px] font-black uppercase tracking-[0.4em] mt-3">Admin Core Entry • v2.0</p>
+        </motion.div>
 
-        <div className="card glass-card !bg-slate-900/80 !border-slate-800 p-8 shadow-2xl">
-          <h1 className="text-xl font-bold text-white mb-1">System Access</h1>
-          <p className="text-sm text-slate-400 mb-6">Authorized personnel only</p>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[40px] p-8 lg:p-10 shadow-2xl shadow-black/60 relative overflow-hidden"
+        >
+          {/* Subtle Scanning Line Effect */}
+          <div className="absolute top-0 left-0 w-full h-[1px] bg-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.5)] animate-scan pointer-events-none" />
 
           {error && (
-            <div className="mb-4 p-3 rounded-lg text-sm border border-red-500/20 bg-red-500/10 text-red-400">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="mb-8 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-black text-center uppercase tracking-widest leading-relaxed"
+            >
+              <ShieldAlert size={16} className="mx-auto mb-2" />
               {error}
-              {lockout > 0 && <div className="mt-1 text-xs opacity-80">Try again in {lockout}s</div>}
-            </div>
+              {lockout > 0 && <div className="mt-2 text-white">System Lockout: {lockout}s</div>}
+            </motion.div>
           )}
 
-          <form onSubmit={handleLogin} className="flex flex-col gap-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">Email</label>
-              <div className="relative">
-                <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                  className="input-field pl-9 text-sm !bg-slate-950/50 !border-slate-800 !text-white focus:!border-blue-500 focus:!ring-1 focus:!ring-blue-500 placeholder:text-slate-600 transition-all" 
-                  placeholder="admin@example.com" required
-                  disabled={lockout > 0} />
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] ml-1">Secure Email</label>
+              <div className="relative group">
+                <Mail size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-red-500 transition-colors" />
+                <input 
+                  type="email" value={email} onChange={e => setEmail(e.target.value)}
+                  className="w-full bg-slate-950/50 border border-white/5 rounded-[22px] py-4.5 pl-14 pr-5 text-sm text-white placeholder:text-gray-700 outline-none focus:border-red-500/30 focus:bg-slate-950/80 transition-all"
+                  placeholder="root@pulse.nexus" required
+                  disabled={lockout > 0}
+                />
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">Password</label>
-              <div className="relative">
-                <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                <input type={showPw ? 'text' : 'password'} value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  className="input-field pl-9 pr-9 text-sm !bg-slate-950/50 !border-slate-800 !text-white focus:!border-blue-500 focus:!ring-1 focus:!ring-blue-500 placeholder:text-slate-600 transition-all" 
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] ml-1">Registry Password</label>
+              <div className="relative group">
+                <Lock size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-red-500 transition-colors" />
+                <input 
+                  type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
+                  className="w-full bg-slate-950/50 border border-white/5 rounded-[22px] py-4.5 pl-14 pr-14 text-sm text-white placeholder:text-gray-700 outline-none focus:border-red-500/30 focus:bg-slate-950/80 transition-all"
                   placeholder="••••••••" required
-                  disabled={lockout > 0} />
-                <button type="button" onClick={() => setShowPw(!showPw)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors">
-                  {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
+                  disabled={lockout > 0}
+                />
+                <button 
+                  type="button" onClick={() => setShowPw(!showPw)}
+                  className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white transition-colors"
+                >
+                  {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">Access Key</label>
-              <div className="relative">
-                <Key size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                <input type={showKey ? 'text' : 'password'} value={adminKey}
-                  onChange={e => setAdminKey(e.target.value)}
-                  className="input-field pl-9 pr-9 text-sm !bg-slate-950/50 !border-slate-800 !text-white focus:!border-blue-500 focus:!ring-1 focus:!ring-blue-500 placeholder:text-slate-600 transition-all" 
-                  placeholder="••••••••••••" required
-                  disabled={lockout > 0} />
-                <button type="button" onClick={() => setShowKey(!showKey)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors">
-                  {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] ml-1">Access Key (2FA)</label>
+              <div className="relative group">
+                <Key size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-red-500 transition-colors" />
+                <input 
+                  type={showKey ? 'text' : 'password'} value={adminKey} onChange={e => setAdminKey(e.target.value)}
+                  className="w-full bg-slate-950/50 border border-white/5 rounded-[22px] py-4.5 pl-14 pr-14 text-sm text-white placeholder:text-gray-700 outline-none focus:border-red-500/30 focus:bg-slate-950/80 transition-all font-mono tracking-widest"
+                  placeholder="KEY-XXXX-XXXX" required
+                  disabled={lockout > 0}
+                />
+                <button 
+                  type="button" onClick={() => setShowKey(!showKey)}
+                  className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white transition-colors"
+                >
+                  {showKey ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
             </div>
 
-            <button
-              type="submit"
+            <motion.button 
+              whileTap={{ scale: 0.98 }}
+              type="submit" 
               disabled={loading || lockout > 0}
-              className="w-full mt-2 py-3 px-4 rounded-lg text-sm font-semibold text-white transition-all hover:bg-slate-700"
-              style={{ background: lockout > 0 ? '#334155' : '#1e293b', cursor: lockout > 0 ? 'not-allowed' : 'pointer' }}
+              className={`w-full py-5 rounded-[22px] font-black text-xs uppercase tracking-[0.3em] shadow-xl transition-all flex items-center justify-center gap-4 ${
+                lockout > 0 
+                  ? 'bg-slate-900 text-gray-600 cursor-not-allowed border border-white/5' 
+                  : 'bg-red-600 hover:bg-red-500 text-white shadow-red-600/10'
+              }`}
             >
-              {loading ? 'Verifying...' : lockout > 0 ? `Locked (${lockout}s)` : 'Authenticate'}
-            </button>
+              {lockout > 0 ? `Locked (${lockout}s)` : (
+                <>
+                  Authenticate <ArrowRight size={18} />
+                </>
+              )}
+            </motion.button>
           </form>
-        </div>
+        </motion.div>
+
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="mt-12 flex items-center justify-center gap-10 text-gray-700"
+        >
+          <div className="flex items-center gap-2">
+            <ShieldCheck size={16} className="text-red-600" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Root Guard</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Zap size={16} className="text-blue-500" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Direct Uplink</span>
+          </div>
+        </motion.div>
       </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes scan {
+          0% { top: 0; }
+          100% { top: 100%; }
+        }
+        .animate-scan {
+          animation: scan 4s linear infinite;
+        }
+      `}} />
     </div>
   )
 }
