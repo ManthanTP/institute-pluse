@@ -101,8 +101,7 @@ export default function LandingPage() {
       <nav style={{ background: '#0f172a', position: 'sticky', top: 0, zIndex: 50 }}>
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-2xl">🌿</span>
-            <span className="font-bold text-white text-lg">InstitutePulse</span>
+            <img src="/logo.png" alt="InstitutePulse Logo" className="brand-logo" />
           </div>
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-6">
@@ -273,9 +272,8 @@ export default function LandingPage() {
       <footer style={{ background: '#0f172a', color: '#94a3b8' }}>
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">🌿</span>
-              <span className="text-white font-bold">InstitutePulse</span>
+            <div className="flex items-center gap-2 opacity-80">
+              <img src="/logo.png" alt="InstitutePulse Logo" className="h-8 w-auto object-contain" />
             </div>
             <p className="text-sm text-center">"Every Action. Every Point. Greener Campus." — Built for a greener tomorrow.</p>
             <p className="text-sm">© 2026 InstitutePulse</p>
