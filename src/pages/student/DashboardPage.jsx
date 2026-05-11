@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bell, ChevronRight, Flame, Leaf, TrendingUp, Star } from 'lucide-react'
-import { useAuthStore, useCarbonStore, useNotifStore } from '../store/index'
-import { supabase } from '../lib/supabase'
-import BottomTabBar from '../components/BottomTabBar'
-import EcoScoreRing from '../components/EcoScoreRing'
+import { useAuthStore, useCarbonStore, useNotifStore } from '../../store/index'
+import { supabase } from '../../lib/supabase'
+import BottomTabBar from '../../components/BottomTabBar'
+import EcoScoreRing from '../../components/EcoScoreRing'
 
 const MODULE_TILES = [
   { path: '/carbon/log', emoji: '🌱', label: 'Carbon Log', color: '#f0fdf4', iconBg: '#16a34a' },
