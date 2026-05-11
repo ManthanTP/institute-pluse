@@ -2313,3 +2313,129 @@ SECTIONS
         ✓ Startup MVP Pitch
 
 ================================================================================
+
+
+════════════════════════════════════════════════════════════════════════════════
+  SECTION 22 — INSTALLED DEPENDENCIES & ENVIRONMENT CONFIGURATION
+════════════════════════════════════════════════════════════════════════════════
+
+  22.1 ALL NPM DEPENDENCIES (package.json)
+  ─────────────────────────────────────────────────────────────────────────────
+
+  ┌─────────────────────────────┬──────────────┬─────────────────────────────────────────────────┐
+  │ Package                     │ Version      │ Purpose                                         │
+  ├─────────────────────────────┼──────────────┼─────────────────────────────────────────────────┤
+  │ react                       │ ^19.1.0      │ Core UI rendering library                       │
+  │ react-dom                   │ ^19.1.0      │ Mounts React app to browser DOM                 │
+  │ react-router-dom            │ ^7.6.0       │ SPA client-side routing between all pages       │
+  │ @supabase/supabase-js       │ ^2.49.8      │ Auth + PostgreSQL DB + Realtime + Storage       │
+  │ @google/generative-ai       │ ^0.24.1      │ Gemini AI — eco tips, chatbot, study planner   │
+  │ zustand                     │ ^5.0.4       │ Global state (auth, carbon, cart, notifs)       │
+  │ recharts                    │ ^2.15.3      │ CO2 charts: line, bar, pie, area                │
+  │ leaflet                     │ ^1.9.4       │ Bus tracking map engine (OpenStreetMap)         │
+  │ react-leaflet               │ ^5.0.0       │ JSX wrapper for Leaflet map components          │
+  │ qrcode.react                │ ^4.2.0       │ QR code generation (cafeteria tokens)           │
+  │ html5-qrcode                │ ^2.3.8       │ Camera QR scanner (attendance)                  │
+  │ lucide-react                │ ^0.511.0     │ 500+ consistent SVG icon set                    │
+  │ framer-motion               │ ^12.12.1     │ Page transitions & micro-animations             │
+  │ react-hot-toast             │ ^2.5.2       │ Success/error toast notifications               │
+  │ date-fns                    │ ^4.1.0       │ Date formatting, streak calc, history grouping  │
+  ├─────────────────────────────┼──────────────┼─────────────────────────────────────────────────┤
+  │ DEV DEPENDENCIES            │              │                                                 │
+  ├─────────────────────────────┼──────────────┼─────────────────────────────────────────────────┤
+  │ vite                        │ ^6.3.5       │ Build tool & dev server with HMR                │
+  │ @vitejs/plugin-react        │ ^4.4.1       │ React JSX + Fast Refresh for Vite               │
+  │ tailwindcss                 │ ^4.1.6       │ Utility CSS — layout, spacing, flex/grid        │
+  │ @tailwindcss/vite           │ ^4.1.6       │ Tailwind v4 Vite integration plugin             │
+  │ autoprefixer                │ ^10.4.21     │ Auto browser vendor prefixes for CSS            │
+  │ postcss                     │ ^8.5.3       │ CSS processing pipeline for Tailwind            │
+  └─────────────────────────────┴──────────────┴─────────────────────────────────────────────────┘
+
+
+  22.2 ENVIRONMENT VARIABLES REQUIRED
+  ─────────────────────────────────────────────────────────────────────────────
+
+  File: .env (create in project root)
+
+  Variable                  | What It Is               | Where to Get It
+  ──────────────────────────┼──────────────────────────┼────────────────────────────────────────
+  VITE_SUPABASE_URL         | Your Supabase project URL | Dashboard → Project Settings → API
+  VITE_SUPABASE_ANON_KEY    | Publishable/anon key      | Dashboard → Project Settings → API
+  VITE_GEMINI_API_KEY       | Google AI Studio API key  | aistudio.google.com/apikey
+  VITE_ADMIN_SECRET_KEY     | Self-defined secret       | Create your own strong password
+
+
+  22.3 HOW TO GET EACH API KEY
+  ─────────────────────────────────────────────────────────────────────────────
+
+  A. SUPABASE URL & ANON KEY
+  ─────────────────────────
+    1. Go to supabase.com → Sign in
+    2. Select your project (or create new one)
+    3. Left sidebar → Project Settings → API
+    4. Copy "Project URL" → VITE_SUPABASE_URL
+    5. Copy "Publishable Key" (sb_publishable_...) or "anon public" → VITE_SUPABASE_ANON_KEY
+    ✅ Already configured in this project.
+
+  B. GOOGLE GEMINI API KEY
+  ────────────────────────
+    1. Go to: https://aistudio.google.com/apikey
+    2. Sign in with Google account
+    3. Click "Create API Key"
+    4. Select or create a Google Cloud project
+    5. Copy the key (starts with "AIza...")
+    6. Paste as: VITE_GEMINI_API_KEY=AIza...
+    
+    Free Tier Limits:
+    • 15 requests per minute
+    • 1,000,000 tokens per day
+    • Sufficient for a 1,000-student campus app
+
+  C. ADMIN SECRET KEY
+  ───────────────────
+    This is NOT a third-party service — you define it yourself.
+    
+    1. Choose any strong string (min 16 characters)
+       Examples: InstitutePulse@Admin2026!
+                 SCSAS_Admin_SecretKey#99
+    2. Set it in .env: VITE_ADMIN_SECRET_KEY=YourChosenKey
+    3. The admin login at /secure-admin-panel/login requires:
+       • Email + Password (Supabase Auth)
+       • This secret key (3rd factor)
+    4. NEVER commit this to git — share only with admins
+
+  D. SUPABASE SERVICE ROLE KEY (Optional — server-side only)
+  ─────────────────────────────────────────────────────────
+    Only needed for Edge Functions / server-side admin operations.
+    Dashboard → Project Settings → API → service_role (secret)
+    ⚠️ NEVER prefix with VITE_ — this bypasses all RLS policies.
+
+
+  22.4 SECURITY NOTES
+  ─────────────────────────────────────────────────────────────────────────────
+
+  • VITE_ prefixed variables are EXPOSED to the browser bundle
+  • The VITE_SUPABASE_ANON_KEY is safe to expose — it's row-level security
+    protected by RLS policies in the database
+  • The VITE_GEMINI_API_KEY is visible in browser — for production, proxy
+    through a Supabase Edge Function to prevent quota abuse
+  • The VITE_ADMIN_SECRET_KEY is visible in bundle — consider moving admin
+    auth to a server-side Edge Function for higher security production use
+  • NEVER put SUPABASE_SERVICE_ROLE_KEY in any VITE_ variable
+
+
+================================================================================
+
+        SCSAS — Smart Campus Sustainability & Assistant System
+        Version 2.0 | PRD Complete | Production Ready
+
+        "Every Action. Every Point. Greener Campus."
+
+        Suitable for:
+        ✓ VTU Final Year Project
+        ✓ IEEE / ACM Hackathon
+        ✓ GitHub Documentation
+        ✓ Resume Showcase
+        ✓ Startup MVP Pitch
+
+================================================================================
