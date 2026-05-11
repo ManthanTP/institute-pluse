@@ -47,7 +47,7 @@ export default function LandingPage() {
       }`}>
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="InstitutePulse Logo" className="w-10 h-10 object-contain shadow-lg shadow-green-500/20" />
+            <img src="/logo_no_bg.png" alt="InstitutePulse Logo" className="w-10 h-10 object-contain shadow-lg shadow-green-500/20" />
             <span className="text-xl font-black tracking-tighter bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
               INSTITUTE<span className="text-green-500">PULSE</span>
             </span>
@@ -143,7 +143,7 @@ export default function LandingPage() {
             <div className="relative z-10 rounded-[40px] border border-white/10 p-4 bg-white/5 backdrop-blur-sm overflow-hidden shadow-2xl">
                <div className="bg-slate-900 rounded-[32px] aspect-[4/3] relative overflow-hidden flex flex-col items-center justify-center p-8">
                   <div className="absolute inset-0 bg-gradient-to-br from-green-500/20 to-transparent" />
-                  <img src="/logo.png" alt="System Interface" className="w-48 h-48 object-contain mb-6 animate-pulse" />
+                  <img src="/logo_no_bg.png" alt="System Interface" className="w-48 h-48 object-contain mb-6 animate-pulse" />
                   <div className="grid grid-cols-2 gap-4 w-full">
                     {[1, 2, 3, 4].map(i => (
                       <div key={i} className="h-2 rounded-full bg-white/5 overflow-hidden">
@@ -245,7 +245,7 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-4 gap-12 mb-16">
             <div className="col-span-2">
               <div className="flex items-center gap-3 mb-6">
-                <img src="/logo.png" alt="Logo" className="w-8 h-8 opacity-80" />
+                <img src="/logo_no_bg.png" alt="Logo" className="w-8 h-8 opacity-80" />
                 <span className="text-lg font-black tracking-tighter">INSTITUTE<span className="text-green-500">PULSE</span></span>
               </div>
               <p className="text-gray-400 max-w-sm mb-8 font-medium">The future of university management is sustainable, connected, and AI-driven. Join thousands of students making a difference every day.</p>

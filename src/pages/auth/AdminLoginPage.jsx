@@ -85,8 +85,10 @@ export default function AdminLoginPage() {
       )}
 
       <div className="w-full max-w-xs animate-fade-in-up relative z-10">
-        <div className="text-center mb-6 flex flex-col items-center">
-          <img src="/logo.png" alt="InstitutePulse Logo" className="brand-logo mb-2 opacity-80" />
+        <div className="text-center mb-10 flex flex-col items-center">
+          <img src="/logo_no_bg.png" alt="InstitutePulse Logo" className="brand-logo mb-6 opacity-90 w-16 h-16 object-contain drop-shadow-[0_0_15px_rgba(239,68,68,0.2)]" />
+          <h1 className="text-2xl font-black text-white tracking-tighter uppercase leading-none">Nexus Root</h1>
+          <p className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em] mt-2">Admin Core Entry</p>
         </div>
 
         <div className="card glass-card !bg-slate-900/80 !border-slate-800 p-8 shadow-2xl">

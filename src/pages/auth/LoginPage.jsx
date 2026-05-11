@@ -34,7 +34,11 @@ export default function LoginPage() {
       else navigate('/dashboard')
 
     } catch (err) {
-      setError('Invalid credentials. Please try again.')
+      if (err.message?.toLowerCase().includes('email not confirmed') || err.message?.toLowerCase().includes('email not verified')) {
+        setError('Email not verified. Please check your inbox for the confirmation link.')
+      } else {
+        setError('Invalid credentials. Please try again.')
+      }
     } finally {
       setLoading(false)
     }
@@ -70,7 +74,7 @@ export default function LoginPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-10"
         >
-          <img src="/logo.png" alt="Logo" className="w-20 h-20 mx-auto mb-6 drop-shadow-[0_0_20px_rgba(34,197,94,0.4)]" />
+          <img src="/logo_no_bg.png" alt="Logo" className="w-20 h-20 mx-auto mb-6 drop-shadow-[0_0_20px_rgba(34,197,94,0.4)]" />
           <h1 className="text-4xl font-black text-white tracking-tighter">Welcome Back</h1>
           <p className="text-gray-500 text-sm mt-2 font-medium tracking-tight">Access your eco-dashboard.</p>
         </motion.div>
@@ -93,7 +97,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1">Identity</label>
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1">Email Address</label>
               <div className="relative group">
                 <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-500 transition-colors" />
                 <input 
@@ -106,9 +110,9 @@ export default function LoginPage() {
 
             <div className="space-y-2">
               <div className="flex justify-between items-center px-1">
-                <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Security</label>
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Password</label>
                 <Link to="/forgot-password" size="sm" className="text-[10px] font-black text-green-500 uppercase tracking-widest hover:text-green-400 transition-colors">
-                  Lost Key?
+                  Forgot Password?
                 </Link>
               </div>
               <div className="relative group">

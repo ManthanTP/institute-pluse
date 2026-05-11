@@ -66,7 +66,7 @@ export default function DashboardPage() {
       {/* STICKY HEADER */}
       <header className="sticky top-0 z-50 px-6 py-4 backdrop-blur-xl bg-slate-950/80 border-b border-white/5 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <img src="/logo.png" alt="Logo" className="w-9 h-9 object-contain drop-shadow-[0_0_8px_rgba(34,197,94,0.3)]" />
+          <img src="/logo_no_bg.png" alt="Logo" className="w-9 h-9 object-contain drop-shadow-[0_0_8px_rgba(34,197,94,0.3)]" />
           <div>
             <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">{greeting}</p>
             <p className="text-lg font-black text-white leading-none tracking-tight">{firstName} ✨</p>

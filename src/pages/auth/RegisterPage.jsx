@@ -117,7 +117,7 @@ export default function RegisterPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
         >
-          <img src="/logo.png" alt="Logo" className="w-16 h-16 mx-auto mb-4 drop-shadow-[0_0_15px_rgba(34,197,94,0.3)]" />
+          <img src="/logo_no_bg.png" alt="Logo" className="w-16 h-16 mx-auto mb-4 drop-shadow-[0_0_15px_rgba(34,197,94,0.3)]" />
           <h1 className="text-3xl font-black text-white tracking-tighter">Create Account</h1>
           <p className="text-gray-500 text-sm mt-1 font-medium tracking-tight">Join the smart campus revolution today.</p>
         </motion.div>
@@ -191,13 +191,13 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Security</label>
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Password</label>
               <div className="relative group">
                 <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-500 transition-colors" />
                 <input 
                   type={showPw ? 'text' : 'password'} value={form.password} onChange={e => update('password', e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-12 text-sm text-white placeholder:text-gray-600 outline-none focus:border-green-500/50 focus:bg-white/[0.08] transition-all"
-                  placeholder="Secret Key" required
+                  placeholder="Enter Password" required
                 />
                 <button 
                   type="button" onClick={() => setShowPw(!showPw)}
@@ -213,7 +213,7 @@ export default function RegisterPage() {
                <input 
                  type="password" value={form.confirm_password} onChange={e => update('confirm_password', e.target.value)}
                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-5 text-sm text-white placeholder:text-gray-600 outline-none focus:border-green-500/50 focus:bg-white/[0.08] transition-all"
-                 placeholder="Repeat Secret Key" required
+                 placeholder="Confirm Password" required
                />
             </div>
 

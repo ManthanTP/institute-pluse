@@ -199,7 +199,10 @@ export default function CarbonLogPage() {
           >
             <ArrowLeft size={20} className="text-gray-400" />
           </motion.button>
-          <h1 className="text-xl font-black text-white tracking-tight">Daily Log</h1>
+          <div className="flex items-center gap-3">
+             <img src="/logo_no_bg.png" alt="Logo" className="w-8 h-8 object-contain" />
+             <h1 className="text-xl font-black text-white tracking-tight">Daily Log</h1>
+          </div>
         </div>
         <div className="flex flex-col items-end">
           <span className="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em]">Temporal Node</span>
