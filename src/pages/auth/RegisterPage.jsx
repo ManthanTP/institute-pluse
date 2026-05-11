@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Eye, EyeOff, Mail, Lock, User, Phone, Building } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, User, Phone, Building, ArrowRight, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import toast from 'react-hot-toast'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const DEPARTMENTS = ['CSE', 'ECE', 'ME', 'Civil', 'MBA', 'Other']
 
@@ -14,17 +15,23 @@ function PasswordStrength({ password }) {
     : 3
 
   const labels = ['', 'Weak', 'Fair', 'Good', 'Strong']
-  const colors = ['', '#ef4444', '#f59e0b', '#22c55e', '#16a34a']
+  const colors = ['', 'bg-red-500', 'bg-yellow-500', 'bg-green-500', 'bg-emerald-500']
 
   return password ? (
-    <div className="mt-1">
-      <div className="flex gap-1 mb-1">
+    <div className="mt-2 px-1">
+      <div className="flex gap-1.5 mb-1.5">
         {[1, 2, 3, 4].map(i => (
-          <div key={i} className="h-1 flex-1 rounded-full transition-all duration-300"
-            style={{ background: i <= strength ? colors[strength] : '#e2e8f0' }} />
+          <motion.div 
+            key={i} 
+            initial={false}
+            animate={{ background: i <= strength ? '' : 'rgba(255,255,255,0.1)' }}
+            className={`h-1 flex-1 rounded-full ${i <= strength ? colors[strength] : ''}`} 
+          />
         ))}
       </div>
-      <p className="text-xs font-medium" style={{ color: colors[strength] }}>{labels[strength]}</p>
+      <p className={`text-[10px] font-black uppercase tracking-widest ${strength >= 3 ? 'text-green-500' : 'text-gray-400'}`}>
+        Security: {labels[strength]}
+      </p>
     </div>
   ) : null
 }
@@ -47,205 +54,214 @@ export default function RegisterPage() {
   async function handleRegister(e) {
     e.preventDefault()
     setError('')
-
-    if (form.password !== form.confirm_password) {
-      setError('Passwords do not match.')
-      return
-    }
-    if (form.password.length < 6) {
-      setError('Password must be at least 6 characters.')
-      return
-    }
-    if (!agreed) {
-      setError('Please agree to the terms.')
-      return
-    }
+    if (form.password !== form.confirm_password) return setError('Passwords do not match.')
+    if (form.password.length < 6) return setError('Password too short.')
+    if (!agreed) return setError('Please agree to terms.')
 
     setLoading(true)
     try {
       const { data, error: authError } = await supabase.auth.signUp({
         email: form.email,
         password: form.password,
-        options: {
-          data: { full_name: form.full_name }
-        }
+        options: { data: { full_name: form.full_name } }
       })
-
       if (authError) throw authError
-
       if (data.user) {
-        // Create profile
-        const { error: profileError } = await supabase.from('profiles').insert({
+        await supabase.from('profiles').insert({
           id: data.user.id,
           full_name: form.full_name,
           role: form.role,
           phone: form.phone || null,
           department: form.department,
-          eco_points: 20, // profile setup bonus
+          eco_points: 50, // Higher bonus for premium launch
           logging_streak: 0,
           total_co2_kg: 0,
         })
-
-        if (profileError) console.error('Profile creation error:', profileError)
       }
-
-      toast.success('Account created! Welcome to InstitutePulse 🌿')
+      toast.success('Welcome to the Ecosystem! 🌿')
       navigate('/dashboard')
     } catch (err) {
-      setError(err.message || 'Registration failed. Please try again.')
+      setError(err.message || 'Registration failed.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen px-4 py-10 relative overflow-hidden bg-slate-900">
+    <div className="min-h-[100dvh] bg-slate-950 flex flex-col items-center justify-center p-6 relative overflow-hidden">
       {/* Background decoration */}
-      <div className="absolute top-[-5%] left-[-10%] w-[50%] h-[50%] rounded-full opacity-20 blur-[100px]" style={{ background: '#16a34a' }} />
-      <div className="absolute bottom-[-5%] right-[-10%] w-[50%] h-[50%] rounded-full opacity-10 blur-[100px]" style={{ background: '#0ea5e9' }} />
+      <div className="absolute top-0 right-0 w-[60%] h-[40%] rounded-full bg-green-500/10 blur-[120px] z-0" />
+      <div className="absolute bottom-0 left-0 w-[60%] h-[40%] rounded-full bg-blue-500/10 blur-[120px] z-0" />
 
       {/* Loading Overlay */}
-      {loading && (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-sm animate-fade-in">
-          <div className="spinner spinner-large spinner-green mb-4" />
-          <p className="text-green-400 font-bold tracking-wide">Creating Account...</p>
-        </div>
-      )}
-
-      <div className="w-full max-w-sm mx-auto animate-fade-in-up relative z-10">
-        {/* Logo */}
-        <div className="text-center mb-6 flex flex-col items-center">
-          <img src="/logo.png" alt="InstitutePulse Logo" className="brand-logo-large mb-2" style={{ height: '80px' }} />
-          <h1 className="text-2xl font-bold text-white tracking-tight">Join InstitutePulse</h1>
-          <p className="text-slate-400 text-sm mt-1">Join the Green Campus Movement</p>
-        </div>
-
-        <div className="card glass-card p-6 !border-slate-700/50 !bg-slate-800/60">
-          {error && (
-            <div className="mb-4 p-3 rounded-lg text-sm font-medium border border-red-500/20 bg-red-500/10 text-red-400">
-              {error}
+      <AnimatePresence>
+        {loading && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-950/90 backdrop-blur-md"
+          >
+            <div className="relative w-20 h-20">
+               <div className="absolute inset-0 border-4 border-green-500/20 rounded-full" />
+               <div className="absolute inset-0 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
             </div>
+            <p className="mt-6 text-sm font-black text-white uppercase tracking-[0.3em] animate-pulse">Initializing Profile</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="w-full max-w-md relative z-10">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-8"
+        >
+          <img src="/logo.png" alt="Logo" className="w-16 h-16 mx-auto mb-4 drop-shadow-[0_0_15px_rgba(34,197,94,0.3)]" />
+          <h1 className="text-3xl font-black text-white tracking-tighter">Create Account</h1>
+          <p className="text-gray-500 text-sm mt-1 font-medium tracking-tight">Join the smart campus revolution today.</p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[32px] p-8 shadow-2xl shadow-black/40"
+        >
+          {error && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold text-center"
+            >
+              {error}
+            </motion.div>
           )}
 
-          <form onSubmit={handleRegister} className="flex flex-col gap-4">
-            {/* Full Name */}
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Full Name</label>
-              <div className="relative">
-                <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input type="text" value={form.full_name} onChange={e => update('full_name', e.target.value)}
-                  className="input-field pl-11 !bg-slate-900/50 !border-slate-700 !text-white focus:!border-green-500 focus:!ring-1 focus:!ring-green-500 placeholder:text-slate-500 transition-all" 
-                  placeholder="Your Full Name" required />
-              </div>
+          <form onSubmit={handleRegister} className="space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+               <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Full Name</label>
+                  <div className="relative group">
+                    <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-500 transition-colors" />
+                    <input 
+                      type="text" value={form.full_name} onChange={e => update('full_name', e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white placeholder:text-gray-600 outline-none focus:border-green-500/50 focus:bg-white/[0.08] transition-all"
+                      placeholder="Alex Johnson" required
+                    />
+                  </div>
+               </div>
+               <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">College Email</label>
+                  <div className="relative group">
+                    <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-500 transition-colors" />
+                    <input 
+                      type="email" value={form.email} onChange={e => update('email', e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white placeholder:text-gray-600 outline-none focus:border-green-500/50 focus:bg-white/[0.08] transition-all"
+                      placeholder="alex@uni.edu" required
+                    />
+                  </div>
+               </div>
             </div>
 
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">College Email</label>
-              <div className="relative">
-                <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input type="email" value={form.email} onChange={e => update('email', e.target.value)}
-                  className="input-field pl-11 !bg-slate-900/50 !border-slate-700 !text-white focus:!border-green-500 focus:!ring-1 focus:!ring-green-500 placeholder:text-slate-500 transition-all" 
-                  placeholder="student@college.edu" required />
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+               <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Phone</label>
+                  <div className="relative group">
+                    <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-500 transition-colors" />
+                    <input 
+                      type="tel" value={form.phone} onChange={e => update('phone', e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white placeholder:text-gray-600 outline-none focus:border-green-500/50 focus:bg-white/[0.08] transition-all"
+                      placeholder="+91 00000 00000"
+                    />
+                  </div>
+               </div>
+               <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Department</label>
+                  <div className="relative group">
+                    <Building size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-500 transition-colors" />
+                    <select 
+                      value={form.department} onChange={e => update('department', e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-green-500/50 appearance-none transition-all cursor-pointer"
+                    >
+                      {DEPARTMENTS.map(d => <option key={d} value={d} className="bg-slate-900">{d}</option>)}
+                    </select>
+                  </div>
+               </div>
             </div>
 
-            {/* Phone */}
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Phone (optional)</label>
-              <div className="relative">
-                <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input type="tel" value={form.phone} onChange={e => update('phone', e.target.value)}
-                  className="input-field pl-11 !bg-slate-900/50 !border-slate-700 !text-white focus:!border-green-500 focus:!ring-1 focus:!ring-green-500 placeholder:text-slate-500 transition-all" 
-                  placeholder="+91 9999999999" />
-              </div>
-            </div>
-
-            {/* Department */}
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Department</label>
-              <div className="relative">
-                <Building size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                <select value={form.department} onChange={e => update('department', e.target.value)}
-                  className="input-field pl-11 appearance-none !bg-slate-900/50 !border-slate-700 !text-white focus:!border-green-500 focus:!ring-1 focus:!ring-green-500 transition-all">
-                  {DEPARTMENTS.map(d => <option key={d} value={d} className="bg-slate-800">{d}</option>)}
-                </select>
-              </div>
-            </div>
-
-            {/* Role */}
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">I am a</label>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { key: 'student', label: 'Student', emoji: '👨‍🎓', desc: 'Track carbon & earn points' },
-                  { key: 'driver', label: 'Driver', emoji: '🚌', desc: 'Share live bus GPS' },
-                ].map(r => (
-                  <button
-                    key={r.key}
-                    type="button"
-                    onClick={() => update('role', r.key)}
-                    className="p-3 rounded-xl border-2 text-left transition-all"
-                    style={{
-                      borderColor: form.role === r.key ? '#16a34a' : 'transparent',
-                      background: form.role === r.key ? 'rgba(22, 163, 74, 0.1)' : 'rgba(15, 23, 42, 0.5)',
-                    }}
-                  >
-                    <div className="text-2xl mb-1">{r.emoji}</div>
-                    <div className="font-semibold text-sm text-white">{r.label}</div>
-                    <div className="text-xs text-slate-400">{r.desc}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Password */}
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Password</label>
-              <div className="relative">
-                <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input type={showPw ? 'text' : 'password'} value={form.password}
-                  onChange={e => update('password', e.target.value)}
-                  className="input-field pl-11 pr-11 !bg-slate-900/50 !border-slate-700 !text-white focus:!border-green-500 focus:!ring-1 focus:!ring-green-500 placeholder:text-slate-500 transition-all" 
-                  placeholder="Min 6 characters" required />
-                <button type="button" onClick={() => setShowPw(!showPw)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors">
-                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Security</label>
+              <div className="relative group">
+                <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-500 transition-colors" />
+                <input 
+                  type={showPw ? 'text' : 'password'} value={form.password} onChange={e => update('password', e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-12 text-sm text-white placeholder:text-gray-600 outline-none focus:border-green-500/50 focus:bg-white/[0.08] transition-all"
+                  placeholder="Secret Key" required
+                />
+                <button 
+                  type="button" onClick={() => setShowPw(!showPw)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+                >
+                  {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
               <PasswordStrength password={form.password} />
             </div>
 
-            {/* Confirm Password */}
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Confirm Password</label>
-              <input type="password" value={form.confirm_password}
-                onChange={e => update('confirm_password', e.target.value)}
-                className="input-field !bg-slate-900/50 !border-slate-700 !text-white focus:!border-green-500 focus:!ring-1 focus:!ring-green-500 placeholder:text-slate-500 transition-all" 
-                placeholder="Repeat password" required />
+            <div className="relative group pt-1">
+               <input 
+                 type="password" value={form.confirm_password} onChange={e => update('confirm_password', e.target.value)}
+                 className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-5 text-sm text-white placeholder:text-gray-600 outline-none focus:border-green-500/50 focus:bg-white/[0.08] transition-all"
+                 placeholder="Repeat Secret Key" required
+               />
             </div>
 
-            {/* Terms */}
-            <label className="flex items-start gap-2 cursor-pointer mt-2">
-              <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)}
-                className="mt-1 accent-green-500 w-4 h-4 rounded border-slate-700 bg-slate-900/50" />
-              <span className="text-xs text-slate-400 leading-relaxed">
-                I agree to use this app for a greener campus and accept the privacy policy.
+            <label className="flex items-start gap-3 cursor-pointer group py-2">
+              <div className="relative flex items-center justify-center mt-0.5">
+                <input 
+                  type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)}
+                  className="peer appearance-none w-5 h-5 border-2 border-white/10 rounded-lg bg-white/5 checked:bg-green-600 checked:border-green-600 transition-all cursor-pointer"
+                />
+                <CheckCircle2 size={12} className="absolute text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" />
+              </div>
+              <span className="text-xs text-gray-500 font-medium leading-relaxed group-hover:text-gray-400 transition-colors">
+                I commit to fostering a sustainable campus and agree to the <span className="text-green-500 font-bold">Privacy Policy</span>.
               </span>
             </label>
 
-            <button type="submit" className="btn-primary w-full mt-2" disabled={loading}>
-              Create Account
-            </button>
+            <motion.button 
+              whileTap={{ scale: 0.98 }}
+              type="submit" 
+              className="w-full py-5 bg-green-600 hover:bg-green-500 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-green-600/20 transition-all flex items-center justify-center gap-3"
+            >
+              Sign Up <ArrowRight size={18} />
+            </motion.button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-slate-400">
-              Already registered?{' '}
-              <Link to="/login" className="font-semibold text-green-400 hover:text-green-300 transition-colors">Login</Link>
+          <div className="mt-8 text-center">
+            <p className="text-sm text-gray-500 font-medium">
+              Already a member?{' '}
+              <Link to="/login" className="text-green-500 font-black hover:text-green-400 transition-colors">Login Here</Link>
             </p>
           </div>
-        </div>
+        </motion.div>
+
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="mt-8 flex items-center justify-center gap-6 text-gray-600"
+        >
+          <div className="flex items-center gap-1.5">
+            <ShieldCheck size={14} className="text-green-600" />
+            <span className="text-[10px] font-black uppercase tracking-widest">Encrypted</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Sparkles size={14} className="text-blue-500" />
+            <span className="text-[10px] font-black uppercase tracking-widest">AI Ready</span>
+          </div>
+        </motion.div>
       </div>
     </div>
   )

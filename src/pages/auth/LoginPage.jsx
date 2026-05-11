@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, ArrowRight, ShieldCheck, Zap } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store/index'
 import toast from 'react-hot-toast'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -40,99 +41,124 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-10 relative overflow-hidden bg-slate-900">
+    <div className="min-h-[100dvh] bg-slate-950 flex flex-col items-center justify-center p-6 relative overflow-hidden">
       {/* Background decoration */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full opacity-20 blur-[100px]" style={{ background: '#16a34a' }} />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full opacity-10 blur-[100px]" style={{ background: '#0ea5e9' }} />
+      <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[50%] rounded-full bg-green-500/10 blur-[120px] z-0" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[50%] rounded-full bg-blue-500/10 blur-[120px] z-0" />
 
       {/* Loading Overlay */}
-      {loading && (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-sm animate-fade-in">
-          <div className="spinner spinner-large spinner-green mb-4" />
-          <p className="text-green-400 font-bold tracking-wide">Authenticating...</p>
-        </div>
-      )}
-
-      <div className="w-full max-w-sm animate-fade-in-up relative z-10">
-        {/* Logo */}
-        <div className="text-center mb-8 flex flex-col items-center">
-          <img src="/logo.png" alt="InstitutePulse Logo" className="brand-logo-large mb-2" />
-          <h1 className="text-2xl font-bold text-white tracking-tight">InstitutePulse</h1>
-          <p className="text-slate-400 text-sm mt-1">Welcome back, eco-warrior</p>
-        </div>
-
-        {/* Card */}
-        <div className="card glass-card p-6 !border-slate-700/50 !bg-slate-800/60">
-          {error && (
-            <div className="mb-4 p-3 rounded-lg text-sm font-medium border border-red-500/20 bg-red-500/10 text-red-400">
-              {error}
+      <AnimatePresence>
+        {loading && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-950/90 backdrop-blur-md"
+          >
+            <div className="relative w-20 h-20">
+               <div className="absolute inset-0 border-4 border-green-500/20 rounded-full" />
+               <div className="absolute inset-0 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
             </div>
+            <p className="mt-6 text-sm font-black text-white uppercase tracking-[0.3em] animate-pulse">Verifying Identity</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="w-full max-w-sm relative z-10">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-10"
+        >
+          <img src="/logo.png" alt="Logo" className="w-20 h-20 mx-auto mb-6 drop-shadow-[0_0_20px_rgba(34,197,94,0.4)]" />
+          <h1 className="text-4xl font-black text-white tracking-tighter">Welcome Back</h1>
+          <p className="text-gray-500 text-sm mt-2 font-medium tracking-tight">Access your eco-dashboard.</p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[32px] p-8 shadow-2xl shadow-black/40"
+        >
+          {error && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold text-center"
+            >
+              {error}
+            </motion.div>
           )}
 
-          <form onSubmit={handleLogin} className="flex flex-col gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Email</label>
-              <div className="relative">
-                <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  className="input-field pl-11 !bg-slate-900/50 !border-slate-700 !text-white focus:!border-green-500 focus:!ring-1 focus:!ring-green-500 transition-all placeholder:text-slate-500"
-                  placeholder="your@email.com"
-                  required
-                  autoComplete="email"
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1">Identity</label>
+              <div className="relative group">
+                <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-500 transition-colors" />
+                <input 
+                  type="email" value={email} onChange={e => setEmail(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4.5 pl-12 pr-4 text-sm text-white placeholder:text-gray-600 outline-none focus:border-green-500/50 focus:bg-white/[0.08] transition-all"
+                  placeholder="name@university.edu" required
                 />
               </div>
             </div>
 
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <label className="text-sm font-medium text-slate-300">Password</label>
-                <Link to="/forgot-password" className="text-xs font-medium text-green-400 hover:text-green-300 transition-colors">
-                  Forgot password?
+            <div className="space-y-2">
+              <div className="flex justify-between items-center px-1">
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Security</label>
+                <Link to="/forgot-password" size="sm" className="text-[10px] font-black text-green-500 uppercase tracking-widest hover:text-green-400 transition-colors">
+                  Lost Key?
                 </Link>
               </div>
-              <div className="relative">
-                <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type={showPw ? 'text' : 'password'}
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  className="input-field pl-11 pr-11 !bg-slate-900/50 !border-slate-700 !text-white focus:!border-green-500 focus:!ring-1 focus:!ring-green-500 transition-all placeholder:text-slate-500"
-                  placeholder="••••••••"
-                  required
-                  autoComplete="current-password"
+              <div className="relative group">
+                <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-500 transition-colors" />
+                <input 
+                  type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4.5 pl-12 pr-12 text-sm text-white placeholder:text-gray-600 outline-none focus:border-green-500/50 focus:bg-white/[0.08] transition-all"
+                  placeholder="••••••••" required
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPw(!showPw)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
-                  aria-label="Toggle password"
+                <button 
+                  type="button" onClick={() => setShowPw(!showPw)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
                 >
-                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
             </div>
 
-            <button type="submit" className="btn-primary w-full mt-4" disabled={loading}>
-              Sign In
-            </button>
+            <motion.button 
+              whileTap={{ scale: 0.98 }}
+              type="submit" 
+              className="w-full py-5 bg-green-600 hover:bg-green-500 text-white rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-xl shadow-green-600/20 transition-all flex items-center justify-center gap-3"
+            >
+              Sign In <ArrowRight size={18} />
+            </motion.button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-slate-400">
-              New here?{' '}
-              <Link to="/register" className="font-semibold text-green-400 hover:text-green-300 transition-colors">
-                Create account
-              </Link>
+          <div className="mt-10 text-center">
+            <p className="text-sm text-gray-500 font-medium">
+              New to the ecosystem?{' '}
+              <Link to="/register" className="text-green-500 font-black hover:text-green-400 transition-colors">Apply Now</Link>
             </p>
           </div>
-        </div>
+        </motion.div>
 
-        <p className="text-center text-xs text-slate-500 mt-8 opacity-60">
-          "Every Action. Every Point. Greener Campus."
-        </p>
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="mt-12 flex items-center justify-center gap-8 text-gray-600"
+        >
+          <div className="flex items-center gap-2">
+            <ShieldCheck size={16} className="text-green-600" />
+            <span className="text-[10px] font-black uppercase tracking-widest">Secure Entry</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Zap size={16} className="text-yellow-500" />
+            <span className="text-[10px] font-black uppercase tracking-widest">Instant Sync</span>
+          </div>
+        </motion.div>
       </div>
     </div>
   )

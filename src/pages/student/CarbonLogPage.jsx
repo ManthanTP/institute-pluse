@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronDown, ChevronUp, CheckCircle2, ArrowLeft } from 'lucide-react'
+import { ChevronDown, ChevronUp, CheckCircle2, ArrowLeft, Bus, Utensils, Zap, Droplets, Trash2, Sparkles, Send, Info, ArrowRight, X, Trophy } from 'lucide-react'
 import {
   TRANSPORT_MODES, TRANSPORT_FACTORS, FOOD_TYPES, MEAL_SLOTS,
   DEVICE_FACTORS, WASTE_TYPES,
@@ -13,6 +13,7 @@ import { useAuthStore, useCarbonStore } from '../../store/index'
 import EcoScoreRing from '../../components/EcoScoreRing'
 import BottomTabBar from '../../components/BottomTabBar'
 import toast from 'react-hot-toast'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const INITIAL_STATE = {
   transport: [{ mode: 'motorbike', km: 5 }],
@@ -23,19 +24,56 @@ const INITIAL_STATE = {
   waste: [],
 }
 
-function AccordionSection({ title, emoji, isOpen, onToggle, children, isComplete }) {
+function AccordionSection({ title, icon: Icon, isOpen, onToggle, children, isComplete, colorClass }) {
   return (
-    <div className={`accordion-item ${isOpen ? 'open' : ''}`}>
-      <button className="accordion-header" onClick={onToggle}>
-        <div className="flex items-center gap-3">
-          <span className="text-xl">{emoji}</span>
-          <span className="text-sm font-semibold text-gray-900">{title}</span>
-          {isComplete && <span className="text-green-500"><CheckCircle2 size={16} /></span>}
+    <motion.div 
+      layout
+      className={`mb-4 overflow-hidden rounded-[32px] border transition-all duration-500 ${
+        isOpen 
+          ? 'bg-white/5 border-white/10 shadow-2xl shadow-black/40' 
+          : 'bg-white/[0.02] border-white/5'
+      }`}
+    >
+      <button 
+        className="w-full px-6 py-5 flex items-center justify-between gap-4"
+        onClick={onToggle}
+      >
+        <div className="flex items-center gap-5">
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
+            isComplete ? 'bg-green-600/20 text-green-500 shadow-[0_0_15px_rgba(34,197,94,0.2)]' : 'bg-white/5 text-gray-500'
+          }`}>
+            <Icon size={22} />
+          </div>
+          <div className="text-left">
+            <span className={`block text-sm font-black tracking-tight ${isOpen ? 'text-white' : 'text-gray-400'}`}>
+              {title}
+            </span>
+            {isComplete && !isOpen && (
+              <span className="text-[9px] font-black text-green-500 uppercase tracking-[0.2em] flex items-center gap-1.5 mt-1">
+                <CheckCircle2 size={10} /> Verified
+              </span>
+            )}
+          </div>
         </div>
-        {isOpen ? <ChevronUp size={18} className="text-gray-400 flex-shrink-0" /> : <ChevronDown size={18} className="text-gray-400 flex-shrink-0" />}
+        <div className={`transition-transform duration-500 ${isOpen ? 'rotate-180' : ''}`}>
+          <ChevronDown size={20} className="text-gray-600" />
+        </div>
       </button>
-      {isOpen && <div className="accordion-content">{children}</div>}
-    </div>
+      
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="px-6 pb-6 overflow-hidden"
+          >
+            <div className="h-[1px] bg-white/5 w-full mb-6" />
+            {children}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   )
 }
 
@@ -64,15 +102,12 @@ export default function CarbonLogPage() {
   function setTransportMode(mode) {
     setForm(f => ({ ...f, transport: [{ ...f.transport[0], mode }] }))
   }
-
   function setTransportKm(km) {
     setForm(f => ({ ...f, transport: [{ ...f.transport[0], km: parseFloat(km) || 0 }] }))
   }
-
   function setMeal(slot, type) {
     setForm(f => ({ ...f, meals: { ...f.meals, [slot]: type } }))
   }
-
   function toggleDevice(key) {
     setForm(f => {
       const exists = f.devices.find(d => d.device_key === key)
@@ -80,14 +115,6 @@ export default function CarbonLogPage() {
       return { ...f, devices: [...f.devices, { device_key: key, hours: 2 }] }
     })
   }
-
-  function setDeviceHours(key, hours) {
-    setForm(f => ({
-      ...f,
-      devices: f.devices.map(d => d.device_key === key ? { ...d, hours: parseFloat(hours) } : d)
-    }))
-  }
-
   function toggleWaste(type) {
     setForm(f => {
       const exists = f.waste.find(w => w.type === type)
@@ -96,17 +123,9 @@ export default function CarbonLogPage() {
     })
   }
 
-  function setWasteKgVal(type, kg) {
-    setForm(f => ({
-      ...f,
-      waste: f.waste.map(w => w.type === type ? { ...w, kg: parseFloat(kg) } : w)
-    }))
-  }
-
   async function handleSubmit() {
     if (!profile) return
     setSubmitting(true)
-
     try {
       const today = new Date().toISOString().split('T')[0]
       const ecoPoints = calcEcoPoints({
@@ -116,7 +135,6 @@ export default function CarbonLogPage() {
         is_first_log: !profile.total_co2_kg,
         streak: profile.logging_streak,
       })
-
       const logData = {
         student_id: profile.id,
         log_date: today,
@@ -131,38 +149,26 @@ export default function CarbonLogPage() {
         transport_mode: form.transport[0]?.mode,
         transport_km: form.transport[0]?.km,
         transport_detail: form.transport,
-        meals_detail: Object.entries(form.meals).map(([slot, type]) => ({
-          slot, type, co2: 0
-        })),
+        meals_detail: Object.entries(form.meals).map(([slot, type]) => ({ slot, type, co2: 0 })),
         devices_detail: form.devices,
         water_detail: { shower_type: form.shower_type, general_level: form.general_water },
         waste_detail: form.waste,
       }
-
-      const { data, error } = await supabase.from('carbon_logs').upsert(logData, {
-        onConflict: 'student_id,log_date'
-      }).select().single()
-
+      const { data, error } = await supabase.from('carbon_logs').upsert(logData, { onConflict: 'student_id,log_date' }).select().single()
       if (error) throw error
-
-      // Update profile eco_points and total_co2
       await supabase.from('profiles').update({
         eco_points: (profile.eco_points || 0) + ecoPoints,
         total_co2_kg: (profile.total_co2_kg || 0) + totalKg,
         last_log_date: today,
         logging_streak: (profile.logging_streak || 0) + 1,
       }).eq('id', profile.id)
-
-      // Get AI tips
       const aiTips = await getEcoRecommendations({
         transport_kg: transportKg, electricity_kg: electricityKg,
         food_kg: foodKg, water_kg: waterKg, waste_kg: wasteKg,
         total_kg: totalKg, eco_score: ecoScore
       })
-
       setTodayLog(data)
       setSuccess({ ecoScore, ecoPoints, aiTips })
-
     } catch (err) {
       console.error('Submit error:', err)
       toast.error(err.message || 'Failed to save log. Please try again.')
@@ -175,29 +181,284 @@ export default function CarbonLogPage() {
     return <SuccessOverlay {...success} onDone={() => navigate('/dashboard')} onHistory={() => navigate('/carbon/history')} />
   }
 
-  const barData = [
-    { label: '🚗 Transport', kg: transportKg, max: 2 },
-    { label: '⚡ Electricity', kg: electricityKg, max: 3 },
-    { label: '🍽️ Food', kg: foodKg, max: 5 },
-    { label: '💧 Water', kg: waterKg, max: 0.5 },
-    { label: '🗑️ Waste', kg: wasteKg, max: 1 },
-  ]
-
   return (
-    <div style={{ background: '#f8fafc', minHeight: '100dvh', paddingBottom: '100px' }}>
+    <div className="min-h-[100dvh] bg-[#fdfdfd] pb-24 relative overflow-hidden">
+      {/* Background Mesh */}
+      <div className="fixed top-0 right-0 w-[50%] h-[40%] rounded-full bg-green-50/50 blur-[100px] z-0" />
+
       {/* HEADER */}
-      <header className="app-header">
-        <button onClick={() => navigate(-1)} className="p-1">
-          <ArrowLeft size={20} color="white" />
-        </button>
-        <span className="font-bold text-white">🌱 Carbon Log</span>
-        <span className="text-xs text-green-200">{new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}</span>
+      <header className="sticky top-0 z-50 px-5 py-4 backdrop-blur-lg bg-white/70 border-b border-gray-100 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={() => navigate(-1)}
+            className="p-2 rounded-xl bg-gray-50 border border-gray-100"
+          >
+            <ArrowLeft size={20} className="text-gray-600" />
+          </motion.button>
+          <h1 className="text-xl font-black text-gray-900 tracking-tight">Daily Log</h1>
+        </div>
+        <div className="flex flex-col items-end">
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Today</span>
+          <span className="text-xs font-black text-green-600">{new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}</span>
+        </div>
       </header>
 
-      {/* LIVE SUMMARY CARD */}
-      <div className="sticky top-14 z-30 px-4 py-3" style={{ background: '#f8fafc' }}>
-        <div className="card p-3" style={{ borderColor: color + '40', borderWidth: 2 }}>
-          <div className="flex items-center justify-between mb-2">
+      <main className="px-5 pt-6 relative z-10 max-w-lg mx-auto">
+        {/* LIVE SCORE CARD */}
+        <motion.div 
+          layout
+          className="bg-slate-900 rounded-[32px] p-6 mb-8 shadow-xl shadow-slate-900/10 relative overflow-hidden"
+        >
+          <div className="absolute top-0 right-0 p-4 opacity-10">
+            <Sparkles size={60} className="text-green-400" />
+          </div>
+          <div className="flex items-center justify-between gap-6">
+            <div className="flex-1">
+              <p className="text-[10px] font-bold text-green-400 uppercase tracking-[0.2em] mb-2">Real-time Stats</p>
+              <h2 className="text-3xl font-black text-white mb-2">{ecoScore}%</h2>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="h-1.5 flex-1 bg-white/10 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${ecoScore}%` }}
+                    className="h-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 font-medium leading-relaxed">
+                Estimated Impact: <span className="text-white font-bold">{totalKg.toFixed(2)} kg CO2</span>
+              </p>
+            </div>
+            <div className="flex-shrink-0">
+              <EcoScoreRing score={ecoScore} size={90} strokeWidth={8} showLabel={false} animated={true} />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* LOGGING SECTIONS */}
+        <section className="flex flex-col gap-1">
+          <AccordionSection 
+            title="Transport & Commute" 
+            icon={Bus} 
+            isOpen={openSection === 'transport'}
+            onToggle={() => toggleSection('transport')}
+            isComplete={form.transport[0]?.km > 0}
+          >
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              {Object.keys(TRANSPORT_FACTORS).map(mode => (
+                <button
+                  key={mode}
+                  onClick={() => setTransportMode(mode)}
+                  className={`p-3 rounded-2xl text-xs font-bold transition-all border ${
+                    form.transport[0]?.mode === mode 
+                      ? 'bg-green-600 text-white border-green-600 shadow-lg shadow-green-600/20' 
+                      : 'bg-gray-50 text-gray-500 border-gray-100 hover:border-green-200'
+                  }`}
+                >
+                  {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                </button>
+              ))}
+            </div>
+            <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Distance Traveled (km)</label>
+              <input 
+                type="number" 
+                value={form.transport[0]?.km} 
+                onChange={e => setTransportKm(e.target.value)}
+                className="w-full bg-transparent text-xl font-black text-gray-900 outline-none"
+                placeholder="0.0"
+              />
+            </div>
+          </AccordionSection>
+
+          <AccordionSection 
+            title="Meals & Food" 
+            icon={Utensils} 
+            isOpen={openSection === 'meals'}
+            onToggle={() => toggleSection('meals')}
+            isComplete={true}
+          >
+            <div className="flex flex-col gap-4">
+              {['breakfast', 'lunch', 'dinner'].map(slot => (
+                <div key={slot} className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">{slot}</p>
+                  <div className="flex gap-2">
+                    {['vegetarian', 'non_vegetarian', 'vegan'].map(type => (
+                      <button
+                        key={type}
+                        onClick={() => setMeal(slot, type)}
+                        className={`flex-1 py-2 rounded-xl text-[10px] font-bold transition-all border ${
+                          form.meals[slot] === type 
+                            ? 'bg-slate-900 text-white border-slate-900' 
+                            : 'bg-white text-gray-500 border-gray-100'
+                        }`}
+                      >
+                        {type.split('_')[0].toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </AccordionSection>
+
+          <AccordionSection 
+            title="Electricity & Devices" 
+            icon={Zap} 
+            isOpen={openSection === 'electricity'}
+            onToggle={() => toggleSection('electricity')}
+            isComplete={form.devices.length > 0}
+          >
+            <div className="grid grid-cols-2 gap-3">
+              {Object.keys(DEVICE_FACTORS).map(device => {
+                const isActive = form.devices.some(d => d.device_key === device)
+                return (
+                  <button
+                    key={device}
+                    onClick={() => toggleDevice(device)}
+                    className={`p-4 rounded-2xl flex flex-col items-center gap-2 transition-all border ${
+                      isActive 
+                        ? 'bg-purple-50 border-purple-200 text-purple-700' 
+                        : 'bg-gray-50 border-gray-100 text-gray-500'
+                    }`}
+                  >
+                    <Zap size={18} className={isActive ? 'text-purple-500' : 'text-gray-300'} />
+                    <span className="text-[10px] font-bold uppercase">{device.replace('_', ' ')}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </AccordionSection>
+
+          <AccordionSection 
+            title="Water & Waste" 
+            icon={Droplets} 
+            isOpen={openSection === 'water'}
+            onToggle={() => toggleSection('water')}
+            isComplete={true}
+          >
+             <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 mb-4">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Shower Type</p>
+              <div className="flex gap-2">
+                {['bucket_bath', 'short_shower', 'long_shower'].map(type => (
+                  <button
+                    key={type}
+                    onClick={() => setForm(f => ({ ...f, shower_type: type }))}
+                    className={`flex-1 py-2 rounded-xl text-[10px] font-bold transition-all border ${
+                      form.shower_type === type 
+                        ? 'bg-blue-600 text-white border-blue-600' 
+                        : 'bg-white text-gray-500 border-gray-100'
+                    }`}
+                  >
+                    {type.split('_')[0].toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Waste Produced</p>
+              <div className="flex flex-wrap gap-2">
+                {Object.keys(WASTE_TYPES).map(type => {
+                  const isActive = form.waste.some(w => w.type === type)
+                  return (
+                    <button
+                      key={type}
+                      onClick={() => toggleWaste(type)}
+                      className={`px-4 py-2 rounded-xl text-[10px] font-bold transition-all border ${
+                        isActive 
+                          ? 'bg-orange-600 text-white border-orange-600' 
+                          : 'bg-white text-gray-500 border-gray-100'
+                      }`}
+                    >
+                      {type.toUpperCase()}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </AccordionSection>
+        </section>
+
+        {/* SUBMIT BUTTON */}
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          disabled={submitting}
+          onClick={handleSubmit}
+          className="w-full mt-8 py-5 rounded-[24px] bg-green-600 text-white font-black text-lg shadow-xl shadow-green-600/30 flex items-center justify-center gap-3 disabled:opacity-50"
+        >
+          {submitting ? (
+            <div className="w-6 h-6 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+          ) : (
+            <>Save Daily Log <Send size={20} /></>
+          )}
+        </motion.button>
+
+        <p className="mt-6 text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center justify-center gap-2">
+          <Info size={12} /> Data is secured by Campus Eco-Chain
+        </p>
+      </main>
+
+      <BottomTabBar />
+    </div>
+  )
+}
+
+function SuccessOverlay({ ecoScore, ecoPoints, aiTips, onDone, onHistory }) {
+  return (
+    <div className="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center p-6 overflow-y-auto">
+      <motion.div 
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="w-24 h-24 rounded-[32px] bg-green-100 text-green-600 flex items-center justify-center mb-8"
+      >
+        <CheckCircle2 size={48} strokeWidth={3} />
+      </motion.div>
+      
+      <h1 className="text-3xl font-black text-gray-900 text-center mb-2">Log Saved!</h1>
+      <p className="text-gray-500 font-medium text-center mb-8">You're doing great for the planet today.</p>
+      
+      <div className="grid grid-cols-2 gap-4 w-full max-w-sm mb-10">
+        <div className="bg-gray-50 rounded-[24px] p-5 text-center border border-gray-100">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Eco Score</p>
+          <p className="text-2xl font-black text-gray-900">{ecoScore}%</p>
+        </div>
+        <div className="bg-green-50 rounded-[24px] p-5 text-center border border-green-100">
+          <p className="text-[10px] font-bold text-green-600 uppercase tracking-widest mb-1">Points</p>
+          <p className="text-2xl font-black text-green-700">+{ecoPoints}</p>
+        </div>
+      </div>
+
+      <div className="bg-slate-900 rounded-[32px] p-6 w-full max-w-sm mb-10 relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-4 opacity-10">
+          <Sparkles size={40} className="text-green-400" />
+        </div>
+        <p className="text-[10px] font-bold text-green-400 uppercase tracking-[0.2em] mb-3">AI Recommendation</p>
+        <p className="text-sm text-gray-200 leading-relaxed font-medium">
+          {aiTips || "Continue your eco-friendly habits to save more CO2 tomorrow!"}
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-3 w-full max-w-sm">
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={onDone}
+          className="w-full py-4 rounded-2xl bg-green-600 text-white font-bold shadow-lg shadow-green-600/20"
+        >
+          Back to Home
+        </motion.button>
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={onHistory}
+          className="w-full py-4 rounded-2xl bg-white text-gray-600 font-bold border border-gray-100"
+        >
+          View Log History
+        </motion.button>
+      </div>
+    </div>
+  )
+}
+
             <div>
               <span className="text-lg font-black" style={{ color }}>{totalKg.toFixed(2)} kg CO2</span>
               <span className="text-xs text-gray-400 ml-2">Total today</span>
