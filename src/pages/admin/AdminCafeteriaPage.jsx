@@ -5,9 +5,12 @@ import AdminLayout from './AdminLayout'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
 
+import { useAuthStore } from '../../store/index'
+
 const CATEGORIES = ['All', 'Breakfast', 'Lunch', 'Snacks', 'Beverages', 'Dinner']
 
 export default function AdminCafeteriaPage() {
+  const { profile } = useAuthStore()
   const [activeTab, setActiveTab] = useState('orders') // 'orders' | 'menu'
   const [orders, setOrders] = useState([])
   const [menuItems, setMenuItems] = useState([])
@@ -39,7 +42,7 @@ export default function AdminCafeteriaPage() {
   async function fetchData() {
     setLoading(true)
     const [ordersRes, menuRes] = await Promise.all([
-      supabase.from('orders').select('*, profiles(full_name)').order('created_at', { ascending: false }),
+      supabase.from('orders').select('*, profiles(full_name, role)').order('created_at', { ascending: false }),
       supabase.from('menu_items').select('*').order('name', { ascending: true })
     ])
 
@@ -112,9 +115,40 @@ export default function AdminCafeteriaPage() {
     return matchSearch && matchCat
   })
 
+  const stats = {
+    total: orders.length,
+    pending: orders.filter(o => o.status === 'pending' || o.status === 'preparing').length,
+    revenue: orders.reduce((sum, o) => sum + (Number(o.total_price) || 0), 0)
+  }
+
   return (
     <AdminLayout>
       <div className="space-y-10">
+        {/* TELEMETRY BAR (Owner Dashboard Integration) */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+           <div className="bg-white/5 border border-white/10 p-6 rounded-[32px] backdrop-blur-xl">
+              <p className="text-[8px] font-black text-gray-500 uppercase tracking-[0.2em] mb-1">Today's Traffic</p>
+              <div className="flex items-end gap-2">
+                 <span className="text-2xl font-black text-white">{stats.total}</span>
+                 <span className="text-[10px] font-bold text-green-500 mb-1 uppercase">Orders</span>
+              </div>
+           </div>
+           <div className="bg-white/5 border border-white/10 p-6 rounded-[32px] backdrop-blur-xl">
+              <p className="text-[8px] font-black text-gray-500 uppercase tracking-[0.2em] mb-1">Active Prep</p>
+              <div className="flex items-end gap-2">
+                 <span className="text-2xl font-black text-orange-500">{stats.pending}</span>
+                 <span className="text-[10px] font-bold text-orange-500/50 mb-1 uppercase">In Kitchen</span>
+              </div>
+           </div>
+           <div className="bg-white/5 border border-white/10 p-6 rounded-[32px] backdrop-blur-xl">
+              <p className="text-[8px] font-black text-gray-500 uppercase tracking-[0.2em] mb-1">Total Revenue</p>
+              <div className="flex items-end gap-2">
+                 <span className="text-2xl font-black text-white">₹{stats.revenue.toLocaleString()}</span>
+                 <span className="text-[10px] font-bold text-gray-500 mb-1 uppercase">Credits</span>
+              </div>
+           </div>
+        </div>
+
         {/* HEADER */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
@@ -123,9 +157,6 @@ export default function AdminCafeteriaPage() {
               <span className="text-[10px] font-black text-orange-500 uppercase tracking-[0.3em]">Cafeteria Operations Node</span>
             </div>
             <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Dining Control</h2>
-            <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mt-3">
-              {activeTab === 'orders' ? `${orders.length} Active Sessions` : `${menuItems.length} Registry Items`}
-            </p>
           </div>
           <div className="flex bg-white/5 border border-white/10 p-1.5 rounded-2xl backdrop-blur-xl">
              <button 
@@ -160,7 +191,12 @@ export default function AdminCafeteriaPage() {
                      transition={{ delay: i * 0.05 }}
                      className="bg-white/5 border border-white/10 rounded-[32px] p-8 backdrop-blur-xl relative overflow-hidden group"
                    >
-                     <div className={`absolute top-0 right-0 p-6 opacity-20 group-hover:opacity-100 transition-opacity ${
+                     {/* QUEUE RANK */}
+                     <div className="absolute top-0 right-0 px-4 py-1 bg-white/5 border-b border-l border-white/10 rounded-bl-xl text-[9px] font-black text-gray-500 uppercase tracking-widest">
+                        Queue #{orders.length - i}
+                     </div>
+
+                     <div className={`absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-20 transition-opacity ${
                        order.status === 'pending' ? 'text-red-500' : 
                        order.status === 'preparing' ? 'text-yellow-500' : 
                        order.status === 'ready' ? 'text-blue-500' : 'text-green-500'
@@ -168,8 +204,15 @@ export default function AdminCafeteriaPage() {
                         <ShoppingBag size={24} />
                      </div>
                      
-                     <div className="flex items-center justify-between mb-6">
-                        <span className="text-[20px] font-black text-white tracking-tighter">#{order.token_number}</span>
+                     <div className="flex items-center justify-between mb-6 pt-2">
+                        <div>
+                          <span className="text-[20px] font-black text-white tracking-tighter block">#{order.token_number || order.id.slice(0,4).toUpperCase()}</span>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase ${order.profiles?.role === 'faculty' ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' : 'bg-green-500/10 text-green-500 border border-green-500/20'}`}>
+                              {order.profiles?.role || 'Guest'}
+                            </span>
+                          </div>
+                        </div>
                         <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${
                           order.status === 'pending' ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 
                           order.status === 'preparing' ? 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20' : 
@@ -182,10 +225,10 @@ export default function AdminCafeteriaPage() {
 
                      <div className="space-y-3 mb-8">
                         {order.items?.map((item, idx) => (
-                          <div key={idx} className="flex justify-between items-center text-[11px] font-black uppercase tracking-tight">
-                             <span className="text-gray-400">{item.qty}x <span className="text-white">{item.name}</span></span>
-                             <span className="text-gray-500">₹{item.price * item.qty}</span>
-                          </div>
+                           <div key={idx} className="flex justify-between items-center text-[11px] font-black uppercase tracking-tight">
+                              <span className="text-gray-400">{item.quantity}x <span className="text-white">{item.name}</span></span>
+                              <span className="text-gray-500">₹{item.price * item.quantity}</span>
+                           </div>
                         ))}
                      </div>
 

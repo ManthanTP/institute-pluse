@@ -59,14 +59,21 @@ export default function AdminLoginPage() {
       if (authError) throw authError
 
       const profile = await fetchProfile(data.user.id)
-      if (!profile || profile.role !== 'admin') {
+      
+      if (!profile || (profile.role !== 'admin' && profile.role !== 'owner')) {
         await supabase.auth.signOut()
-        throw new Error('Access denied. Admin privileges required.')
+        throw new Error('Access denied. Privileged access required.')
       }
 
       useAuthStore.setState({ user: data.user })
-      toast.success('Admin Core Synchronized 🛡️')
-      navigate('/12345678/admin/dashboard')
+      
+      if (profile.role === 'owner') {
+        toast.success('Owner Portal Synchronized 🍱')
+        navigate('/owner/dashboard')
+      } else {
+        toast.success('Admin Core Synchronized 🛡️')
+        navigate('/12345678/admin/dashboard')
+      }
     } catch (err) {
       const newAttempts = attempts + 1
       setAttempts(newAttempts)

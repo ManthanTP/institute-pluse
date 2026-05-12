@@ -60,6 +60,14 @@ export default function AdminLayout({ children }) {
           <nav className="flex-1 py-6 px-4 overflow-y-auto no-scrollbar">
             <div className="space-y-1">
               {NAV_ITEMS.map(item => {
+                // RESTRICTED OWNER ACCESS: Only show Cafeteria and Dashboard if this is the owner email
+                if (profile?.email === 'hubligojaincollege@gmail.com') {
+                  if (item.label !== 'Cafeteria' && item.label !== 'Dashboard') {
+                    return null
+                  }
+                }
+                // Regular Admins see everything (no 'return null' for Cafeteria)
+
                 const Icon = item.icon
                 const isActive = location.pathname === item.path
                 return (

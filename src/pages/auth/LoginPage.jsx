@@ -31,6 +31,7 @@ export default function LoginPage() {
       toast.success('Welcome back! 🌿')
 
       if (profile?.role === 'admin') navigate('/12345678/admin/dashboard')
+      else if (profile?.role === 'owner') navigate('/owner/dashboard')
       else if (profile?.role === 'faculty') navigate('/faculty/dashboard')
       else navigate('/dashboard')
 

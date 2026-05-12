@@ -35,9 +35,24 @@ export default function DashboardPage() {
   const [tipIndex] = useState(() => Math.floor(Math.random() * ECO_TIPS.length))
 
   useEffect(() => {
-    if (profile?.id) {
-      fetchTodayLog(profile.id)
-    }
+    if (!profile?.id) return
+
+    fetchTodayLog(profile.id)
+
+    // Real-time profile updates (Eco-points, Carbon)
+    const channel = supabase
+      .channel(`profile_updates_${profile.id}`)
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'profiles', 
+        filter: `id=eq.${profile.id}` 
+      }, (payload) => {
+        useAuthStore.getState().setProfile(payload.new)
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
   }, [profile?.id])
 
   const hasLogged = !!todayLog

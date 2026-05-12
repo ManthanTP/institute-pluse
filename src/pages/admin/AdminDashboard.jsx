@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Users, Leaf, Bus, TrendingDown, Award, ShoppingCart, AlertCircle, Zap, Clock, ShieldCheck, ShieldAlert, TrendingUp } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts'
 import { supabase } from '../../lib/supabase'
 import AdminLayout from './AdminLayout'
 import { motion } from 'framer-motion'
+import { useAuthStore } from '../../store/index'
 
 const MOCK_TREND = [
   { day: 'Mon', co2: 3.2, logs: 820 },
@@ -38,6 +39,8 @@ function StatCard({ icon: Icon, label, value, sub, color = '#16a34a', delay = 0 
 }
 
 export default function AdminDashboard() {
+  const navigate = useNavigate()
+  const { profile } = useAuthStore()
   const [stats, setStats] = useState({
     totalUsers: 0,
     todayLogs: 0,
@@ -52,6 +55,11 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (profile && profile.email === 'hubligojaincollege@gmail.com') {
+      navigate('/12345678/admin/cafeteria')
+      return
+    }
+
     async function fetchStats() {
       setLoading(true)
       const today = new Date().toISOString().split('T')[0]

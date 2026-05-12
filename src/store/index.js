@@ -166,7 +166,7 @@ export const useCarbonStore = create((set, get) => ({
 
 export const useCartStore = create((set, get) => ({
   items: [],
-  totalPrice: 0,
+  total: 0,
   totalCarbon: 0,
 
   addItem: (item) => {
@@ -175,27 +175,27 @@ export const useCartStore = create((set, get) => ({
       let newItems
       if (existing) {
         newItems = state.items.map(i =>
-          i.id === item.id ? { ...i, qty: i.qty + 1 } : i
+          i.id === item.id ? { ...i, quantity: (i.quantity || 0) + 1 } : i
         )
       } else {
-        newItems = [...state.items, { ...item, qty: 1 }]
+        newItems = [...state.items, { ...item, quantity: 1 }]
       }
-      const totalPrice = newItems.reduce((t, i) => t + (i.price * i.qty), 0)
-      const totalCarbon = newItems.reduce((t, i) => t + (i.carbon_kg * i.qty), 0)
-      return { items: newItems, totalPrice, totalCarbon }
+      const total = newItems.reduce((t, i) => t + (Number(i.price) * i.quantity), 0)
+      const totalCarbon = newItems.reduce((t, i) => t + (Number(i.carbon_kg || 0) * i.quantity), 0)
+      return { items: newItems, total, totalCarbon }
     })
   },
 
   removeItem: (itemId) => {
     set(state => {
       const newItems = state.items
-        .map(i => i.id === itemId ? { ...i, qty: i.qty - 1 } : i)
-        .filter(i => i.qty > 0)
-      const totalPrice = newItems.reduce((t, i) => t + (i.price * i.qty), 0)
-      const totalCarbon = newItems.reduce((t, i) => t + (i.carbon_kg * i.qty), 0)
-      return { items: newItems, totalPrice, totalCarbon }
+        .map(i => i.id === itemId ? { ...i, quantity: i.quantity - 1 } : i)
+        .filter(i => i.quantity > 0)
+      const total = newItems.reduce((t, i) => t + (Number(i.price) * i.quantity), 0)
+      const totalCarbon = newItems.reduce((t, i) => t + (Number(i.carbon_kg || 0) * i.quantity), 0)
+      return { items: newItems, total, totalCarbon }
     })
   },
 
-  clearCart: () => set({ items: [], totalPrice: 0, totalCarbon: 0 }),
+  clearCart: () => set({ items: [], total: 0, totalCarbon: 0 }),
 }))

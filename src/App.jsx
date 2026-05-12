@@ -9,7 +9,7 @@ import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
 import AdminLoginPage from './pages/auth/AdminLoginPage'
-import { ProtectedRoute, AdminRoute, FacultyRoute, PublicRoute } from './components/RouteGuards'
+import { ProtectedRoute, AdminRoute, FacultyRoute, PublicRoute, OwnerRoute } from './components/RouteGuards'
 
 // ─── STUDENT PAGES ──────────────────────────────────────────────
 const DashboardPage = lazy(() => import('./pages/student/DashboardPage'))
@@ -32,6 +32,8 @@ const NotificationsPage = lazy(() => import('./pages/student/NotificationsPage')
 // ─── FACULTY PAGES ──────────────────────────────────────────────
 const FacultyDashboard = lazy(() => import('./pages/faculty/FacultyDashboard'))
 const FacultyEventsPage = lazy(() => import('./pages/faculty/FacultyEventsPage'))
+const FacultyCafeteriaPage = lazy(() => import('./pages/faculty/FacultyCafeteriaPage'))
+import FacultyAttendancePage from './pages/faculty/FacultyAttendancePage'
 const FacultyStubPage = lazy(() => import('./pages/faculty/FacultyStubPage'))
 
 
@@ -96,7 +98,12 @@ function AdminStubPage({ title }) {
   )
 }
 
-export default function App() {
+// ─── OWNER PAGES ────────────────────────────────────────────────
+const OwnerDashboard = lazy(() => import('./pages/owner/OwnerDashboard'))
+const OwnerCafeteriaPage = lazy(() => import('./pages/owner/OwnerCafeteriaPage'))
+const OwnerProfilePage = lazy(() => import('./pages/owner/OwnerProfilePage'))
+
+function App() {
   const { initialize } = useAuthStore()
 
   useEffect(() => {
@@ -169,13 +176,17 @@ export default function App() {
           <Route path="/faculty/analytics" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyStubPage title="📊 Analytics" /></Suspense></FacultyRoute>} />
           <Route path="/faculty/sustainability" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyStubPage title="🌱 Sustainability" /></Suspense></FacultyRoute>} />
           <Route path="/faculty/challenges" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyStubPage title="🎯 Challenges" /></Suspense></FacultyRoute>} />
-          <Route path="/faculty/cafeteria" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyStubPage title="🍽 Cafeteria Monitoring" /></Suspense></FacultyRoute>} />
-          <Route path="/faculty/attendance" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyStubPage title="🎓 Attendance Management" /></Suspense></FacultyRoute>} />
+          <Route path="/faculty/cafeteria" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyCafeteriaPage /></Suspense></FacultyRoute>} />
+          <Route path="/faculty/attendance" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyAttendancePage /></Suspense></FacultyRoute>} />
           <Route path="/faculty/complaints" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyStubPage title="🧾 Complaints Review" /></Suspense></FacultyRoute>} />
           <Route path="/faculty/announcements" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyStubPage title="📢 Announcements" /></Suspense></FacultyRoute>} />
           <Route path="/faculty/notifications" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyStubPage title="🔔 Notifications" /></Suspense></FacultyRoute>} />
           <Route path="/faculty/profile" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyStubPage title="👤 Profile Settings" /></Suspense></FacultyRoute>} />
 
+          {/* ══════════ OWNER ══════════ */}
+          <Route path="/owner/dashboard" element={<OwnerRoute><Suspense fallback={<PageLoader />}><OwnerDashboard /></Suspense></OwnerRoute>} />
+          <Route path="/owner/cafeteria" element={<OwnerRoute><Suspense fallback={<PageLoader />}><OwnerCafeteriaPage /></Suspense></OwnerRoute>} />
+          <Route path="/owner/profile" element={<OwnerRoute><Suspense fallback={<PageLoader />}><OwnerProfilePage /></Suspense></OwnerRoute>} />
 
 
           {/* ══════════ ADMIN (OBFUSCATED) ══════════ */}
@@ -202,3 +213,5 @@ export default function App() {
     </BrowserRouter>
   )
 }
+
+export default App
