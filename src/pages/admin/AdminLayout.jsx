@@ -35,38 +35,42 @@ export default function AdminLayout({ children }) {
   }
 
   return (
-    <div className="flex min-h-[100dvh] bg-slate-950 text-white overflow-hidden">
+    <div className="flex min-h-[100dvh] bg-[#020617] text-white overflow-hidden">
       {/* Background Mesh */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-0 left-0 w-[40%] h-[40%] rounded-full bg-blue-600/5 blur-[120px]" />
-        <div className="absolute bottom-0 right-0 w-[40%] h-[40%] rounded-full bg-green-500/5 blur-[120px]" />
+        <div className="absolute top-0 left-0 w-[80%] md:w-[40%] h-[40%] rounded-full bg-green-600/5 blur-[120px]" />
+        <div className="absolute bottom-0 right-0 w-[80%] md:w-[40%] h-[40%] rounded-full bg-blue-500/5 blur-[120px]" />
       </div>
 
       {/* SIDEBAR */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 transition-all duration-500 transform ${
+      <aside className={`fixed inset-y-0 left-0 z-50 w-full md:w-72 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] transform ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}>
-        <div className="h-full bg-slate-950/40 backdrop-blur-3xl border-r border-white/5 flex flex-col">
+        <div className="h-full bg-[#020617]/80 lg:bg-[#020617]/40 backdrop-blur-3xl border-r border-white/5 flex flex-col">
           {/* Logo */}
-          <div className="px-8 py-8 flex items-center gap-4 border-b border-white/5">
-            <img src={logo} alt="Admin Logo" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(34,197,94,0.3)]" />
-            <div>
-              <p className="text-white font-black text-sm uppercase tracking-tighter">InstitutePulse</p>
-              <p className="text-green-500 font-black text-[9px] uppercase tracking-[0.3em]">Core Nexus</p>
+          <div className="px-8 py-10 flex items-center justify-between lg:justify-start gap-4 border-b border-white/5">
+            <div className="flex items-center gap-4">
+              <img src={logo} alt="Admin Logo" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(34,197,94,0.3)]" />
+              <div>
+                <p className="text-white font-black text-sm uppercase tracking-tighter">InstitutePulse</p>
+                <p className="text-green-500 font-black text-[9px] uppercase tracking-[0.3em]">Core Nexus</p>
+              </div>
             </div>
+            <button className="lg:hidden p-3 bg-white/5 rounded-2xl" onClick={() => setSidebarOpen(false)}>
+               <X size={20} />
+            </button>
           </div>
 
           {/* NAV */}
           <nav className="flex-1 py-6 px-4 overflow-y-auto no-scrollbar">
             <div className="space-y-1">
               {NAV_ITEMS.map(item => {
-                // RESTRICTED OWNER ACCESS: Only show Cafeteria and Dashboard if this is the owner email
+                // RESTRICTED OWNER ACCESS
                 if (profile?.email === 'hubligojaincollege@gmail.com') {
                   if (item.label !== 'Cafeteria' && item.label !== 'Dashboard') {
                     return null
                   }
                 }
-                // Regular Admins see everything (no 'return null' for Cafeteria)
 
                 const Icon = item.icon
                 const isActive = location.pathname === item.path
@@ -75,7 +79,7 @@ export default function AdminLayout({ children }) {
                     key={item.path}
                     to={item.path}
                     onClick={() => setSidebarOpen(false)}
-                    className={`flex items-center gap-4 px-4 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
+                    className={`flex items-center gap-4 px-5 py-4 lg:py-3 rounded-2xl text-[10px] lg:text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
                       isActive 
                         ? 'bg-green-600 text-white shadow-lg shadow-green-600/20' 
                         : 'text-gray-500 hover:text-white hover:bg-white/5'
@@ -92,8 +96,8 @@ export default function AdminLayout({ children }) {
           {/* PROFILE */}
           <div className="p-6 border-t border-white/5 bg-slate-900/40">
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-blue-600 p-[1.5px]">
-                <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center text-xs font-black text-white uppercase">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-blue-600 p-[1.5px]">
+                <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center text-sm font-black text-white uppercase">
                    {profile?.full_name?.[0] || 'A'}
                 </div>
               </div>
@@ -104,7 +108,7 @@ export default function AdminLayout({ children }) {
             </div>
             <button 
               onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-3 py-3 rounded-xl bg-red-500/5 border border-red-500/10 text-red-500 text-[10px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all"
+              className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-red-500/5 border border-red-500/10 text-red-500 text-[10px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all"
             >
               <LogOut size={14} /> Exit System
             </button>
@@ -117,40 +121,38 @@ export default function AdminLayout({ children }) {
         {sidebarOpen && (
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 lg:hidden" 
+            className="fixed inset-0 bg-black/60 backdrop-blur-md z-40 lg:hidden" 
             onClick={() => setSidebarOpen(false)} 
           />
         )}
       </AnimatePresence>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 lg:ml-72 flex flex-col min-h-screen relative">
+      <main className="flex-1 lg:ml-72 flex flex-col min-h-screen relative overflow-y-auto no-scrollbar">
         {/* TOP BAR */}
-        <header className="sticky top-0 z-30 px-6 py-4 backdrop-blur-xl bg-slate-950/80 border-b border-white/5 flex items-center justify-between">
+        <header className="sticky top-0 z-30 px-6 py-5 lg:py-6 backdrop-blur-xl bg-[#020617]/80 border-b border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3">
-              <button className="lg:hidden p-2 rounded-xl bg-white/5 border border-white/10" onClick={() => setSidebarOpen(!sidebarOpen)}>
-                {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-              </button>
-              <img src={logo} alt="Logo" className="lg:hidden w-8 h-8 object-contain drop-shadow-[0_0_10px_rgba(34,197,94,0.2)]" />
-            </div>
-            <h1 className="text-lg font-black text-white uppercase tracking-tighter">
+            <button className="lg:hidden p-3 rounded-2xl bg-white/5 border border-white/10 text-green-500" onClick={() => setSidebarOpen(true)}>
+               <Menu size={20} />
+            </button>
+            <h1 className="text-sm lg:text-lg font-black text-white uppercase tracking-tighter">
               {NAV_ITEMS.find(n => n.path === location.pathname)?.label || 'Console'}
             </h1>
           </div>
           <div className="flex items-center gap-3">
-             <div className="px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 flex items-center gap-2">
+             <div className="px-4 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 flex items-center gap-2">
                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
-               <span className="text-[9px] font-black text-green-500 uppercase tracking-widest">System Online</span>
+               <span className="text-[8px] font-black text-green-500 uppercase tracking-widest hidden sm:inline">System Live</span>
              </div>
           </div>
         </header>
 
         {/* PAGE CONTENT */}
-        <div className="p-6 lg:p-10 flex-1 overflow-x-hidden no-scrollbar">
+        <div className="p-5 md:p-8 lg:p-12 flex-1 relative z-10">
            {children}
         </div>
       </main>
     </div>
   )
 }
+

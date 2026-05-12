@@ -35,6 +35,14 @@ const FacultyEventsPage = lazy(() => import('./pages/faculty/FacultyEventsPage')
 const FacultyCafeteriaPage = lazy(() => import('./pages/faculty/FacultyCafeteriaPage'))
 import FacultyAttendancePage from './pages/faculty/FacultyAttendancePage'
 const FacultyStubPage = lazy(() => import('./pages/faculty/FacultyStubPage'))
+const FacultyParticipantsPage = lazy(() => import('./pages/faculty/FacultyParticipantsPage'))
+const FacultyAnalyticsPage = lazy(() => import('./pages/faculty/FacultyAnalyticsPage'))
+const FacultySustainabilityPage = lazy(() => import('./pages/faculty/FacultySustainabilityPage'))
+const FacultyChallengesPage = lazy(() => import('./pages/faculty/FacultyChallengesPage'))
+const FacultyComplaintsPage = lazy(() => import('./pages/faculty/FacultyComplaintsPage'))
+const FacultyAnnouncementsPage = lazy(() => import('./pages/faculty/FacultyAnnouncementsPage'))
+const FacultyNotificationsPage = lazy(() => import('./pages/faculty/FacultyNotificationsPage'))
+const FacultyProfilePage = lazy(() => import('./pages/faculty/FacultyProfilePage'))
 
 
 
@@ -45,6 +53,17 @@ const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'))
 const AdminComplaintsPage = lazy(() => import('./pages/admin/AdminComplaintsPage'))
 const AdminCafeteriaPage = lazy(() => import('./pages/admin/AdminCafeteriaPage'))
 const AdminEventsPage = lazy(() => import('./pages/admin/AdminEventsPage'))
+const AdminAttendancePage = lazy(() => import('./pages/admin/AdminAttendancePage'))
+const AdminChallengesPage = lazy(() => import('./pages/admin/AdminChallengesPage'))
+const AdminLostFoundPage = lazy(() => import('./pages/admin/AdminLostFoundPage'))
+const AdminBroadcastPage = lazy(() => import('./pages/admin/AdminBroadcastPage'))
+const AdminNotificationsPage = lazy(() => import('./pages/admin/AdminNotificationsPage'))
+const AdminSettingsPage = lazy(() => import('./pages/admin/AdminSettingsPage'))
+const AdminAuditPage = lazy(() => import('./pages/admin/AdminAuditPage'))
+const AdminNavigationPage = lazy(() => import('./pages/admin/AdminNavigationPage'))
+const AdminProfilePage = lazy(() => import('./pages/admin/AdminProfilePage'))
+const AdminStubPage = lazy(() => import('./pages/admin/AdminStubPage'))
+
 
 // ─── LAYOUTS ────────────────────────────────────────────────────
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
@@ -78,25 +97,6 @@ function StudentPage({ component: Component, title, showBack = false, hideChrome
 }
 
 // Admin page stubs for unbuilt modules
-function AdminStubPage({ title }) {
-  return (
-    <Suspense fallback={<PageLoader />}>
-      <AdminLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="glass-card p-12 text-center max-w-lg mx-auto">
-            <div className="text-5xl mb-4">🚧</div>
-            <h2 className="text-xl font-black text-white mb-3 tracking-tight">{title}</h2>
-            <p className="text-sm text-gray-500 font-medium leading-relaxed">This admin module is ready for integration. Connect your Supabase backend and the data will populate here automatically.</p>
-            <div className="mt-8 px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20 inline-flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-[9px] font-black text-green-500 uppercase tracking-widest">Module Standby</span>
-            </div>
-          </div>
-        </div>
-      </AdminLayout>
-    </Suspense>
-  )
-}
 
 // ─── OWNER PAGES ────────────────────────────────────────────────
 const OwnerDashboard = lazy(() => import('./pages/owner/OwnerDashboard'))
@@ -169,19 +169,20 @@ function App() {
           <Route path="/profile" element={<StudentPage component={ProfilePage} title="Profile Settings" showBack />} />
           <Route path="/notifications" element={<StudentPage component={NotificationsPage} title="Notifications" showBack />} />
 
-          {/* ══════════ FACULTY ══════════ */}
-          <Route path="/faculty/dashboard" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyDashboard /></Suspense></FacultyRoute>} />
-          <Route path="/faculty/events" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyEventsPage /></Suspense></FacultyRoute>} />
-          <Route path="/faculty/participants" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyStubPage title="👥 Participants" /></Suspense></FacultyRoute>} />
-          <Route path="/faculty/analytics" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyStubPage title="📊 Analytics" /></Suspense></FacultyRoute>} />
-          <Route path="/faculty/sustainability" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyStubPage title="🌱 Sustainability" /></Suspense></FacultyRoute>} />
-          <Route path="/faculty/challenges" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyStubPage title="🎯 Challenges" /></Suspense></FacultyRoute>} />
-          <Route path="/faculty/cafeteria" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyCafeteriaPage /></Suspense></FacultyRoute>} />
-          <Route path="/faculty/attendance" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyAttendancePage /></Suspense></FacultyRoute>} />
-          <Route path="/faculty/complaints" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyStubPage title="🧾 Complaints Review" /></Suspense></FacultyRoute>} />
-          <Route path="/faculty/announcements" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyStubPage title="📢 Announcements" /></Suspense></FacultyRoute>} />
-          <Route path="/faculty/notifications" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyStubPage title="🔔 Notifications" /></Suspense></FacultyRoute>} />
-          <Route path="/faculty/profile" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyStubPage title="👤 Profile Settings" /></Suspense></FacultyRoute>} />
+           {/* ══════════ FACULTY ══════════ */}
+           <Route path="/faculty/dashboard" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyDashboard /></Suspense></FacultyRoute>} />
+           <Route path="/faculty/events" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyEventsPage /></Suspense></FacultyRoute>} />
+           <Route path="/faculty/participants" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyParticipantsPage /></Suspense></FacultyRoute>} />
+           <Route path="/faculty/analytics" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyAnalyticsPage /></Suspense></FacultyRoute>} />
+           <Route path="/faculty/sustainability" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultySustainabilityPage /></Suspense></FacultyRoute>} />
+           <Route path="/faculty/challenges" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyChallengesPage /></Suspense></FacultyRoute>} />
+           <Route path="/faculty/cafeteria" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyCafeteriaPage /></Suspense></FacultyRoute>} />
+           <Route path="/faculty/attendance" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyAttendancePage /></Suspense></FacultyRoute>} />
+           <Route path="/faculty/complaints" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyComplaintsPage /></Suspense></FacultyRoute>} />
+           <Route path="/faculty/announcements" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyAnnouncementsPage /></Suspense></FacultyRoute>} />
+           <Route path="/faculty/notifications" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyNotificationsPage /></Suspense></FacultyRoute>} />
+           <Route path="/faculty/profile" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyProfilePage /></Suspense></FacultyRoute>} />
+
 
           {/* ══════════ OWNER ══════════ */}
           <Route path="/owner/dashboard" element={<OwnerRoute><Suspense fallback={<PageLoader />}><OwnerDashboard /></Suspense></OwnerRoute>} />
@@ -189,22 +190,24 @@ function App() {
           <Route path="/owner/profile" element={<OwnerRoute><Suspense fallback={<PageLoader />}><OwnerProfilePage /></Suspense></OwnerRoute>} />
 
 
-          {/* ══════════ ADMIN (OBFUSCATED) ══════════ */}
-          <Route path="/12345678/admin/dashboard" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminDashboard /></Suspense></AdminRoute>} />
-          <Route path="/12345678/admin/sustainability" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminSustainabilityPage /></Suspense></AdminRoute>} />
-          <Route path="/12345678/admin/users" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminUsersPage /></Suspense></AdminRoute>} />
-          <Route path="/12345678/admin/complaints" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminComplaintsPage /></Suspense></AdminRoute>} />
-          <Route path="/12345678/admin/events" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminEventsPage /></Suspense></AdminRoute>} />
-          <Route path="/12345678/admin/challenges" element={<AdminRoute><AdminStubPage title="🎯 Challenge Management" /></AdminRoute>} />
-          <Route path="/12345678/admin/cafeteria" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminCafeteriaPage /></Suspense></AdminRoute>} />
-          <Route path="/12345678/admin/attendance" element={<AdminRoute><AdminStubPage title="🎓 Attendance System" /></AdminRoute>} />
-          <Route path="/12345678/admin/lost-found" element={<AdminRoute><AdminStubPage title="🔍 Lost & Found Verification" /></AdminRoute>} />
-          <Route path="/12345678/admin/broadcast" element={<AdminRoute><AdminStubPage title="📢 Broadcast Center" /></AdminRoute>} />
-          <Route path="/12345678/admin/notifications" element={<AdminRoute><AdminStubPage title="🔔 Notification Center" /></AdminRoute>} />
-          <Route path="/12345678/admin/settings" element={<AdminRoute><AdminStubPage title="⚙️ System Settings" /></AdminRoute>} />
-          <Route path="/12345678/admin/audit" element={<AdminRoute><AdminStubPage title="📈 Audit Logs" /></AdminRoute>} />
-          <Route path="/12345678/admin/navigation" element={<AdminRoute><AdminStubPage title="📍 Campus Locations" /></AdminRoute>} />
-          <Route path="/12345678/admin/profile" element={<AdminRoute><AdminStubPage title="👤 Admin Profile" /></AdminRoute>} />
+           {/* ══════════ ADMIN (OBFUSCATED) ══════════ */}
+           <Route path="/12345678/admin/dashboard" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminDashboard /></Suspense></AdminRoute>} />
+           <Route path="/12345678/admin/sustainability" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminSustainabilityPage /></Suspense></AdminRoute>} />
+           <Route path="/12345678/admin/users" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminUsersPage /></Suspense></AdminRoute>} />
+           <Route path="/12345678/admin/complaints" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminComplaintsPage /></Suspense></AdminRoute>} />
+           <Route path="/12345678/admin/events" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminEventsPage /></Suspense></AdminRoute>} />
+           <Route path="/12345678/admin/challenges" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminChallengesPage /></Suspense></AdminRoute>} />
+           <Route path="/12345678/admin/cafeteria" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminCafeteriaPage /></Suspense></AdminRoute>} />
+           <Route path="/12345678/admin/attendance" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminAttendancePage /></Suspense></AdminRoute>} />
+           <Route path="/12345678/admin/lost-found" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminLostFoundPage /></Suspense></AdminRoute>} />
+           <Route path="/12345678/admin/broadcast" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminBroadcastPage /></Suspense></AdminRoute>} />
+           <Route path="/12345678/admin/notifications" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminNotificationsPage /></Suspense></AdminRoute>} />
+           <Route path="/12345678/admin/settings" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminSettingsPage /></Suspense></AdminRoute>} />
+           <Route path="/12345678/admin/audit" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminAuditPage /></Suspense></AdminRoute>} />
+           <Route path="/12345678/admin/navigation" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminNavigationPage /></Suspense></AdminRoute>} />
+           <Route path="/12345678/admin/profile" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminProfilePage /></Suspense></AdminRoute>} />
+           <Route path="/12345678/admin" element={<Navigate to="/12345678/admin/dashboard" replace />} />
+
 
           {/* CATCH ALL */}
           <Route path="*" element={<Navigate to="/" replace />} />

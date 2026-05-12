@@ -11,10 +11,16 @@ function getModel() {
   }
   if (!genAI) {
     genAI = new GoogleGenerativeAI(API_KEY)
-    model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    // Fallback logic for model availability
+    try {
+      model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    } catch (e) {
+      model = genAI.getGenerativeModel({ model: 'gemini-pro' })
+    }
   }
   return model
 }
+
 
 // ── ECO RECOMMENDATIONS ──
 export async function getEcoRecommendations(carbonData) {

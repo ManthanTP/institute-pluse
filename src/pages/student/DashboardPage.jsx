@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, Flame, Leaf, TrendingUp, Star, Award, Zap, Compass, Search, MessageSquare, Info, ShieldAlert, ArrowRight, ChevronRight, Sparkles, LayoutGrid, Target, Waves, Wind } from 'lucide-react'
+import { Bell, Flame, Leaf, TrendingUp, Star, Award, Zap, Compass, Search, MessageSquare, Info, ShieldAlert, ArrowRight, ChevronRight, Sparkles, LayoutGrid, Target, Waves, Wind, User } from 'lucide-react'
 import { useAuthStore, useCarbonStore, useNotifStore } from '../../store/index'
 import { supabase } from '../../lib/supabase'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
+
 
 const MODULE_TILES = [
   { path: '/carbon/log', icon: Leaf, label: 'Carbon Log', color: '#22c55e' },
@@ -33,27 +34,57 @@ export default function DashboardPage() {
   const { profile } = useAuthStore()
   const { todayLog, fetchTodayLog } = useCarbonStore()
   const [tipIndex] = useState(() => Math.floor(Math.random() * ECO_TIPS.length))
+  const [activeSession, setActiveSession] = useState(null)
 
   useEffect(() => {
     if (!profile?.id) return
 
     fetchTodayLog(profile.id)
+    fetchActiveSession()
 
-    // Real-time profile updates (Eco-points, Carbon)
-    const channel = supabase
-      .channel(`profile_updates_${profile.id}`)
-      .on('postgres_changes', { 
-        event: 'UPDATE', 
-        schema: 'public', 
-        table: 'profiles', 
-        filter: `id=eq.${profile.id}` 
-      }, (payload) => {
-        useAuthStore.getState().setProfile(payload.new)
+    // Real-time profile updates
+    const profileSub = supabase
+      .channel(`profile_${profile.id}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${profile.id}` }, (p) => {
+        useAuthStore.getState().setProfile(p.new)
       })
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    // Real-time attendance updates
+    const notifSub = supabase
+      .channel(`dashboard_notifs_${profile.id}`)
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'student_notifications',
+        filter: `student_id=eq.${profile.id}`
+      }, () => fetchActiveSession())
+      .subscribe()
+
+    return () => { 
+      supabase.removeChannel(profileSub)
+      supabase.removeChannel(notifSub)
+    }
   }, [profile?.id])
+
+  async function fetchActiveSession() {
+    if (!profile?.division_id) return
+    const { data } = await supabase
+      .from('attendance_sessions')
+      .select('*, academic_classrooms(name)')
+      .eq('division_id', profile.division_id)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (data && new Date(data.expires_at) > new Date()) {
+      setActiveSession(data)
+    } else {
+      setActiveSession(null)
+    }
+  }
+
 
   const hasLogged = !!todayLog
   const ecoScore = todayLog?.eco_score || 0
@@ -67,7 +98,56 @@ export default function DashboardPage() {
       </div>
 
       <div className="relative z-10 px-6 pt-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+           <div>
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] mb-1">Nexus Node Active</p>
+              <h1 className="text-xl font-black text-white tracking-tighter">Welcome, {profile?.full_name?.split(' ')[0]}</h1>
+           </div>
+           <button 
+             onClick={() => navigate('/profile')}
+             className="p-3 rounded-2xl bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-colors"
+           >
+              <User size={20} />
+           </button>
+        </div>
+
+        {/* ACTIVE SESSION ALERT */}
+        <AnimatePresence>
+           {activeSession && (
+              <motion.div
+                initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                animate={{ opacity: 1, height: 'auto', marginBottom: 24 }}
+                exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                className="relative overflow-hidden rounded-[32px] p-6 bg-gradient-to-r from-blue-600 to-indigo-600 border border-white/20 shadow-xl"
+              >
+                 <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none"><Zap size={80} /></div>
+                 <div className="relative z-10">
+                    <div className="flex items-center gap-2 mb-4">
+                       <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                       <span className="text-[8px] font-black text-white uppercase tracking-[0.4em]">Live Class Protocol</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                       <div>
+                          <h3 className="text-xl font-black text-white uppercase tracking-tight italic">{activeSession.subject}</h3>
+                          <p className="text-[10px] text-blue-100 font-black uppercase tracking-widest mt-1">
+                             Venue: {activeSession.academic_classrooms?.name || 'Manual'} • {activeSession.session_type}
+                          </p>
+                       </div>
+                       <button 
+                         onClick={() => navigate('/attendance')}
+                         className="px-6 py-3 bg-white text-blue-600 rounded-2xl text-[9px] font-black uppercase tracking-widest shadow-xl hover:scale-105 transition-all"
+                       >
+                          Join Terminal
+                       </button>
+                    </div>
+                 </div>
+              </motion.div>
+           )}
+        </AnimatePresence>
+
         {/* HERO STATUS CARD */}
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -125,9 +205,9 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
            {[
              { label: 'Ecosystem XP', val: (profile?.eco_points || 0).toLocaleString(), icon: Sparkles, color: 'text-yellow-500' },
-             { label: 'Active Streak', val: `${profile?.logging_streak || 0} Days`, icon: Flame, color: 'text-orange-500' },
+             { label: 'Registry USN', val: profile?.usn || 'N/A', icon: User, color: 'text-indigo-500' },
              { label: 'Carbon Saved', val: `${(profile?.total_co2_kg || 0).toFixed(1)}kg`, icon: Zap, color: 'text-green-500' },
-             { label: 'Registry Dept', val: profile?.department || 'Gen', icon: Target, color: 'text-blue-500' },
+             { label: 'Registry Node', val: `${profile?.department || 'Gen'} • ${profile?.semester_id ? 'Sem' : 'N/A'}`, icon: Target, color: 'text-blue-500' },
            ].map((stat, i) => (
              <motion.div
                key={stat.label}
@@ -139,7 +219,7 @@ export default function DashboardPage() {
                 <div className={`w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center ${stat.color} mb-3`}>
                    <stat.icon size={14} />
                 </div>
-                <p className="text-lg font-black text-white leading-none mb-1">{stat.val}</p>
+                <p className="text-lg font-black text-white leading-none mb-1 truncate">{stat.val}</p>
                 <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest leading-none">{stat.label}</p>
              </motion.div>
            ))}

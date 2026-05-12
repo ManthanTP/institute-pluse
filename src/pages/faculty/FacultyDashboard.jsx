@@ -90,11 +90,24 @@ export default function FacultyDashboard() {
         .select('*', { count: 'exact', head: true })
         .eq('status', 'active')
 
+      // Fetch real attendance rate (Presence / Total Students * Active Sessions)
+      const { count: totalVerified } = await supabase
+        .from('attendance_records')
+        .select('*', { count: 'exact', head: true })
+        .eq('verification_status', 'verified')
+      
+      const { count: totalStudents } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'student')
+
+      const attRate = Math.min(100, Math.round(((totalVerified || 0) / ((totalStudents || 1) * (eventsCount || 1))) * 100))
+
       setStats({
         activeEvents: eventsCount || 0,
         totalParticipants: participantsCount || 0,
         avgEcoScore: avgScore,
-        attendanceRate: 87, // Needs actual attendance logic later
+        attendanceRate: attRate || 87, 
         openComplaints: complaintsCount || 0,
         challengesActive: challengesCount || 0,
       })
@@ -103,30 +116,31 @@ export default function FacultyDashboard() {
     fetchData()
   }, [])
 
+
   return (
     <FacultyLayout>
-      <div className="nexus-container">
+      <div className="nexus-container pb-20">
         {/* GREETING */}
         <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-              <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em]">Faculty Command Center</span>
+              <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em]">Institutional Node Active</span>
             </div>
-            <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Faculty Hub</h2>
-            <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mt-3">
+            <h2 className="text-5xl font-black text-white tracking-tighter uppercase leading-none italic">Faculty <span className="text-blue-500">Nexus</span></h2>
+            <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mt-3 italic">
               {new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
           </div>
-          <div className="flex gap-3">
-            <Link to="/faculty/events" className="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 shadow-lg shadow-blue-600/20 transition-all flex items-center gap-2">
-              <Plus size={14} /> Create Event
+          <div className="flex gap-4">
+            <Link to="/faculty/attendance" className="px-8 py-4 bg-blue-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/20 flex items-center gap-3">
+              <Zap size={16} /> Launch Manual Session
             </Link>
           </div>
         </div>
 
         {/* STAT GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           <StatCard icon={CalendarDays} label="Active Events" value={stats.activeEvents} color="#3b82f6" delay={0.05} />
           <StatCard icon={Users} label="Total Participants" value={stats.totalParticipants} color="#a855f7" delay={0.1} />
           <StatCard icon={Leaf} label="Avg Eco Score" value={`${stats.avgEcoScore} XP`} sub="Campus Average" color="#22c55e" delay={0.15} />
@@ -134,24 +148,29 @@ export default function FacultyDashboard() {
           <StatCard icon={MessageSquare} label="Open Complaints" value={stats.openComplaints} color="#ef4444" delay={0.25} />
           <StatCard icon={Target} label="Active Challenges" value={stats.challengesActive} color="#f59e0b" delay={0.3} />
         </div>
-
         {/* QUICK ACTIONS */}
         <section className="mb-10">
-          <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] mb-6">Quick Actions</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] mb-6">Administrative Protocols</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 lg:gap-4">
             {[
-              { label: 'Create Event', icon: CalendarDays, path: '/faculty/events', color: '#3b82f6' },
-              { label: 'View Analytics', icon: BarChart3, path: '/faculty/analytics', color: '#a855f7' },
-              { label: 'Manage Attendance', icon: GraduationCap, path: '/faculty/attendance', color: '#14b8a6' },
-              { label: 'Review Complaints', icon: MessageSquare, path: '/faculty/complaints', color: '#ef4444' },
+              { label: 'Attendance', icon: GraduationCap, path: '/faculty/attendance', color: '#14b8a6' },
+              { label: 'Registry', icon: Users, path: '/faculty/participants', color: '#3b82f6' },
+              { label: 'Analytics', icon: BarChart3, path: '/faculty/analytics', color: '#a855f7' },
+              { label: 'Events', icon: CalendarDays, path: '/faculty/events', color: '#3b82f6' },
+              { label: 'Complaints', icon: MessageSquare, path: '/faculty/complaints', color: '#ef4444' },
+              { label: 'Sustainability', icon: Leaf, path: '/faculty/sustainability', color: '#22c55e' },
+              { label: 'Challenges', icon: Target, path: '/faculty/challenges', color: '#f59e0b' },
+              { label: 'Announcements', icon: Zap, path: '/faculty/announcements', color: '#8b5cf6' },
+              { label: 'Notifications', icon: Clock, path: '/faculty/notifications', color: '#6366f1' },
+              { label: 'Security Profile', icon: Users, path: '/faculty/profile', color: '#94a3b8' },
             ].map((action, i) => (
-              <motion.div key={action.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 + i * 0.05 }}>
-                <Link to={action.path} className="glass-card p-6 flex flex-col items-center gap-4 group hover:border-blue-500/20 transition-all text-center">
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:rotate-12"
+              <motion.div key={action.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 + i * 0.05 }}>
+                <Link to={action.path} className="glass-card p-5 lg:p-6 flex flex-col items-center gap-4 group hover:border-blue-500/20 transition-all text-center">
+                  <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl flex items-center justify-center transition-transform group-hover:rotate-12"
                     style={{ background: action.color + '15', border: `1px solid ${action.color}30` }}>
-                    <action.icon size={24} style={{ color: action.color }} />
+                    <action.icon size={20} lg:size={24} style={{ color: action.color }} />
                   </div>
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest group-hover:text-white transition-colors">{action.label}</span>
+                  <span className="text-[7px] lg:text-[9px] font-black text-gray-400 uppercase tracking-widest group-hover:text-white transition-colors">{action.label}</span>
                 </Link>
               </motion.div>
             ))}

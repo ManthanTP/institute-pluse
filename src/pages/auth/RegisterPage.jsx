@@ -39,14 +39,37 @@ function PasswordStrength({ password }) {
 
 export default function RegisterPage() {
   const navigate = useNavigate()
+  const [semesters, setSemesters] = useState([])
+  const [divisions, setDivisions] = useState([])
   const [form, setForm] = useState({
     full_name: '', email: '', phone: '', department: 'CSE',
-    role: 'student', password: '', confirm_password: ''
+    role: 'student', password: '', confirm_password: '',
+    usn: '', semester_id: '', division_id: ''
   })
   const [showPw, setShowPw] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [agreed, setAgreed] = useState(false)
+
+  useEffect(() => {
+    async function loadAcademicData() {
+      const { data: sems } = await supabase.from('academic_semesters').select('*').order('name')
+      const { data: divs } = await supabase.from('academic_divisions').select('*').order('name')
+      if (sems) setSemesters(sems)
+      if (divs) setDivisions(divs)
+    }
+    loadAcademicData()
+  }, [])
+
+  const filteredDivisions = divisions.filter(d => 
+    d.department === form.department && 
+    d.semester_id === form.semester_id
+  )
+
+  // Clear division if department or semester changes
+  useEffect(() => {
+    setForm(f => ({ ...f, division_id: '' }))
+  }, [form.department, form.semester_id])
 
   function update(field, value) {
     setForm(f => ({ ...f, [field]: value }))
@@ -57,6 +80,7 @@ export default function RegisterPage() {
     setError('')
     if (form.password !== form.confirm_password) return setError('Passwords do not match.')
     if (form.password.length < 6) return setError('Password too short.')
+    if (form.role === 'student' && !form.usn) return setError('USN is required for students.')
     if (!agreed) return setError('Please agree to terms.')
 
     setLoading(true)
@@ -68,7 +92,10 @@ export default function RegisterPage() {
           data: {
             full_name: form.full_name,
             role: form.role,
-            department: form.department
+            department: form.department,
+            usn: form.usn,
+            semester_id: form.semester_id,
+            division_id: form.division_id
           }
         }
       })
@@ -82,6 +109,9 @@ export default function RegisterPage() {
             role: form.role,
             phone: form.phone || null,
             department: form.department,
+            usn: form.role === 'student' ? form.usn : null,
+            semester_id: form.role === 'student' ? (form.semester_id || null) : null,
+            division_id: form.role === 'student' ? (form.division_id || null) : null,
             eco_points: 100, // Premium launch bonus
             logging_streak: 0,
             total_co2_kg: 0,
@@ -276,6 +306,55 @@ export default function RegisterPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Academic Data (Only for Students) */}
+                <AnimatePresence>
+                  {form.role === 'student' && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="space-y-5 overflow-hidden"
+                    >
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">USN (University Serial Number)</label>
+                        <div className="relative group">
+                          <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-500 transition-colors" />
+                          <input
+                            type="text" value={form.usn} onChange={e => update('usn', e.target.value)}
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white placeholder:text-gray-600 outline-none focus:border-green-500/50 focus:bg-white/[0.08] transition-all"
+                            placeholder="e.g. 1MS22CS001" required={form.role === 'student'}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-5">
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Semester</label>
+                          <select
+                            value={form.semester_id} onChange={e => update('semester_id', e.target.value)}
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-4 text-sm text-white outline-none focus:border-green-500/50 appearance-none transition-all cursor-pointer"
+                            required={form.role === 'student'}
+                          >
+                            <option value="" className="bg-slate-900">Select Sem</option>
+                            {semesters.map(s => <option key={s.id} value={s.id} className="bg-slate-900">{s.name}</option>)}
+                          </select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Division</label>
+                          <select
+                            value={form.division_id} onChange={e => update('division_id', e.target.value)}
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-4 text-sm text-white outline-none focus:border-green-500/50 appearance-none transition-all cursor-pointer"
+                            required={form.role === 'student'}
+                          >
+                            <option value="" className="bg-slate-900">Select Div</option>
+                            {filteredDivisions.map(d => <option key={d.id} value={d.id} className="bg-slate-900">Division {d.name}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Passwords */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">

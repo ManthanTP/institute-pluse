@@ -128,94 +128,98 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout>
-      <div className="space-y-10">
+      <div className="space-y-8 lg:space-y-10 pb-20">
         {/* GREETING */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-[10px] font-black text-green-500 uppercase tracking-[0.3em]">Real-time Nexus Command</span>
+          <div className="text-center md:text-left">
+            <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+              <span className="text-[8px] lg:text-[10px] font-black text-green-500 uppercase tracking-[0.3em]">Real-time Nexus Command</span>
             </div>
-            <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Campus Core</h2>
-            <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mt-3 italic">
-               System Online: {new Date().toLocaleTimeString()}
+            <h2 className="text-3xl lg:text-4xl font-black text-white tracking-tighter uppercase leading-none italic">Campus <span className="text-green-500">Core</span></h2>
+            <p className="text-gray-500 text-[8px] lg:text-[10px] font-black uppercase tracking-[0.2em] mt-3 italic">
+               System Online: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </p>
           </div>
-          <div className="flex gap-3">
-             <button className="px-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:text-white transition-all backdrop-blur-xl">
+          <div className="flex flex-col sm:flex-row gap-3">
+             <button className="px-6 py-4 rounded-xl lg:rounded-2xl bg-white/5 border border-white/10 text-[8px] lg:text-[10px] font-black uppercase tracking-widest hover:text-white transition-all backdrop-blur-xl">
                 Diagnostic Export
              </button>
-             <button className="px-6 py-3 rounded-2xl bg-green-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-green-500 shadow-lg shadow-green-600/20 transition-all">
+             <button onClick={() => window.location.reload()} className="px-6 py-4 rounded-xl lg:rounded-2xl bg-green-600 text-white text-[8px] lg:text-[10px] font-black uppercase tracking-widest hover:bg-green-500 shadow-lg shadow-green-600/20 transition-all">
                 Global Refresh
              </button>
           </div>
         </div>
 
         {/* STAT GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard icon={Users} label="Identity Nodes" value={stats.totalUsers.toLocaleString()} color="#3b82f6" delay={0.05} />
           <StatCard icon={Leaf} label="Daily Flux" value={stats.todayLogs} sub={`Efficiency: ${stats.avgEcoScore}%`} color="#22c55e" delay={0.1} />
           <StatCard icon={TrendingDown} label="Carbon Aggregation" value={`${stats.totalCo2} kg`} sub="Life-cycle Total" color="#0ea5e9" delay={0.15} />
           <StatCard icon={ShieldCheck} label="Offset Protocol" value={`${stats.totalSaved} kg`} sub="Verified Reduction" color="#166534" delay={0.2} />
           <StatCard icon={AlertCircle} label="Distress Signals" value={stats.openComplaints} sub="Action Required" color="#ef4444" delay={0.25} />
           <StatCard icon={Zap} label="Eco-Points Issued" value={stats.totalPoints.toLocaleString()} color="#f59e0b" delay={0.3} />
-          <Link to="/12345678/admin/events">
+          <Link to="/12345678/admin/events" className="block h-full">
             <StatCard icon={Award} label="Active Campaigns" value={stats.activeEvents} color="#a855f7" delay={0.35} />
           </Link>
           <StatCard icon={ShieldAlert} label="System Security" value="Normal" color="#10b981" delay={0.4} />
         </div>
 
         {/* CHARTS */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="bg-white/5 border border-white/10 rounded-[40px] p-8 backdrop-blur-xl relative overflow-hidden"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white/5 border border-white/10 rounded-3xl lg:rounded-[40px] p-6 lg:p-8 backdrop-blur-xl relative overflow-hidden"
           >
             <div className="flex items-center justify-between mb-8">
-               <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Emission Trajectory</h3>
-               <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-green-500" /> <span className="text-[9px] font-black uppercase text-gray-500">CO2 Flow</span></div>
+               <h3 className="text-[8px] lg:text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Emission Trajectory</h3>
+               <div className="flex items-center gap-1.5"><div className="w-1 h-1 rounded-full bg-green-500" /> <span className="text-[7px] lg:text-[9px] font-black uppercase text-gray-500">CO2 Flow</span></div>
             </div>
-            <ResponsiveContainer width="100%" height={250}>
-              <AreaChart data={chartData}>
-                <defs>
-                  <linearGradient id="colorCo2" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#16a34a" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#16a34a" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
-                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 'bold' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 'bold' }} />
-                <Tooltip 
-                  contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '10px' }}
-                />
-                <Area type="monotone" dataKey="co2" stroke="#16a34a" strokeWidth={3} fillOpacity={1} fill="url(#colorCo2)" />
-              </AreaChart>
-            </ResponsiveContainer>
+            <div className="h-[200px] lg:h-[250px] w-full">
+               <ResponsiveContainer width="100%" height="100%">
+                 <AreaChart data={chartData}>
+                   <defs>
+                     <linearGradient id="colorCo2" x1="0" y1="0" x2="0" y2="1">
+                       <stop offset="5%" stopColor="#16a34a" stopOpacity={0.2}/>
+                       <stop offset="95%" stopColor="#16a34a" stopOpacity={0}/>
+                     </linearGradient>
+                   </defs>
+                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                   <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} />
+                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} />
+                   <Tooltip 
+                     contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '9px' }}
+                   />
+                   <Area type="monotone" dataKey="co2" stroke="#16a34a" strokeWidth={3} fillOpacity={1} fill="url(#colorCo2)" />
+                 </AreaChart>
+               </ResponsiveContainer>
+            </div>
           </motion.div>
 
           <motion.div 
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="bg-white/5 border border-white/10 rounded-[40px] p-8 backdrop-blur-xl relative overflow-hidden"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white/5 border border-white/10 rounded-3xl lg:rounded-[40px] p-6 lg:p-8 backdrop-blur-xl relative overflow-hidden"
           >
             <div className="flex items-center justify-between mb-8">
-               <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Intake Volume</h3>
-               <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-blue-500" /> <span className="text-[9px] font-black uppercase text-gray-500">Log Packets</span></div>
+               <h3 className="text-[8px] lg:text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Intake Volume</h3>
+               <div className="flex items-center gap-1.5"><div className="w-1 h-1 rounded-full bg-blue-500" /> <span className="text-[7px] lg:text-[9px] font-black uppercase text-gray-500">Log Packets</span></div>
             </div>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
-                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 'bold' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 'bold' }} />
-                <Tooltip 
-                  cursor={{ fill: 'rgba(255,255,255,0.03)' }}
-                  contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '10px' }}
-                />
-                <Bar dataKey="logs" fill="#3b82f6" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="h-[200px] lg:h-[250px] w-full">
+               <ResponsiveContainer width="100%" height="100%">
+                 <BarChart data={chartData}>
+                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                   <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} />
+                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} />
+                   <Tooltip 
+                     cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                     contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '9px' }}
+                   />
+                   <Bar dataKey="logs" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={20} />
+                 </BarChart>
+               </ResponsiveContainer>
+            </div>
           </motion.div>
         </div>
 
@@ -225,24 +229,24 @@ export default function AdminDashboard() {
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white/5 border border-white/10 rounded-[40px] p-8 backdrop-blur-xl relative overflow-hidden"
+            className="bg-white/5 border border-white/10 rounded-3xl lg:rounded-[40px] p-6 lg:p-8 backdrop-blur-xl relative overflow-hidden"
           >
             <div className="flex items-center justify-between mb-8">
-              <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Distress Signals</h3>
-              <Link to="/12345678/admin/complaints" className="text-[9px] font-black text-green-500 uppercase tracking-widest hover:text-green-400 transition-all">Full Console →</Link>
+              <h3 className="text-[8px] lg:text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Distress Signals</h3>
+              <Link to="/12345678/admin/complaints" className="text-[7px] lg:text-[9px] font-black text-green-500 uppercase tracking-widest hover:text-green-400 transition-all">Full Console →</Link>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {recentComplaints.length === 0 ? (
                 <div className="py-12 text-center">
-                  <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em]">Zero Anomalies Detected</p>
+                  <p className="text-[8px] lg:text-[10px] font-black text-gray-600 uppercase tracking-[0.2em]">Zero Anomalies Detected</p>
                 </div>
               ) : (
                 recentComplaints.map(c => (
-                  <div key={c.id} className="flex items-center gap-4 p-5 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/[0.08] transition-all">
-                    <div className="w-2 h-2 rounded-full flex-shrink-0 animate-pulse bg-red-500" />
+                  <div key={c.id} className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/[0.08] transition-all">
+                    <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 animate-pulse bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.5)]" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-black text-white truncate uppercase tracking-tight">{c.title}</p>
-                      <p className="text-[9px] font-bold text-gray-500 mt-1 uppercase tracking-widest">{c.category}</p>
+                      <p className="text-[11px] font-black text-white truncate uppercase tracking-tight">{c.title}</p>
+                      <p className="text-[8px] font-bold text-gray-500 mt-1 uppercase tracking-widest">{c.category}</p>
                     </div>
                   </div>
                 ))
@@ -254,39 +258,40 @@ export default function AdminDashboard() {
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white/5 border border-white/10 rounded-[40px] p-8 backdrop-blur-xl relative overflow-hidden"
+            className="bg-white/5 border border-white/10 rounded-3xl lg:rounded-[40px] p-6 lg:p-8 backdrop-blur-xl relative overflow-hidden"
           >
             <div className="flex items-center justify-between mb-8">
-              <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Nexus Core Status</h3>
+              <h3 className="text-[8px] lg:text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Nexus Core Status</h3>
             </div>
             <div className="space-y-6">
                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                     <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500">
+                     <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500 border border-green-500/20">
                         <Zap size={18} />
                      </div>
-                     <span className="text-[10px] font-black text-white uppercase tracking-widest">Main Node Uptime</span>
+                     <span className="text-[9px] lg:text-[10px] font-black text-white uppercase tracking-widest">Main Node Uptime</span>
                   </div>
-                  <span className="text-[10px] font-black text-green-500 uppercase tracking-widest">99.98%</span>
+                  <span className="text-[9px] lg:text-[10px] font-black text-green-500 uppercase tracking-widest">99.98%</span>
                </div>
                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                     <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
+                     <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500 border border-blue-500/20">
                         <TrendingUp size={18} />
                      </div>
-                     <span className="text-[10px] font-black text-white uppercase tracking-widest">Data Latency</span>
+                     <span className="text-[9px] lg:text-[10px] font-black text-white uppercase tracking-widest">Data Latency</span>
                   </div>
-                  <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">12ms</span>
+                  <span className="text-[9px] lg:text-[10px] font-black text-blue-500 uppercase tracking-widest">12ms</span>
                </div>
                <div className="pt-6 border-t border-white/5">
-                  <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest leading-relaxed">
-                     All subsystems operational. Nexus kernel version 2.4.0 active. Security protocols at maximum threshold.
+                  <p className="text-[8px] lg:text-[9px] font-black text-gray-600 uppercase tracking-widest leading-relaxed">
+                     All subsystems operational. Nexus kernel version 2.4.0 active. Security protocols at maximum threshold. Encryption level: AES-256-GCM.
                   </p>
                </div>
             </div>
           </motion.div>
         </div>
       </div>
+
     </AdminLayout>
   )
 }
