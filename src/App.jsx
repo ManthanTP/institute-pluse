@@ -31,6 +31,7 @@ const NotificationsPage = lazy(() => import('./pages/student/NotificationsPage')
 
 // ─── FACULTY PAGES ──────────────────────────────────────────────
 const FacultyDashboard = lazy(() => import('./pages/faculty/FacultyDashboard'))
+const FacultyEventsPage = lazy(() => import('./pages/faculty/FacultyEventsPage'))
 const FacultyStubPage = lazy(() => import('./pages/faculty/FacultyStubPage'))
 
 
@@ -41,6 +42,7 @@ const AdminSustainabilityPage = lazy(() => import('./pages/admin/AdminSustainabi
 const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'))
 const AdminComplaintsPage = lazy(() => import('./pages/admin/AdminComplaintsPage'))
 const AdminCafeteriaPage = lazy(() => import('./pages/admin/AdminCafeteriaPage'))
+const AdminEventsPage = lazy(() => import('./pages/admin/AdminEventsPage'))
 
 // ─── LAYOUTS ────────────────────────────────────────────────────
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
@@ -162,7 +164,7 @@ export default function App() {
 
           {/* ══════════ FACULTY ══════════ */}
           <Route path="/faculty/dashboard" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyDashboard /></Suspense></FacultyRoute>} />
-          <Route path="/faculty/events" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyStubPage title="📅 Events" /></Suspense></FacultyRoute>} />
+          <Route path="/faculty/events" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyEventsPage /></Suspense></FacultyRoute>} />
           <Route path="/faculty/participants" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyStubPage title="👥 Participants" /></Suspense></FacultyRoute>} />
           <Route path="/faculty/analytics" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyStubPage title="📊 Analytics" /></Suspense></FacultyRoute>} />
           <Route path="/faculty/sustainability" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyStubPage title="🌱 Sustainability" /></Suspense></FacultyRoute>} />
@@ -181,7 +183,7 @@ export default function App() {
           <Route path="/12345678/admin/sustainability" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminSustainabilityPage /></Suspense></AdminRoute>} />
           <Route path="/12345678/admin/users" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminUsersPage /></Suspense></AdminRoute>} />
           <Route path="/12345678/admin/complaints" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminComplaintsPage /></Suspense></AdminRoute>} />
-          <Route path="/12345678/admin/events" element={<AdminRoute><AdminStubPage title="📅 Event Management" /></AdminRoute>} />
+          <Route path="/12345678/admin/events" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminEventsPage /></Suspense></AdminRoute>} />
           <Route path="/12345678/admin/challenges" element={<AdminRoute><AdminStubPage title="🎯 Challenge Management" /></AdminRoute>} />
           <Route path="/12345678/admin/cafeteria" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminCafeteriaPage /></Suspense></AdminRoute>} />
           <Route path="/12345678/admin/attendance" element={<AdminRoute><AdminStubPage title="🎓 Attendance System" /></AdminRoute>} />

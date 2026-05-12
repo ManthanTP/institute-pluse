@@ -59,12 +59,13 @@ export default function AdminDashboard() {
       lastWeek.setDate(lastWeek.getDate() - 7)
       const lastWeekStr = lastWeek.toISOString().split('T')[0]
 
-      const [usersCount, logsToday, complaintsRes, allLogs, trendLogs] = await Promise.all([
+      const [usersCount, logsToday, complaintsRes, allLogs, trendLogs, eventsCount] = await Promise.all([
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
         supabase.from('carbon_logs').select('*').eq('log_date', today),
         supabase.from('complaints').select('*').eq('status', 'open').order('created_at', { ascending: false }).limit(5),
         supabase.from('carbon_logs').select('total_kg, eco_points_earned'),
-        supabase.from('carbon_logs').select('log_date, total_kg').gte('log_date', lastWeekStr).order('log_date', { ascending: true })
+        supabase.from('carbon_logs').select('log_date, total_kg').gte('log_date', lastWeekStr).order('log_date', { ascending: true }),
+        supabase.from('events').select('*', { count: 'exact', head: true }).eq('status', 'upcoming')
       ])
 
       const totalCo2 = allLogs.data?.reduce((acc, curr) => acc + (curr.total_kg || 0), 0) || 0
@@ -99,7 +100,8 @@ export default function AdminDashboard() {
         totalSaved: totalSaved.toFixed(1),
         totalPoints: totalPoints,
         openComplaints: complaintsRes.data?.length || 0,
-        avgEcoScore: allLogs.data?.length ? (totalSaved / (totalSaved + totalCo2) * 100).toFixed(0) : 0
+        avgEcoScore: allLogs.data?.length ? (totalSaved / (totalSaved + totalCo2) * 100).toFixed(0) : 0,
+        activeEvents: eventsCount.count || 0
       })
 
       if (complaintsRes.data) setRecentComplaints(complaintsRes.data)
@@ -149,7 +151,9 @@ export default function AdminDashboard() {
           <StatCard icon={ShieldCheck} label="Offset Protocol" value={`${stats.totalSaved} kg`} sub="Verified Reduction" color="#166534" delay={0.2} />
           <StatCard icon={AlertCircle} label="Distress Signals" value={stats.openComplaints} sub="Action Required" color="#ef4444" delay={0.25} />
           <StatCard icon={Zap} label="Eco-Points Issued" value={stats.totalPoints.toLocaleString()} color="#f59e0b" delay={0.3} />
-          <StatCard icon={Award} label="Active Challenges" value="4" color="#a855f7" delay={0.35} />
+          <Link to="/12345678/admin/events">
+            <StatCard icon={Award} label="Active Campaigns" value={stats.activeEvents} color="#a855f7" delay={0.35} />
+          </Link>
           <StatCard icon={ShieldAlert} label="System Security" value="Normal" color="#10b981" delay={0.4} />
         </div>
 
