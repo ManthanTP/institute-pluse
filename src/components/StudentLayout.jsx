@@ -154,9 +154,12 @@ export default function StudentLayout({ children, title, showBack = false }) {
                 <ChevronLeft size={20} />
               </button>
             ) : (
-              <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-xl bg-white/5 border border-white/10 text-gray-400">
-                <Menu size={20} />
-              </button>
+              <div className="flex items-center gap-4">
+                <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-xl bg-white/5 border border-white/10 text-gray-400">
+                  <Menu size={20} />
+                </button>
+                <img src={logo} alt="Logo" className="w-8 h-8 object-contain drop-shadow-[0_0_10px_rgba(34,197,94,0.2)]" />
+              </div>
             )}
             <div>
               {!showBack && <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest leading-none mb-1">{greeting}</p>}

@@ -1,11 +1,11 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Home, Leaf, Bus, UtensilsCrossed, User, Sparkles } from 'lucide-react'
+import { Home, Leaf, CalendarDays, UtensilsCrossed, User, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 const tabs = [
   { path: '/dashboard', icon: Home, label: 'Home' },
   { path: '/carbon/log', icon: Sparkles, label: 'Log' },
-  { path: '/bus-tracking', icon: Bus, label: 'Bus' },
+  { path: '/events', icon: CalendarDays, label: 'Events' },
   { path: '/cafeteria', icon: UtensilsCrossed, label: 'Café' },
   { path: '/profile', icon: User, label: 'Me' },
 ]

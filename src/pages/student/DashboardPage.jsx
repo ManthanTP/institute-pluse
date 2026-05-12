@@ -107,7 +107,7 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* CORE TELEMETRY */}
-        <div className="grid grid-cols-2 gap-4 mb-10">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
            {[
              { label: 'Ecosystem XP', val: (profile?.eco_points || 0).toLocaleString(), icon: Sparkles, color: 'text-yellow-500' },
              { label: 'Active Streak', val: `${profile?.logging_streak || 0} Days`, icon: Flame, color: 'text-orange-500' },
@@ -119,7 +119,7 @@ export default function DashboardPage() {
                initial={{ opacity: 0, y: 10 }}
                animate={{ opacity: 1, y: 0 }}
                transition={{ delay: i * 0.05 }}
-               className="bg-white/5 border border-white/5 rounded-[32px] p-5 backdrop-blur-xl"
+               className="bg-white/5 border border-white/10 rounded-[32px] p-6 backdrop-blur-xl"
              >
                 <div className={`w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center ${stat.color} mb-3`}>
                    <stat.icon size={14} />
@@ -137,7 +137,7 @@ export default function DashboardPage() {
               <div className="flex-1 h-[1px] bg-white/5" />
            </div>
            
-           <div className="grid grid-cols-3 gap-4">
+           <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {MODULE_TILES.map((node, i) => (
                 <motion.button
                   key={node.path}

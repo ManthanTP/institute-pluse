@@ -120,9 +120,12 @@ export default function AdminLayout({ children }) {
         {/* TOP BAR */}
         <header className="sticky top-0 z-30 px-6 py-4 backdrop-blur-xl bg-slate-950/80 border-b border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button className="lg:hidden p-2 rounded-xl bg-white/5 border border-white/10" onClick={() => setSidebarOpen(!sidebarOpen)}>
-              {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
+            <div className="flex items-center gap-3">
+              <button className="lg:hidden p-2 rounded-xl bg-white/5 border border-white/10" onClick={() => setSidebarOpen(!sidebarOpen)}>
+                {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
+              <img src={logo} alt="Logo" className="lg:hidden w-8 h-8 object-contain drop-shadow-[0_0_10px_rgba(34,197,94,0.2)]" />
+            </div>
             <h1 className="text-lg font-black text-white uppercase tracking-tighter">
               {NAV_ITEMS.find(n => n.path === location.pathname)?.label || 'Console'}
             </h1>

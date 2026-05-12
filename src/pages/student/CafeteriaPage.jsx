@@ -163,8 +163,8 @@ export default function CafeteriaPage() {
         </div>
 
         {/* MENU LIST */}
-        <div className="px-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <AnimatePresence mode="wait">
+        <div className="px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <AnimatePresence mode="popLayout">
             {loading ? (
               <div className="col-span-full py-20 flex flex-col items-center justify-center gap-4">
                 <div className="w-10 h-10 border-2 border-green-500/20 border-t-green-500 rounded-full animate-spin" />

@@ -44,8 +44,10 @@ export default function AdminDashboard() {
     totalCo2: 0,
     openComplaints: 0,
     avgEcoScore: 0,
-    totalSaved: 0
+    totalSaved: 0,
+    totalPoints: 0
   })
+  const [chartData, setChartData] = useState([])
   const [recentComplaints, setRecentComplaints] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -53,22 +55,49 @@ export default function AdminDashboard() {
     async function fetchStats() {
       setLoading(true)
       const today = new Date().toISOString().split('T')[0]
+      const lastWeek = new Date()
+      lastWeek.setDate(lastWeek.getDate() - 7)
+      const lastWeekStr = lastWeek.toISOString().split('T')[0]
 
-      const [usersCount, logsRes, complaintsRes, allLogs] = await Promise.all([
+      const [usersCount, logsToday, complaintsRes, allLogs, trendLogs] = await Promise.all([
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
         supabase.from('carbon_logs').select('*').eq('log_date', today),
         supabase.from('complaints').select('*').eq('status', 'open').order('created_at', { ascending: false }).limit(5),
-        supabase.from('carbon_logs').select('total_co2_kg, co2_saved_kg')
+        supabase.from('carbon_logs').select('total_kg, eco_points_earned'),
+        supabase.from('carbon_logs').select('log_date, total_kg').gte('log_date', lastWeekStr).order('log_date', { ascending: true })
       ])
 
-      const totalCo2 = allLogs.data?.reduce((acc, curr) => acc + (curr.total_co2_kg || 0), 0) || 0
-      const totalSaved = allLogs.data?.reduce((acc, curr) => acc + (curr.co2_saved_kg || 0), 0) || 0
+      const totalCo2 = allLogs.data?.reduce((acc, curr) => acc + (curr.total_kg || 0), 0) || 0
+      const totalPoints = allLogs.data?.reduce((acc, curr) => acc + (curr.eco_points_earned || 0), 0) || 0
+      const totalSaved = (totalCo2 * 0.15) 
+
+      // Process Trend Data
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+      const trendMap = {}
+      
+      // Initialize last 7 days
+      for(let i=6; i>=0; i--) {
+        const d = new Date()
+        d.setDate(d.getDate() - i)
+        const dateStr = d.toISOString().split('T')[0]
+        trendMap[dateStr] = { day: days[d.getDay()], co2: 0, logs: 0 }
+      }
+
+      trendLogs.data?.forEach(log => {
+        if (trendMap[log.log_date]) {
+          trendMap[log.log_date].co2 += parseFloat(log.total_kg || 0)
+          trendMap[log.log_date].logs += 1
+        }
+      })
+
+      setChartData(Object.values(trendMap))
 
       setStats({
         totalUsers: usersCount.count || 0,
-        todayLogs: logsRes.data?.length || 0,
+        todayLogs: logsToday.data?.length || 0,
         totalCo2: totalCo2.toFixed(1),
         totalSaved: totalSaved.toFixed(1),
+        totalPoints: totalPoints,
         openComplaints: complaintsRes.data?.length || 0,
         avgEcoScore: allLogs.data?.length ? (totalSaved / (totalSaved + totalCo2) * 100).toFixed(0) : 0
       })
@@ -78,12 +107,10 @@ export default function AdminDashboard() {
     }
     fetchStats()
 
-    // Real-time updates for complaints
     const channel = supabase
-      .channel('admin_stats')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'complaints' }, () => {
-        fetchStats()
-      })
+      .channel('admin_stats_v2')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'complaints' }, () => fetchStats())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'carbon_logs' }, () => fetchStats())
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
@@ -121,13 +148,13 @@ export default function AdminDashboard() {
           <StatCard icon={TrendingDown} label="Carbon Aggregation" value={`${stats.totalCo2} kg`} sub="Life-cycle Total" color="#0ea5e9" delay={0.15} />
           <StatCard icon={ShieldCheck} label="Offset Protocol" value={`${stats.totalSaved} kg`} sub="Verified Reduction" color="#166534" delay={0.2} />
           <StatCard icon={AlertCircle} label="Distress Signals" value={stats.openComplaints} sub="Action Required" color="#ef4444" delay={0.25} />
-          <StatCard icon={Zap} label="Eco-Points Issued" value="12.4k" color="#f59e0b" delay={0.3} />
+          <StatCard icon={Zap} label="Eco-Points Issued" value={stats.totalPoints.toLocaleString()} color="#f59e0b" delay={0.3} />
           <StatCard icon={Award} label="Active Challenges" value="4" color="#a855f7" delay={0.35} />
           <StatCard icon={ShieldAlert} label="System Security" value="Normal" color="#10b981" delay={0.4} />
         </div>
 
         {/* CHARTS */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -138,7 +165,7 @@ export default function AdminDashboard() {
                <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-green-500" /> <span className="text-[9px] font-black uppercase text-gray-500">CO2 Flow</span></div>
             </div>
             <ResponsiveContainer width="100%" height={250}>
-              <AreaChart data={MOCK_TREND}>
+              <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="colorCo2" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#16a34a" stopOpacity={0.2}/>
@@ -166,7 +193,7 @@ export default function AdminDashboard() {
                <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-blue-500" /> <span className="text-[9px] font-black uppercase text-gray-500">Log Packets</span></div>
             </div>
             <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={MOCK_TREND}>
+              <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
                 <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 'bold' }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 'bold' }} />

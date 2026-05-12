@@ -139,7 +139,7 @@ export default function EventsPage() {
             </div>
 
             {/* EVENT CARDS */}
-            <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {loading ? (
                  <div className="py-20 flex flex-col items-center justify-center gap-4">
                     <div className="w-10 h-10 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />

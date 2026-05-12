@@ -40,6 +40,7 @@ const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
 const AdminSustainabilityPage = lazy(() => import('./pages/admin/AdminSustainabilityPage'))
 const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'))
 const AdminComplaintsPage = lazy(() => import('./pages/admin/AdminComplaintsPage'))
+const AdminCafeteriaPage = lazy(() => import('./pages/admin/AdminCafeteriaPage'))
 
 // ─── LAYOUTS ────────────────────────────────────────────────────
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
@@ -182,7 +183,7 @@ export default function App() {
           <Route path="/12345678/admin/complaints" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminComplaintsPage /></Suspense></AdminRoute>} />
           <Route path="/12345678/admin/events" element={<AdminRoute><AdminStubPage title="📅 Event Management" /></AdminRoute>} />
           <Route path="/12345678/admin/challenges" element={<AdminRoute><AdminStubPage title="🎯 Challenge Management" /></AdminRoute>} />
-          <Route path="/12345678/admin/cafeteria" element={<AdminRoute><AdminStubPage title="🍽️ Cafeteria Management" /></AdminRoute>} />
+          <Route path="/12345678/admin/cafeteria" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminCafeteriaPage /></Suspense></AdminRoute>} />
           <Route path="/12345678/admin/attendance" element={<AdminRoute><AdminStubPage title="🎓 Attendance System" /></AdminRoute>} />
           <Route path="/12345678/admin/lost-found" element={<AdminRoute><AdminStubPage title="🔍 Lost & Found Verification" /></AdminRoute>} />
           <Route path="/12345678/admin/broadcast" element={<AdminRoute><AdminStubPage title="📢 Broadcast Center" /></AdminRoute>} />

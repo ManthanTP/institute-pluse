@@ -29,8 +29,8 @@ export default function CarbonHistoryPage() {
   }, [profile?.id])
 
   // Simple aggregations for demo
-  const totalSaved = history.reduce((acc, curr) => acc + (curr.co2_saved_kg || 0), 0)
-  const averageImpact = history.length > 0 ? history.reduce((acc, curr) => acc + (curr.total_co2_kg || 0), 0) / history.length : 0
+  const totalSaved = history.reduce((acc, curr) => acc + (curr.total_kg * 0.15 || 0), 0)
+  const averageImpact = history.length > 0 ? history.reduce((acc, curr) => acc + (curr.total_kg || 0), 0) / history.length : 0
 
   return (
     <div className="min-h-[100dvh] bg-slate-950 pb-28 relative overflow-hidden">
@@ -134,16 +134,16 @@ export default function CarbonHistoryPage() {
                       <h4 className="text-sm font-black text-white uppercase tracking-tight mb-1">
                         {new Date(log.log_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }).toUpperCase()}
                       </h4>
-                      <div className="flex items-center gap-3">
-                         <div className="flex items-center gap-1">
-                            <Zap size={10} className="text-yellow-500" />
-                            <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">{log.total_co2_kg.toFixed(1)} kg</span>
-                         </div>
-                         <div className="w-0.5 h-0.5 rounded-full bg-white/20" />
-                         <span className="text-[9px] font-black text-green-500 uppercase tracking-widest flex items-center gap-1">
-                            Saved {log.co2_saved_kg.toFixed(1)} kg
-                         </span>
-                      </div>
+                          <div className="flex items-center gap-3">
+                             <div className="flex items-center gap-1">
+                                <Zap size={10} className="text-yellow-500" />
+                                <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">{(log.total_kg || 0).toFixed(1)} kg</span>
+                             </div>
+                             <div className="w-0.5 h-0.5 rounded-full bg-white/20" />
+                             <span className="text-[9px] font-black text-green-500 uppercase tracking-widest flex items-center gap-1">
+                                Score {log.eco_score}%
+                             </span>
+                          </div>
                    </div>
                 </div>
                 <ChevronRight size={18} className="text-gray-700 group-hover:text-white transition-colors" />

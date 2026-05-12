@@ -16,37 +16,44 @@ export default function AdminSustainabilityPage() {
     activeUsers: 0,
     avgEfficiency: 0
   })
+  const [deptData, setDeptData] = useState([])
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true)
-      const { data: logsData } = await supabase.from('carbon_logs').select('*').order('log_date', { ascending: false })
+      
+      const { data: logsData } = await supabase
+        .from('carbon_logs')
+        .select('*, profiles(department)')
+        .order('log_date', { ascending: false })
+
       const { count: usersCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true })
       
       if (logsData) {
         setLogs(logsData)
-        const totalCo2 = logsData.reduce((acc, curr) => acc + (curr.total_co2_kg || 0), 0)
-        const totalSaved = logsData.reduce((acc, curr) => acc + (curr.co2_saved_kg || 0), 0)
+        const totalCo2 = logsData.reduce((acc, curr) => acc + (curr.total_kg || 0), 0)
+        const totalSaved = (totalCo2 * 0.15) 
+        
         setStats({
           totalCo2: totalCo2.toFixed(1),
           totalSaved: totalSaved.toFixed(1),
           activeUsers: usersCount || 0,
           avgEfficiency: ((totalSaved / (totalSaved + totalCo2)) * 100 || 0).toFixed(1)
         })
+
+        // Process Department Data
+        const deptMap = {}
+        logsData.forEach(log => {
+          const dept = log.profiles?.department || 'General'
+          if (!deptMap[dept]) deptMap[dept] = { name: dept, value: 0 }
+          deptMap[dept].value += 1
+        })
+        setDeptData(Object.values(deptMap))
       }
       setLoading(false)
     }
     fetchData()
   }, [])
-
-  // Process data for charts
-  const deptData = [
-    { name: 'CSE', value: 450, co2: 120 },
-    { name: 'ECE', value: 320, co2: 95 },
-    { name: 'ME', value: 280, co2: 150 },
-    { name: 'Civil', value: 210, co2: 80 },
-    { name: 'MBA', value: 150, co2: 40 },
-  ]
 
   return (
     <AdminLayout>
@@ -157,44 +164,77 @@ export default function AdminSustainabilityPage() {
         </div>
 
         {/* LOG ANALYTICS */}
-        <div className="bg-white/5 border border-white/10 rounded-[40px] overflow-hidden backdrop-blur-xl">
-           <div className="px-8 py-6 border-b border-white/5 flex items-center justify-between">
-              <h3 className="text-[11px] font-black text-white uppercase tracking-widest">Temporal Log Stream</h3>
-              <div className="flex items-center gap-4">
-                 <Download size={14} className="text-gray-500 hover:text-white cursor-pointer" />
-              </div>
+        <div className="space-y-4">
+           {/* Mobile List View */}
+           <div className="grid grid-cols-1 gap-4 lg:hidden">
+              {loading ? (
+                <div className="py-20 flex flex-col items-center justify-center gap-4">
+                   <div className="w-10 h-10 border-2 border-green-500/20 border-t-green-500 rounded-full animate-spin" />
+                </div>
+              ) : logs.length === 0 ? (
+                <div className="py-20 text-center bg-white/5 border border-white/10 rounded-[32px]">
+                   <p className="text-xs font-black text-gray-600 uppercase tracking-widest">No Logs</p>
+                </div>
+              ) : logs.slice(0, 10).map((log, i) => (
+                <div key={log.id} className="bg-white/5 border border-white/10 rounded-[28px] p-6 backdrop-blur-xl">
+                   <div className="flex items-center justify-between mb-4">
+                      <span className="text-[10px] font-black text-white uppercase tracking-tight">{new Date(log.log_date).toLocaleDateString()}</span>
+                      <span className="px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-[8px] font-black text-green-500 uppercase tracking-widest">+{log.eco_points_earned} Pts</span>
+                   </div>
+                   <div className="flex items-center justify-between">
+                      <div>
+                         <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">Carbon Flux</p>
+                         <p className="text-xs font-black text-white">{(log.total_kg || 0).toFixed(2)} kg</p>
+                      </div>
+                      <div className="text-right">
+                         <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">Node ID</p>
+                         <p className="text-[10px] font-black text-gray-400 font-mono">{log.student_id.split('-')[0]}</p>
+                      </div>
+                   </div>
+                </div>
+              ))}
            </div>
-           <div className="overflow-x-auto no-scrollbar">
-             <table className="w-full text-left">
-               <thead>
-                 <tr className="bg-white/5">
-                   {['Time Node', 'Student ID', 'Carbon Flux', 'Eco-Bonus', 'Category'].map(h => (
-                     <th key={h} className="px-8 py-5 text-[9px] font-black text-gray-500 uppercase tracking-widest">{h}</th>
-                   ))}
-                 </tr>
-               </thead>
-               <tbody>
-                  {loading ? (
-                    <tr><td colSpan={5} className="py-20 text-center"><div className="w-10 h-10 border-2 border-green-500/20 border-t-green-500 rounded-full animate-spin mx-auto" /></td></tr>
-                  ) : logs.length === 0 ? (
-                    <tr><td colSpan={5} className="py-20 text-center text-xs font-black text-gray-600 uppercase tracking-widest">No Log Data Recorded</td></tr>
-                  ) : logs.slice(0, 10).map((log, i) => (
-                    <tr key={log.id} className="border-b border-white/5 hover:bg-white/[0.03] transition-colors">
-                      <td className="px-8 py-5">
-                         <span className="text-[10px] font-black text-white uppercase tracking-tight">{new Date(log.log_date).toLocaleDateString()}</span>
-                      </td>
-                      <td className="px-8 py-5">
-                         <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest font-mono">{log.student_id.split('-')[0]}...</span>
-                      </td>
-                      <td className="px-8 py-5 font-black text-white text-xs">{log.total_co2_kg.toFixed(2)} kg</td>
-                      <td className="px-8 py-5 font-black text-green-500 text-xs">+{log.co2_saved_kg.toFixed(1)} Pts</td>
-                      <td className="px-8 py-5">
-                         <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[8px] font-black text-gray-400 uppercase tracking-widest">Nexus Log</span>
-                      </td>
+
+           {/* Desktop Table View */}
+           <div className="hidden lg:block bg-white/5 border border-white/10 rounded-[40px] overflow-hidden backdrop-blur-xl">
+              <div className="px-8 py-6 border-b border-white/5 flex items-center justify-between">
+                 <h3 className="text-[11px] font-black text-white uppercase tracking-widest">Temporal Log Stream</h3>
+                 <div className="flex items-center gap-4">
+                    <Download size={14} className="text-gray-500 hover:text-white cursor-pointer" />
+                 </div>
+              </div>
+              <div className="overflow-x-auto no-scrollbar">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-white/5">
+                      {['Time Node', 'Student ID', 'Carbon Flux', 'Eco-Bonus', 'Category'].map(h => (
+                        <th key={h} className="px-8 py-5 text-[9px] font-black text-gray-500 uppercase tracking-widest">{h}</th>
+                      ))}
                     </tr>
-                  ))}
-               </tbody>
-             </table>
+                  </thead>
+                  <tbody>
+                     {loading ? (
+                       <tr><td colSpan={5} className="py-20 text-center"><div className="w-10 h-10 border-2 border-green-500/20 border-t-green-500 rounded-full animate-spin mx-auto" /></td></tr>
+                     ) : logs.length === 0 ? (
+                       <tr><td colSpan={5} className="py-20 text-center text-xs font-black text-gray-600 uppercase tracking-widest">No Log Data Recorded</td></tr>
+                     ) : logs.slice(0, 10).map((log, i) => (
+                       <tr key={log.id} className="border-b border-white/5 hover:bg-white/[0.03] transition-colors">
+                         <td className="px-8 py-5">
+                            <span className="text-[10px] font-black text-white uppercase tracking-tight">{new Date(log.log_date).toLocaleDateString()}</span>
+                         </td>
+                         <td className="px-8 py-5">
+                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest font-mono">{log.student_id.split('-')[0]}...</span>
+                         </td>
+                         <td className="px-8 py-5 font-black text-white text-xs">{(log.total_kg || 0).toFixed(2)} kg</td>
+                         <td className="px-8 py-5 font-black text-green-500 text-xs">+{(log.eco_points_earned || 0)} Pts</td>
+                         <td className="px-8 py-5">
+                            <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[8px] font-black text-gray-400 uppercase tracking-widest">Nexus Log</span>
+                         </td>
+                       </tr>
+                     ))}
+                  </tbody>
+                </table>
+              </div>
            </div>
         </div>
       </div>
