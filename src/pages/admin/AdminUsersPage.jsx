@@ -1,156 +1,237 @@
 import { useState, useEffect } from 'react'
-import { Search, Download } from 'lucide-react'
+import { Search, Download, UserCheck, Shield, Mail, Phone, Calendar, MoreHorizontal, Filter, GraduationCap, Users } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import AdminLayout from './AdminLayout'
-import { format } from 'date-fns'
-
-const DEMO_USERS = [
-  { id: '1', full_name: 'Arjun Sharma', department: 'CSE', eco_points: 1240, logging_streak: 15, total_co2_kg: 45.2, role: 'student', created_at: new Date().toISOString() },
-  { id: '2', full_name: 'Priya Patel', department: 'ECE', eco_points: 980, logging_streak: 8, total_co2_kg: 38.7, role: 'student', created_at: new Date().toISOString() },
-  { id: '3', full_name: 'Rahul Kumar', department: 'ME', eco_points: 1580, logging_streak: 22, total_co2_kg: 52.1, role: 'student', created_at: new Date().toISOString() },
-  { id: '4', full_name: 'Sneha Joshi', department: 'MBA', eco_points: 720, logging_streak: 5, total_co2_kg: 28.4, role: 'student', created_at: new Date().toISOString() },
-]
+import { motion, AnimatePresence } from 'framer-motion'
+import toast from 'react-hot-toast'
 
 const DEPT_FILTER = ['All', 'CSE', 'ECE', 'ME', 'Civil', 'MBA', 'Other']
-const ROLE_FILTER = ['All', 'student', 'driver', 'admin']
+const ROLE_FILTER = ['All', 'student', 'faculty', 'admin']
 
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState(DEMO_USERS)
+  const [users, setUsers] = useState([])
   const [search, setSearch] = useState('')
-  const [dept, setDept] = useState('All')
-  const [role, setRole] = useState('All')
-  const [loading, setLoading] = useState(false)
-  const [selected, setSelected] = useState(null)
+  const [activeDept, setActiveDept] = useState('All')
+  const [activeRole, setActiveRole] = useState('All')
+  const [loading, setLoading] = useState(true)
+  const [selectedUser, setSelectedUser] = useState(null)
 
   useEffect(() => {
-    setLoading(true)
-    supabase.from('profiles').select('*').order('eco_points', { ascending: false })
-      .then(({ data }) => { if (data?.length) setUsers(data); setLoading(false) })
-      .catch(() => setLoading(false))
+    fetchUsers()
   }, [])
 
+  async function fetchUsers() {
+    setLoading(true)
+    const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false })
+    if (data) setUsers(data)
+    setLoading(false)
+  }
+
+  async function updateRole(userId, newRole) {
+    const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', userId)
+    if (!error) {
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u))
+      toast.success('Security Clearance Updated')
+    }
+  }
+
   const filtered = users.filter(u => {
-    const matchSearch = u.full_name?.toLowerCase().includes(search.toLowerCase())
-    const matchDept = dept === 'All' || u.department === dept
-    const matchRole = role === 'All' || u.role === role
+    const matchSearch = u.full_name?.toLowerCase().includes(search.toLowerCase()) || u.email?.toLowerCase().includes(search.toLowerCase())
+    const matchDept = activeDept === 'All' || u.department === activeDept
+    const matchRole = activeRole === 'All' || u.role === activeRole
     return matchSearch && matchDept && matchRole
   })
 
-  async function changeRole(userId, newRole) {
-    await supabase.from('profiles').update({ role: newRole }).eq('id', userId)
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u))
-  }
-
   return (
     <AdminLayout>
-      <div className="max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-4">
+      <div className="space-y-10">
+        {/* HEADER AREA */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <h2 className="text-xl font-black text-gray-900">User Management 👥</h2>
-            <p className="text-gray-500 text-sm">{filtered.length} users</p>
-          </div>
-          <button className="btn-ghost text-sm py-2 px-4 flex items-center gap-2">
-            <Download size={15} /> Export
-          </button>
-        </div>
-
-        {/* FILTERS */}
-        <div className="flex flex-wrap gap-3 mb-4">
-          <div className="relative flex-1 min-w-48">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input value={search} onChange={e => setSearch(e.target.value)}
-              className="input-field pl-9 text-sm py-2" placeholder="Search users..." />
-          </div>
-          <select value={dept} onChange={e => setDept(e.target.value)} className="input-field text-sm py-2 w-auto">
-            {DEPT_FILTER.map(d => <option key={d} value={d}>{d}</option>)}
-          </select>
-          <select value={role} onChange={e => setRole(e.target.value)} className="input-field text-sm py-2 w-auto">
-            {ROLE_FILTER.map(r => <option key={r} value={r}>{r}</option>)}
-          </select>
-        </div>
-
-        {/* TABLE */}
-        <div className="card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr style={{ background: '#f8fafc', borderBottom: '1.5px solid #e2e8f0' }}>
-                  {['Name', 'Dept', 'Role', 'Eco Points', 'Streak', 'Total CO2', 'Joined', 'Actions'].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr><td colSpan={8} className="py-8 text-center text-gray-400">Loading...</td></tr>
-                ) : filtered.length === 0 ? (
-                  <tr><td colSpan={8} className="py-8 text-center text-gray-400">No users found</td></tr>
-                ) : filtered.map((user, i) => (
-                  <tr key={user.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
-                    style={{ animationDelay: `${i * 0.03}s` }}>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full gradient-eco flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-                          {user.full_name?.[0] || '?'}
-                        </div>
-                        <span className="font-medium text-gray-900">{user.full_name}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-gray-500">{user.department}</td>
-                    <td className="px-4 py-3">
-                      <select value={user.role} onChange={e => changeRole(user.id, e.target.value)}
-                        className="text-xs px-2 py-1 rounded-lg border"
-                        style={{ borderColor: '#e2e8f0', outline: 'none', background: 'white' }}>
-                        <option value="student">Student</option>
-                        <option value="driver">Driver</option>
-                        <option value="admin">Admin</option>
-                      </select>
-                    </td>
-                    <td className="px-4 py-3 font-bold text-green-700">{(user.eco_points || 0).toLocaleString()}</td>
-                    <td className="px-4 py-3 text-orange-500">🔥 {user.logging_streak || 0}d</td>
-                    <td className="px-4 py-3 text-gray-600">{(user.total_co2_kg || 0).toFixed(1)} kg</td>
-                    <td className="px-4 py-3 text-gray-400 text-xs">{user.created_at ? format(new Date(user.created_at), 'MMM d, yy') : '—'}</td>
-                    <td className="px-4 py-3">
-                      <button onClick={() => setSelected(user)} className="text-xs font-semibold px-2 py-1 rounded" style={{ color: '#16a34a', background: '#f0fdf4' }}>
-                        View
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* USER DETAIL DRAWER */}
-        {selected && (
-          <>
-            <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setSelected(null)} />
-            <div className="fixed top-0 right-0 bottom-0 w-80 bg-white z-50 p-6 shadow-2xl overflow-y-auto" style={{ animation: 'slideInRight 0.3s ease' }}>
-              <button onClick={() => setSelected(null)} className="text-gray-400 mb-4">✕ Close</button>
-              <div className="text-center mb-4">
-                <div className="w-16 h-16 rounded-full gradient-eco flex items-center justify-center text-2xl font-black text-white mx-auto mb-2">
-                  {selected.full_name?.[0] || '?'}
-                </div>
-                <h3 className="font-bold text-gray-900">{selected.full_name}</h3>
-                <p className="text-sm text-gray-500">{selected.role} · {selected.department}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { label: 'Eco Points', value: selected.eco_points || 0 },
-                  { label: 'Streak', value: `🔥 ${selected.logging_streak || 0}d` },
-                  { label: 'Total CO2', value: `${(selected.total_co2_kg || 0).toFixed(1)} kg` },
-                ].map(s => (
-                  <div key={s.label} className="p-3 rounded-xl text-center" style={{ background: '#f8fafc' }}>
-                    <p className="text-lg font-bold text-gray-900">{s.value}</p>
-                    <p className="text-xs text-gray-400">{s.label}</p>
-                  </div>
-                ))}
-              </div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+              <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em]">Directory Management Module</span>
             </div>
+            <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Nexus Registry</h2>
+            <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mt-3">
+              {filtered.length} Active Identity Nodes Tracked
+            </p>
+          </div>
+          <div className="flex gap-3">
+             <button className="px-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:text-white transition-all">
+                Export Registry
+             </button>
+          </div>
+        </div>
+
+        {/* SEARCH & FILTERS */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+           <div className="relative group md:col-span-1">
+             <div className="absolute inset-0 bg-blue-500/10 blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
+             <div className="relative flex items-center bg-white/5 border border-white/10 rounded-2xl px-4 py-4 backdrop-blur-xl">
+               <Search size={18} className="text-gray-500" />
+               <input 
+                 value={search} 
+                 onChange={e => setSearch(e.target.value)}
+                 placeholder="Search by name or email..." 
+                 className="flex-1 bg-transparent border-none outline-none text-white text-[11px] font-black uppercase tracking-widest ml-4 placeholder:text-gray-700"
+               />
+             </div>
+           </div>
+           
+           <div className="flex gap-4">
+             <select 
+               value={activeDept} 
+               onChange={e => setActiveDept(e.target.value)}
+               className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-6 text-[10px] font-black text-white uppercase tracking-widest outline-none focus:border-blue-500/50"
+             >
+                {DEPT_FILTER.map(d => <option key={d} value={d}>{d} Dept</option>)}
+             </select>
+             <select 
+               value={activeRole} 
+               onChange={e => setActiveRole(e.target.value)}
+               className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-6 text-[10px] font-black text-white uppercase tracking-widest outline-none focus:border-blue-500/50"
+             >
+                {ROLE_FILTER.map(r => <option key={r} value={r}>{r} Role</option>)}
+             </select>
+           </div>
+        </div>
+
+        {/* USERS TABLE */}
+        <div className="bg-white/5 border border-white/10 rounded-[40px] overflow-hidden backdrop-blur-xl shadow-2xl">
+           <div className="overflow-x-auto no-scrollbar">
+             <table className="w-full text-left border-collapse">
+               <thead>
+                 <tr className="border-b border-white/5 bg-white/5">
+                   {['Node Identity', 'Department', 'Security Clearance', 'Activity Metrics', 'Joined', ''].map(h => (
+                     <th key={h} className="px-8 py-5 text-[9px] font-black text-gray-500 uppercase tracking-widest">{h}</th>
+                   ))}
+                 </tr>
+               </thead>
+               <tbody>
+                 {loading ? (
+                   <tr><td colSpan={6} className="py-20 text-center"><div className="w-10 h-10 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mx-auto" /></td></tr>
+                 ) : filtered.length === 0 ? (
+                   <tr><td colSpan={6} className="py-20 text-center text-xs font-black text-gray-600 uppercase tracking-widest">No Identities Match Filter</td></tr>
+                 ) : filtered.map((u, i) => (
+                   <tr key={u.id} className="border-b border-white/5 hover:bg-white/[0.03] transition-colors group">
+                     <td className="px-8 py-6">
+                        <div className="flex items-center gap-4">
+                           <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500/20 to-transparent border border-white/10 flex items-center justify-center text-xs font-black text-white shadow-inner group-hover:scale-110 transition-transform">
+                              {u.full_name?.[0] || 'U'}
+                           </div>
+                           <div>
+                              <p className="text-[11px] font-black text-white uppercase tracking-tight mb-1">{u.full_name}</p>
+                              <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest truncate max-w-[150px]">{u.email}</p>
+                           </div>
+                        </div>
+                     </td>
+                     <td className="px-8 py-6">
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{u.department || 'General'}</span>
+                     </td>
+                     <td className="px-8 py-6">
+                        <select 
+                          value={u.role} 
+                          onChange={e => updateRole(u.id, e.target.value)}
+                          className="bg-slate-900 border border-white/10 rounded-xl px-3 py-1.5 text-[9px] font-black text-blue-500 uppercase tracking-widest outline-none focus:border-blue-500 transition-all"
+                        >
+                           <option value="student">Student</option>
+                           <option value="faculty">Faculty</option>
+                           <option value="admin">Administrator</option>
+                        </select>
+                     </td>
+                     <td className="px-8 py-6">
+                        <div className="flex items-center gap-6">
+                           <div>
+                              <p className="text-xs font-black text-white leading-none mb-1">{(u.eco_points || 0).toLocaleString()}</p>
+                              <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Pts</p>
+                           </div>
+                           <div>
+                              <p className="text-xs font-black text-orange-500 leading-none mb-1">🔥 {u.logging_streak || 0}d</p>
+                              <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Streak</p>
+                           </div>
+                        </div>
+                     </td>
+                     <td className="px-8 py-6">
+                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                           {u.created_at ? new Date(u.created_at).toLocaleDateString() : 'Unknown'}
+                        </span>
+                     </td>
+                     <td className="px-8 py-6 text-right">
+                        <button 
+                          onClick={() => setSelectedUser(u)}
+                          className="p-3 rounded-xl bg-white/5 border border-white/10 text-gray-500 hover:text-white transition-all"
+                        >
+                           <MoreHorizontal size={16} />
+                        </button>
+                     </td>
+                   </tr>
+                 ))}
+               </tbody>
+             </table>
+           </div>
+        </div>
+      </div>
+
+      {/* USER DETAIL MODAL */}
+      <AnimatePresence>
+        {selectedUser && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[60]"
+              onClick={() => setSelectedUser(null)}
+            />
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="fixed inset-x-6 top-[15%] bottom-[15%] max-w-2xl mx-auto bg-slate-900 border border-white/10 rounded-[48px] z-[70] p-12 overflow-y-auto no-scrollbar shadow-2xl"
+            >
+              <div className="flex flex-col items-center text-center mb-10">
+                 <div className="w-24 h-24 rounded-[40px] bg-gradient-to-br from-blue-500 to-green-600 p-1 mb-6">
+                    <div className="w-full h-full rounded-[38px] bg-slate-900 flex items-center justify-center text-4xl font-black text-white">
+                       {selectedUser.full_name?.[0] || 'U'}
+                    </div>
+                 </div>
+                 <h3 className="text-3xl font-black text-white uppercase tracking-tighter mb-2">{selectedUser.full_name}</h3>
+                 <div className="flex gap-3">
+                    <span className="px-4 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-[10px] font-black text-blue-500 uppercase tracking-widest">{selectedUser.role}</span>
+                    <span className="px-4 py-1.5 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black text-gray-400 uppercase tracking-widest">{selectedUser.department}</span>
+                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-10">
+                 {[
+                   { label: 'E-Mail Identity', value: selectedUser.email, icon: Mail },
+                   { label: 'Contact Node', value: selectedUser.phone || 'N/A', icon: Phone },
+                   { label: 'Enrollment Date', value: new Date(selectedUser.created_at).toLocaleDateString(), icon: Calendar },
+                   { label: 'Status', value: 'Active Node', icon: UserCheck },
+                 ].map(s => (
+                   <div key={s.label} className="bg-white/5 border border-white/10 rounded-3xl p-6 flex items-start gap-4">
+                      <s.icon size={18} className="text-gray-500 mt-1" />
+                      <div>
+                         <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">{s.label}</p>
+                         <p className="text-sm font-black text-white truncate max-w-[150px]">{s.value}</p>
+                      </div>
+                   </div>
+                 ))}
+              </div>
+
+              <div className="space-y-4">
+                 <button className="w-full py-5 rounded-[28px] bg-blue-600 text-white text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-600/20">
+                    Audit Identity Logs
+                 </button>
+                 <button onClick={() => setSelectedUser(null)} className="w-full py-4 rounded-2xl bg-white/5 text-gray-500 text-[10px] font-black uppercase tracking-widest">
+                    Close Manifest
+                 </button>
+              </div>
+            </motion.div>
           </>
         )}
-      </div>
+      </AnimatePresence>
     </AdminLayout>
   )
 }

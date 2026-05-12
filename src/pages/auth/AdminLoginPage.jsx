@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store/index'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
+import logo from '../../assets/logo.png'
 
 const ADMIN_KEY = import.meta.env.VITE_ADMIN_SECRET_KEY || 'admin-secret-2026'
 const MAX_ATTEMPTS = 3
@@ -110,7 +111,7 @@ export default function AdminLoginPage() {
           className="text-center mb-10"
         >
           <div className="relative inline-block">
-            <img src="/logo_no_bg.png" alt="Logo" className="w-24 h-24 mx-auto mb-8 drop-shadow-[0_0_30px_rgba(239,68,68,0.3)] grayscale opacity-80" />
+            <img src={logo} alt="Logo" className="w-24 h-24 mx-auto mb-8 drop-shadow-[0_0_30px_rgba(239,68,68,0.3)] grayscale opacity-80" />
             <div className="absolute inset-0 bg-red-500/10 blur-3xl rounded-full scale-150 animate-pulse" />
           </div>
           <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Nexus Root</h1>

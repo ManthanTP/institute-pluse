@@ -1,19 +1,27 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
-import { Menu, X, LogOut, Home, Leaf, Bus, UtensilsCrossed, GraduationCap, User, Sparkles, Trophy, MessageSquare, Bell, ChevronLeft } from 'lucide-react'
+import { Menu, X, LogOut, Home, Leaf, Bus, UtensilsCrossed, GraduationCap, User, Sparkles, Trophy, MessageSquare, Bell, ChevronLeft, TrendingUp, Target, CalendarDays, Search, MapPin, Beaker, BookOpen, Bot, ShieldAlert } from 'lucide-react'
 import { useAuthStore } from '../store/index'
 import { motion, AnimatePresence } from 'framer-motion'
 import BottomTabBar from './BottomTabBar'
+import logo from '../assets/logo.png'
 
 const STUDENT_NAV = [
   { path: '/dashboard', icon: Home, label: 'Dashboard' },
-  { path: '/carbon/log', icon: Sparkles, label: 'Carbon Log' },
+  { path: '/carbon/log', icon: Leaf, label: 'Carbon Tracker' },
+  { path: '/carbon/history', icon: TrendingUp, label: 'Carbon Analytics' },
   { path: '/leaderboard', icon: Trophy, label: 'Leaderboard' },
-  { path: '/bus-tracking', icon: Bus, label: 'Bus Tracking' },
+  { path: '/events', icon: CalendarDays, label: 'Events' },
   { path: '/cafeteria', icon: UtensilsCrossed, label: 'Cafeteria' },
   { path: '/attendance', icon: GraduationCap, label: 'Attendance' },
-  { path: '/complaints', icon: MessageSquare, label: 'Complaints' },
-  { path: '/profile', icon: User, label: 'My Profile' },
+  { path: '/chatbot', icon: Bot, label: 'AI Assistant' },
+  { path: '/study-planner', icon: BookOpen, label: 'Study Planner' },
+  { path: '/lab-assistant', icon: Beaker, label: 'Lab Assistant' },
+  { path: '/navigation', icon: MapPin, label: 'Campus Navigation' },
+  { path: '/lost-found', icon: Search, label: 'Lost & Found' },
+  { path: '/complaints', icon: ShieldAlert, label: 'Complaints' },
+  { path: '/notifications', icon: Bell, label: 'Notifications' },
+  { path: '/profile', icon: User, label: 'Profile Settings' },
 ]
 
 export default function StudentLayout({ children, title, showBack = false }) {
@@ -22,12 +30,22 @@ export default function StudentLayout({ children, title, showBack = false }) {
   const { profile, signOut } = useAuthStore()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [greeting, setGreeting] = useState('Welcome')
+  const [time, setTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
 
   useEffect(() => {
-    const hour = new Date().getHours()
-    if (hour < 12) setGreeting('Good morning')
-    else if (hour < 17) setGreeting('Good afternoon')
-    else setGreeting('Good evening')
+    const timer = setInterval(() => {
+      const now = new Date()
+      const hour = now.getHours()
+      
+      setTime(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
+      
+      if (hour >= 5 && hour < 12) setGreeting('Good morning')
+      else if (hour >= 12 && hour < 17) setGreeting('Good afternoon')
+      else if (hour >= 17 && hour < 21) setGreeting('Good evening')
+      else setGreeting('Good night')
+    }, 1000)
+
+    return () => clearInterval(timer)
   }, [])
 
   async function handleLogout() {
@@ -35,7 +53,8 @@ export default function StudentLayout({ children, title, showBack = false }) {
     navigate('/login')
   }
 
-  const firstName = profile?.full_name?.split(' ')[0] || 'Warrior'
+  const fullName = profile?.full_name || 'Nexus User'
+  const firstName = profile?.full_name?.split(' ')[0] || 'User'
   const activeLabel = STUDENT_NAV.find(n => n.path === location.pathname)?.label || title || 'Nexus'
 
   return (
@@ -53,9 +72,7 @@ export default function StudentLayout({ children, title, showBack = false }) {
         <div className="h-full bg-slate-950/40 backdrop-blur-3xl border-r border-white/5 flex flex-col">
           {/* Logo */}
           <div className="px-8 py-8 flex items-center gap-4 border-b border-white/5">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-700 flex items-center justify-center text-xl shadow-lg shadow-green-500/20">
-               <Leaf size={20} className="text-white" />
-            </div>
+            <img src={logo} alt="Logo" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(34,197,94,0.2)]" />
             <div>
               <p className="text-white font-black text-sm uppercase tracking-tighter">InstitutePulse</p>
               <p className="text-green-500 font-black text-[9px] uppercase tracking-[0.3em]">Student Nexus</p>
@@ -63,7 +80,7 @@ export default function StudentLayout({ children, title, showBack = false }) {
           </div>
 
           {/* NAV */}
-          <nav className="flex-1 py-8 px-4 overflow-y-auto no-scrollbar">
+          <nav className="flex-1 py-6 px-4 overflow-y-auto no-scrollbar">
             <div className="space-y-1">
               {STUDENT_NAV.map(item => {
                 const Icon = item.icon
@@ -73,7 +90,7 @@ export default function StudentLayout({ children, title, showBack = false }) {
                     key={item.path}
                     to={item.path}
                     onClick={() => setSidebarOpen(false)}
-                    className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
+                    className={`flex items-center gap-4 px-4 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
                       isActive 
                         ? 'bg-green-600 text-white shadow-lg shadow-green-600/20' 
                         : 'text-gray-500 hover:text-white hover:bg-white/5'
@@ -96,9 +113,13 @@ export default function StudentLayout({ children, title, showBack = false }) {
                 </div>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-white text-[11px] font-black uppercase tracking-tight truncate">{profile?.full_name}</p>
+                <p className="text-white text-[11px] font-black uppercase tracking-tight truncate">{fullName}</p>
                 <p className="text-gray-500 text-[9px] font-black uppercase tracking-widest">{profile?.department || 'Student'}</p>
               </div>
+            </div>
+            <div className="flex items-center justify-between mb-4 px-1">
+              <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Local Time</span>
+              <span className="text-[10px] font-black text-green-500 uppercase tracking-widest">{time}</span>
             </div>
             <button 
               onClick={handleLogout}

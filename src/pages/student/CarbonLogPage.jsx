@@ -189,28 +189,7 @@ export default function CarbonLogPage() {
         <div className="absolute bottom-0 left-0 w-[50%] h-[40%] rounded-full bg-blue-500/5 blur-[120px]" />
       </div>
 
-      {/* HEADER */}
-      <header className="sticky top-0 z-50 px-6 py-4 backdrop-blur-xl bg-slate-950/80 border-b border-white/5 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={() => navigate(-1)}
-            className="p-2.5 rounded-2xl bg-white/5 border border-white/10"
-          >
-            <ArrowLeft size={20} className="text-gray-400" />
-          </motion.button>
-          <div className="flex items-center gap-3">
-             <img src="/logo_no_bg.png" alt="Logo" className="w-8 h-8 object-contain" />
-             <h1 className="text-xl font-black text-white tracking-tight">Daily Log</h1>
-          </div>
-        </div>
-        <div className="flex flex-col items-end">
-          <span className="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em]">Temporal Node</span>
-          <span className="text-xs font-black text-green-500 tracking-tighter">
-            {new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }).toUpperCase()}
-          </span>
-        </div>
-      </header>
+
 
       <main className="px-6 pt-6 relative z-10 max-w-lg mx-auto">
         {/* LIVE SCORE CARD */}
@@ -304,15 +283,15 @@ export default function CarbonLogPage() {
                   <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
                     {FOOD_TYPES.map(type => (
                       <button
-                        key={type}
-                        onClick={() => setMeal(slot, type)}
+                        key={type.key}
+                        onClick={() => setMeal(slot, type.key)}
                         className={`flex-shrink-0 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${
-                          form.meals[slot] === type 
+                          form.meals[slot] === type.key 
                             ? 'bg-green-600 border-green-600 text-white shadow-lg' 
-                            : 'bg-white/5 border-white/5 text-gray-500'
+                            : 'bg-white/5 border-white/5 text-gray-500 hover:bg-white/10'
                         }`}
                       >
-                        {type}
+                        {type.emoji} {type.label}
                       </button>
                     ))}
                   </div>
@@ -407,19 +386,19 @@ export default function CarbonLogPage() {
           >
             <div className="grid grid-cols-2 gap-4">
               {WASTE_TYPES.map(type => {
-                const isSelected = form.waste.find(w => w.type === type)
+                const isSelected = form.waste.find(w => w.type === type.key)
                 return (
                   <button
-                    key={type}
-                    onClick={() => toggleWaste(type)}
+                    key={type.key}
+                    onClick={() => toggleWaste(type.key)}
                     className={`p-5 rounded-[32px] border transition-all text-left flex flex-col gap-3 ${
                       isSelected 
                         ? 'bg-green-600 border-green-600 text-white shadow-lg' 
                         : 'bg-white/5 border-white/5 text-gray-500'
                     }`}
                   >
-                    <Trash2 size={18} className={isSelected ? 'text-white' : 'text-gray-600'} />
-                    <span className="text-[10px] font-black uppercase tracking-widest">{type}</span>
+                    <span className={isSelected ? 'text-white text-xl' : 'text-gray-600 text-xl'}>{type.emoji}</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest">{type.label}</span>
                   </button>
                 )
               })}

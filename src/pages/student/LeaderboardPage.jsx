@@ -1,19 +1,23 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { Trophy, Star, TrendingUp, Medal, Award, Users, Search } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store/index'
-import { BADGE_DEFINITIONS } from '../../lib/carbonCalc'
-import BottomTabBar from '../../components/BottomTabBar'
-import EcoScoreRing from '../../components/EcoScoreRing'
+import { motion, AnimatePresence } from 'framer-motion'
 
-const TABS = ['🏆 Campus', '🏫 Department', '🎯 Challenges', '🏅 My Badges']
-const PERIODS = ['This Week', 'This Month', 'All Time']
+const TABS = [
+  { label: 'Campus', icon: Trophy, id: 'campus' },
+  { label: 'Department', icon: Users, id: 'dept' },
+  { label: 'Challenges', icon: Star, id: 'challenges' },
+  { label: 'Badges', icon: Award, id: 'badges' }
+]
+
+const PERIODS = ['Weekly', 'Monthly', 'All Time']
 
 export default function LeaderboardPage() {
   const navigate = useNavigate()
   const { profile } = useAuthStore()
-  const [tab, setTab] = useState(0)
+  const [activeTab, setActiveTab] = useState('campus')
   const [period, setPeriod] = useState(0)
   const [leaderboard, setLeaderboard] = useState([])
   const [challenges, setChallenges] = useState([])
@@ -22,19 +26,19 @@ export default function LeaderboardPage() {
   const [joinedChallenges, setJoinedChallenges] = useState([])
 
   useEffect(() => {
-    if (tab === 0 || tab === 1) fetchLeaderboard()
-    if (tab === 2) fetchChallenges()
-    if (tab === 3) fetchBadges()
-  }, [tab, period, profile?.department])
+    if (activeTab === 'campus' || activeTab === 'dept') fetchLeaderboard()
+    if (activeTab === 'challenges') fetchChallenges()
+    if (activeTab === 'badges') fetchBadges()
+  }, [activeTab, period, profile?.department])
 
   async function fetchLeaderboard() {
     setLoading(true)
     let query = supabase.from('profiles')
       .select('id, full_name, department, eco_points, total_co2_kg, logging_streak')
       .order('eco_points', { ascending: false })
-      .limit(20)
+      .limit(50)
 
-    if (tab === 1 && profile?.department) {
+    if (activeTab === 'dept' && profile?.department) {
       query = query.eq('department', profile.department)
     }
 
@@ -69,172 +73,221 @@ export default function LeaderboardPage() {
   }
 
   const myRank = leaderboard.findIndex(u => u.id === profile?.id) + 1
-  const myEntry = leaderboard.find(u => u.id === profile?.id)
 
   return (
-    <div style={{ background: '#f8fafc', minHeight: '100dvh', paddingBottom: '80px' }}>
-      <header className="app-header">
-        <button onClick={() => navigate(-1)}><ArrowLeft size={20} color="white" /></button>
-        <span className="font-bold text-white">🏆 Leaderboard</span>
-        <div />
-      </header>
+    <div className="min-h-[100dvh] bg-slate-950 pb-28 relative overflow-hidden">
+      {/* Background Mesh */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-0 right-0 w-[50%] h-[40%] rounded-full bg-yellow-500/5 blur-[120px]" />
+        <div className="absolute bottom-0 left-0 w-[50%] h-[40%] rounded-full bg-green-500/5 blur-[120px]" />
+      </div>
 
-      <div className="page-container pt-4">
-        {/* MY STATS BAR */}
-        <div className="card p-3 mb-4 flex items-center justify-around">
+      <div className="px-6 pt-6 space-y-8 relative z-10">
+        {/* STATS OVERVIEW */}
+        <div className="grid grid-cols-3 gap-3">
           {[
-            { label: 'Eco Points', value: (profile?.eco_points || 0).toLocaleString(), emoji: '⭐' },
-            { label: 'Rank', value: myRank ? `#${myRank}` : '—', emoji: '🏆' },
-            { label: 'Streak', value: `🔥${profile?.logging_streak || 0}d`, emoji: '' },
+            { label: 'Eco Points', value: (profile?.eco_points || 0).toLocaleString(), icon: Star, color: 'text-yellow-500' },
+            { label: 'Global Rank', value: myRank ? `#${myRank}` : '—', icon: Trophy, color: 'text-green-500' },
+            { label: 'Streak', value: `${profile?.logging_streak || 0}d`, icon: TrendingUp, color: 'text-blue-500' },
           ].map(s => (
-            <div key={s.label} className="text-center">
-              <p className="text-lg font-black text-gray-900">{s.emoji} {s.value}</p>
-              <p className="text-xs text-gray-400">{s.label}</p>
+            <div key={s.label} className="bg-white/5 border border-white/10 rounded-3xl p-4 flex flex-col items-center justify-center text-center backdrop-blur-xl">
+              <s.icon size={16} className={`${s.color} mb-2`} />
+              <p className="text-sm font-black text-white tracking-tight leading-none mb-1">{s.value}</p>
+              <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest leading-none">{s.label}</p>
             </div>
           ))}
         </div>
 
-        {/* TABS */}
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar mb-4">
-          {TABS.map((t, i) => (
-            <button key={t} onClick={() => setTab(i)}
-              className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-              style={{
-                background: tab === i ? '#16a34a' : 'white',
-                color: tab === i ? 'white' : '#64748b',
-                border: `1.5px solid ${tab === i ? '#16a34a' : '#e2e8f0'}`,
-              }}>
-              {t}
-            </button>
-          ))}
+        {/* NAVIGATION TABS */}
+        <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-2">
+          {TABS.map(t => {
+            const Icon = t.icon
+            const isActive = activeTab === t.id
+            return (
+              <motion.button
+                key={t.id}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setActiveTab(t.id)}
+                className={`flex-shrink-0 flex items-center gap-2.5 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 border ${
+                  isActive 
+                    ? 'bg-green-600 text-white border-green-600 shadow-lg shadow-green-600/20' 
+                    : 'bg-white/5 text-gray-500 border-white/5 hover:text-white'
+                }`}
+              >
+                <Icon size={14} />
+                <span>{t.label}</span>
+              </motion.button>
+            )
+          })}
         </div>
 
-        {/* CAMPUS / DEPT LEADERBOARD */}
-        {(tab === 0 || tab === 1) && (
-          <>
-            <div className="flex gap-2 mb-3">
+        {/* CONTENT AREA */}
+        <div className="space-y-4">
+          {/* PERIOD SELECTOR FOR LEADERBOARD */}
+          {(activeTab === 'campus' || activeTab === 'dept') && (
+            <div className="flex gap-2 p-1.5 bg-white/5 border border-white/10 rounded-2xl w-fit">
               {PERIODS.map((p, i) => (
-                <button key={p} onClick={() => setPeriod(i)}
-                  className="text-xs px-2.5 py-1 rounded-lg font-medium transition-all"
-                  style={{ background: period === i ? '#f0fdf4' : 'transparent', color: period === i ? '#16a34a' : '#94a3b8' }}>
+                <button
+                  key={p}
+                  onClick={() => setPeriod(i)}
+                  className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
+                    period === i ? 'bg-white text-slate-950' : 'text-gray-500 hover:text-white'
+                  }`}
+                >
                   {p}
                 </button>
               ))}
             </div>
-            {loading ? (
-              <div className="flex justify-center py-10"><div className="spinner spinner-green" /></div>
-            ) : leaderboard.length === 0 ? (
-              <div className="card p-6 text-center text-gray-400">
-                <p className="text-3xl mb-2">🌱</p>
-                <p className="text-sm">No data yet. Start logging to appear here!</p>
-              </div>
-            ) : (
-              <div>
-                {leaderboard.map((user, i) => {
-                  const isMe = user.id === profile?.id
-                  const rankColors = ['#f59e0b', '#94a3b8', '#92400e']
-                  const rankEmoji = i < 3 ? ['🥇', '🥈', '🥉'][i] : null
+          )}
 
+          <AnimatePresence mode="wait">
+            {loading ? (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="py-20 flex flex-col items-center justify-center gap-4"
+              >
+                <div className="w-10 h-10 border-2 border-green-500/20 border-t-green-500 rounded-full animate-spin" />
+                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Ranking Warriors...</p>
+              </motion.div>
+            ) : activeTab === 'campus' || activeTab === 'dept' ? (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-3"
+              >
+                {leaderboard.length === 0 ? (
+                  <div className="py-12 text-center bg-white/5 border border-white/10 rounded-[32px] backdrop-blur-xl px-8">
+                     <div className="text-4xl mb-4 opacity-50">🍃</div>
+                     <p className="text-xs font-black text-white uppercase tracking-widest">No Data Found</p>
+                     <p className="text-[10px] font-medium text-gray-500 mt-2">Start your sustainability journey today!</p>
+                  </div>
+                ) : leaderboard.map((user, i) => {
+                  const isMe = user.id === profile?.id
+                  const isTop3 = i < 3
                   return (
-                    <div key={user.id} className={`leaderboard-row animate-fade-in-up ${isMe ? 'my-row' : ''}`}
-                      style={{ animationDelay: `${i * 0.04}s` }}>
-                      <div className="rank-badge" style={{ background: i < 3 ? rankColors[i] + '20' : '#f8fafc', color: i < 3 ? rankColors[i] : '#64748b' }}>
-                        {rankEmoji || `#${i + 1}`}
+                    <motion.div
+                      key={user.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      className={`group relative flex items-center gap-4 p-4 rounded-[28px] border transition-all duration-300 ${
+                        isMe 
+                          ? 'bg-green-600 text-white border-green-600 shadow-xl shadow-green-600/20' 
+                          : 'bg-white/5 text-white border-white/10 hover:bg-white/10'
+                      }`}
+                    >
+                      {/* RANK */}
+                      <div className={`flex-shrink-0 w-8 text-center text-xs font-black uppercase tracking-tighter ${
+                        isTop3 && !isMe ? 'text-yellow-500' : isMe ? 'text-white' : 'text-gray-500'
+                      }`}>
+                        {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
                       </div>
-                      <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
-                        style={{ background: '#16a34a' }}>
-                        {user.full_name?.[0] || '?'}
+
+                      {/* AVATAR */}
+                      <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 flex items-center justify-center text-xs font-black text-white uppercase overflow-hidden shadow-inner">
+                        {user.full_name?.[0]}
                       </div>
+
+                      {/* INFO */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 truncate">{user.full_name} {isMe && '(You)'}</p>
-                        <p className="text-xs text-gray-400">{user.department}</p>
+                        <p className={`text-[11px] font-black uppercase tracking-tight truncate ${isMe ? 'text-white' : 'text-white'}`}>
+                          {user.full_name} {isMe && '✨'}
+                        </p>
+                        <p className={`text-[9px] font-black uppercase tracking-widest ${isMe ? 'text-white/60' : 'text-gray-500'}`}>
+                          {user.department || 'General'}
+                        </p>
                       </div>
+
+                      {/* SCORE */}
                       <div className="text-right">
-                        <p className="text-sm font-black text-green-700">{(user.eco_points || 0).toLocaleString()}</p>
-                        <p className="text-xs text-gray-400">pts</p>
+                        <p className={`text-xs font-black tracking-tighter leading-none mb-1 ${isMe ? 'text-white' : 'text-green-500'}`}>
+                          {(user.eco_points || 0).toLocaleString()}
+                        </p>
+                        <p className={`text-[8px] font-black uppercase tracking-widest ${isMe ? 'text-white/60' : 'text-gray-500'}`}>
+                          Points
+                        </p>
                       </div>
-                    </div>
+                    </motion.div>
                   )
                 })}
-              </div>
-            )}
-          </>
-        )}
-
-        {/* CHALLENGES */}
-        {tab === 2 && (
-          <div>
-            {challenges.length === 0 ? (
-              <div className="card p-6 text-center text-gray-400">
-                <p className="text-3xl mb-2">🎯</p>
-                <p className="text-sm">No active challenges. Check back soon!</p>
-              </div>
-            ) : challenges.map(ch => {
-              const joined = joinedChallenges.includes(ch.id)
-              const endDate = new Date(ch.end_date)
-              const daysLeft = Math.ceil((endDate - new Date()) / (1000 * 60 * 60 * 24))
-
-              return (
-                <div key={ch.id} className="card p-4 mb-3 animate-fade-in-up">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="badge-chip text-xs">{ch.category}</span>
-                        {daysLeft > 0 && <span className="text-xs text-orange-600 font-medium">⏰ {daysLeft}d left</span>}
+              </motion.div>
+            ) : activeTab === 'challenges' ? (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-4"
+              >
+                {challenges.length === 0 ? (
+                  <div className="py-12 text-center bg-white/5 border border-white/10 rounded-[32px]">
+                     <div className="text-4xl mb-4">🎯</div>
+                     <p className="text-xs font-black text-white uppercase tracking-widest">Awaiting Challenges</p>
+                  </div>
+                ) : challenges.map((ch, i) => {
+                  const joined = joinedChallenges.includes(ch.id)
+                  return (
+                    <motion.div
+                      key={ch.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      className="bg-white/5 border border-white/10 rounded-[32px] p-6 backdrop-blur-xl relative overflow-hidden group"
+                    >
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 blur-2xl rounded-full -mr-16 -mt-16 group-hover:bg-green-500/10 transition-colors" />
+                      
+                      <div className="flex items-center justify-between mb-4 relative z-10">
+                        <div className="px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-[8px] font-black text-green-500 uppercase tracking-widest">
+                          {ch.category}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[9px] font-black text-gray-500 uppercase tracking-widest">
+                          <TrendingUp size={10} /> {ch.duration_days} Days
+                        </div>
                       </div>
-                      <h3 className="font-bold text-gray-900 text-sm">{ch.title}</h3>
-                      <p className="text-xs text-gray-500 mt-1">{ch.description}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between mt-3">
-                    <div className="flex gap-3 text-xs text-gray-500">
-                      <span>🎁 +{ch.points_reward} pts</span>
-                      <span>📅 {ch.duration_days} days</span>
-                    </div>
-                    <button
-                      onClick={() => !joined && joinChallenge(ch.id)}
-                      className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${joined ? 'cursor-default' : 'cursor-pointer'}`}
-                      style={{
-                        background: joined ? '#f0fdf4' : '#16a34a',
-                        color: joined ? '#16a34a' : 'white',
-                        border: joined ? '1px solid #86efac' : 'none',
-                      }}>
-                      {joined ? '✓ Joined' : 'Join Challenge'}
-                    </button>
-                  </div>
+
+                      <h3 className="text-sm font-black text-white uppercase tracking-tight mb-2 relative z-10">{ch.title}</h3>
+                      <p className="text-[10px] font-medium text-gray-500 leading-relaxed mb-6 line-clamp-2 relative z-10">{ch.description}</p>
+
+                      <div className="flex items-center justify-between relative z-10">
+                        <div className="flex items-center gap-1.5">
+                          <Star size={14} className="text-yellow-500" />
+                          <span className="text-xs font-black text-white">+{ch.points_reward}</span>
+                          <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Eco Pts</span>
+                        </div>
+                        <motion.button
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => !joined && joinChallenge(ch.id)}
+                          disabled={joined}
+                          className={`px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                            joined 
+                              ? 'bg-green-500/10 text-green-500 border border-green-500/20' 
+                              : 'bg-white text-slate-950 shadow-lg shadow-white/10'
+                          }`}
+                        >
+                          {joined ? '✓ Active' : 'Join Challenge'}
+                        </motion.button>
+                      </div>
+                    </motion.div>
+                  )
+                })}
+              </motion.div>
+            ) : (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="grid grid-cols-2 gap-4"
+              >
+                {/* MY BADGES WILL BE INTEGRATED LATER WITH THE FULL CALCULATOR */}
+                <div className="col-span-2 py-12 text-center bg-white/5 border border-white/10 rounded-[32px]">
+                   <div className="text-4xl mb-4">🏅</div>
+                   <p className="text-xs font-black text-white uppercase tracking-widest">Badges Coming Soon</p>
+                   <p className="text-[10px] font-medium text-gray-500 mt-2">Earned from zero-carbon logs!</p>
                 </div>
-              )
-            })}
-          </div>
-        )}
-
-        {/* MY BADGES */}
-        {tab === 3 && (
-          <div>
-            <div className="grid grid-cols-3 gap-3">
-              {BADGE_DEFINITIONS.map((badge, i) => {
-                const earned = myBadges.includes(badge.key)
-                return (
-                  <div key={badge.key}
-                    className="card p-3 text-center animate-fade-in-up"
-                    style={{
-                      animationDelay: `${i * 0.05}s`,
-                      opacity: earned ? 1 : 0.4,
-                      filter: earned ? 'none' : 'grayscale(1)',
-                    }}>
-                    <div className="text-3xl mb-1">{badge.emoji}</div>
-                    <p className="text-xs font-semibold text-gray-900">{badge.name}</p>
-                    <p className="text-xs text-gray-400 mt-0.5 leading-tight">{badge.desc}</p>
-                    {earned && <div className="badge-chip mx-auto mt-1 text-xs py-0.5">Earned ✓</div>}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
-
-      <BottomTabBar />
     </div>
   )
 }

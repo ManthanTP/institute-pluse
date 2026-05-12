@@ -61,28 +61,23 @@ export default function NotificationsPage() {
         <div className="absolute bottom-0 left-0 w-[60%] h-[40%] rounded-full bg-green-500/5 blur-[100px]" />
       </div>
 
-      {/* STICKY HEADER */}
-      <header className="sticky top-0 z-50 px-6 py-4 backdrop-blur-xl bg-slate-950/80 border-b border-white/5 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={() => navigate(-1)}
-            className="p-2.5 rounded-2xl bg-white/5 border border-white/10"
-          >
-            <ArrowLeft size={20} className="text-gray-400" />
-          </motion.button>
-          <h1 className="text-xl font-black text-white tracking-tight">Notifications</h1>
+      {/* TOP ROW WITH TITLE & ACTIONS */}
+      <div className="flex items-center justify-between px-6 py-6 relative z-10">
+        <div className="flex flex-col">
+          <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Activity Stream</span>
+          <h2 className="text-xl font-black text-white uppercase tracking-tight">Recent Alerts</h2>
         </div>
         {unreadCount > 0 && (
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={() => profile?.id && markAllRead(profile.id)}
-            className="text-[10px] font-black text-green-500 uppercase tracking-[0.2em] px-3 py-1.5 rounded-xl hover:bg-green-500/10 transition-all"
+            className="text-[10px] font-black text-green-500 uppercase tracking-[0.2em] px-4 py-2 rounded-xl bg-green-500/10 border border-green-500/20 hover:bg-green-500 hover:text-white transition-all shadow-lg shadow-green-500/5"
           >
-            Clear All
+            Mark All Read
           </motion.button>
         )}
-      </header>
+      </div>
+
 
       {/* FILTER TABS */}
       <div className="flex gap-2.5 overflow-x-auto no-scrollbar px-6 py-5 relative z-10">

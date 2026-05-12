@@ -1,20 +1,26 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
-import { Menu, X, LogOut, BarChart3, Users, Bus, UtensilsCrossed, GraduationCap, MessageSquare, Search, Bell, Map, LayoutDashboard, Shield, Zap } from 'lucide-react'
+import { Menu, X, LogOut, BarChart3, Users, UtensilsCrossed, GraduationCap, MessageSquare, Search, Bell, Map, LayoutDashboard, Shield, Target, CalendarDays, Megaphone, Settings, FileText, User } from 'lucide-react'
 import { useAuthStore } from '../../store/index'
 import { motion, AnimatePresence } from 'framer-motion'
+import logo from '../../assets/logo.png'
 
 const NAV_ITEMS = [
   { path: '/12345678/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { path: '/12345678/admin/users', icon: Users, label: 'User Management' },
   { path: '/12345678/admin/sustainability', icon: BarChart3, label: 'Sustainability' },
-  { path: '/12345678/admin/users', icon: Users, label: 'Users' },
-  { path: '/12345678/admin/buses', icon: Bus, label: 'Bus Management' },
+  { path: '/12345678/admin/events', icon: CalendarDays, label: 'Event Management' },
+  { path: '/12345678/admin/challenges', icon: Target, label: 'Challenges' },
   { path: '/12345678/admin/cafeteria', icon: UtensilsCrossed, label: 'Cafeteria' },
   { path: '/12345678/admin/attendance', icon: GraduationCap, label: 'Attendance' },
   { path: '/12345678/admin/complaints', icon: MessageSquare, label: 'Complaints' },
   { path: '/12345678/admin/lost-found', icon: Search, label: 'Lost & Found' },
+  { path: '/12345678/admin/broadcast', icon: Megaphone, label: 'Broadcast Center' },
   { path: '/12345678/admin/notifications', icon: Bell, label: 'Notifications' },
+  { path: '/12345678/admin/settings', icon: Settings, label: 'System Settings' },
+  { path: '/12345678/admin/audit', icon: FileText, label: 'Audit Logs' },
   { path: '/12345678/admin/navigation', icon: Map, label: 'Campus Locations' },
+  { path: '/12345678/admin/profile', icon: User, label: 'Admin Profile' },
 ]
 
 export default function AdminLayout({ children }) {
@@ -43,9 +49,7 @@ export default function AdminLayout({ children }) {
         <div className="h-full bg-slate-950/40 backdrop-blur-3xl border-r border-white/5 flex flex-col">
           {/* Logo */}
           <div className="px-8 py-8 flex items-center gap-4 border-b border-white/5">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-700 flex items-center justify-center text-xl shadow-lg shadow-green-500/20">
-               <Shield size={20} className="text-white" />
-            </div>
+            <img src={logo} alt="Admin Logo" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(34,197,94,0.3)]" />
             <div>
               <p className="text-white font-black text-sm uppercase tracking-tighter">InstitutePulse</p>
               <p className="text-green-500 font-black text-[9px] uppercase tracking-[0.3em]">Core Nexus</p>
@@ -53,7 +57,7 @@ export default function AdminLayout({ children }) {
           </div>
 
           {/* NAV */}
-          <nav className="flex-1 py-8 px-4 overflow-y-auto no-scrollbar">
+          <nav className="flex-1 py-6 px-4 overflow-y-auto no-scrollbar">
             <div className="space-y-1">
               {NAV_ITEMS.map(item => {
                 const Icon = item.icon
@@ -63,7 +67,7 @@ export default function AdminLayout({ children }) {
                     key={item.path}
                     to={item.path}
                     onClick={() => setSidebarOpen(false)}
-                    className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
+                    className={`flex items-center gap-4 px-4 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
                       isActive 
                         ? 'bg-green-600 text-white shadow-lg shadow-green-600/20' 
                         : 'text-gray-500 hover:text-white hover:bg-white/5'
@@ -104,9 +108,7 @@ export default function AdminLayout({ children }) {
       <AnimatePresence>
         {sidebarOpen && (
           <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 lg:hidden" 
             onClick={() => setSidebarOpen(false)} 
           />

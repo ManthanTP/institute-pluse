@@ -1,130 +1,247 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, RefreshCw, Plus, CheckCircle2, Circle } from 'lucide-react'
-import { generateStudyPlan } from '../../lib/gemini'
+import { useState, useEffect } from 'react'
+import { CalendarDays, Plus, Clock, BookOpen, Target, ChevronRight, CheckCircle2, Circle, GraduationCap, Flame, Sparkles } from 'lucide-react'
 import { useAuthStore } from '../../store/index'
-import BottomTabBar from '../../components/BottomTabBar'
+import { supabase } from '../../lib/supabase'
+import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
 
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-
 export default function StudyPlannerPage() {
-  const navigate = useNavigate()
   const { profile } = useAuthStore()
-  const [step, setStep] = useState('setup') // setup | plan
-  const [subjects, setSubjects] = useState(['Mathematics', 'Physics', 'Chemistry'])
-  const [dailyHours, setDailyHours] = useState(3)
-  const [plan, setPlan] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [completedTasks, setCompletedTasks] = useState({})
-  const [selectedDay, setSelectedDay] = useState(0)
+  const [tasks, setTasks] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [newTask, setNewTask] = useState({ title: '', duration: '30', priority: 'medium' })
+  const [isAdding, setIsAdding] = useState(false)
 
-  async function generatePlan() {
+  useEffect(() => {
+    fetchTasks()
+  }, [profile?.id])
+
+  async function fetchTasks() {
+    if (!profile?.id) return
     setLoading(true)
-    try {
-      const result = await generateStudyPlan({ subjects, daily_hours: dailyHours })
-      setPlan(result)
-      setStep('plan')
-    } catch (err) {
-      toast.error('Failed to generate plan')
-    }
+    const { data } = await supabase.from('study_tasks').select('*').eq('student_id', profile.id).order('created_at', { ascending: false })
+    if (data) setTasks(data)
     setLoading(false)
   }
 
-  function toggleTask(dayIdx, taskIdx) {
-    const key = `${dayIdx}-${taskIdx}`
-    setCompletedTasks(prev => ({ ...prev, [key]: !prev[key] }))
+  async function addTask() {
+    if (!newTask.title || !profile?.id) return
+    const { data, error } = await supabase.from('study_tasks').insert({
+      student_id: profile.id,
+      title: newTask.title,
+      duration_mins: parseInt(newTask.duration),
+      priority: newTask.priority,
+      status: 'pending'
+    }).select().single()
+
+    if (error) {
+      toast.error('Failed to sync task')
+    } else {
+      setTasks([data, ...tasks])
+      setNewTask({ title: '', duration: '30', priority: 'medium' })
+      setIsAdding(false)
+      toast.success('Nexus Task Synced')
+    }
   }
 
+  async function toggleTask(task) {
+    const newStatus = task.status === 'completed' ? 'pending' : 'completed'
+    const { error } = await supabase.from('study_tasks').update({ status: newStatus }).eq('id', task.id)
+    if (!error) {
+      setTasks(tasks.map(t => t.id === task.id ? { ...t, status: newStatus } : t))
+      if (newStatus === 'completed') toast.success('Objective Completed! 🎯')
+    }
+  }
+
+  const completedCount = tasks.filter(t => t.status === 'completed').length
+  const progress = tasks.length > 0 ? (completedCount / tasks.length) * 100 : 0
+
   return (
-    <div style={{ background: '#f8fafc', minHeight: '100dvh', paddingBottom: '80px' }}>
-      <header className="app-header">
-        <button onClick={() => navigate(-1)}><ArrowLeft size={20} color="white" /></button>
-        <span className="font-bold text-white">📅 Study Planner</span>
-        {step === 'plan' && (
-          <button onClick={() => { setPlan(null); setStep('setup') }} className="text-green-200">
-            <RefreshCw size={18} />
-          </button>
-        )}
-      </header>
-
-      <div className="page-container pt-4">
-        {/* ECO BANNER */}
-        <div className="card p-3 mb-4" style={{ background: '#f0fdf4', borderColor: '#86efac' }}>
-          <p className="text-xs text-green-700">📱 Digital study planning = zero paper used. +5 eco-points for going paperless! 🌿</p>
-        </div>
-
-        {step === 'setup' ? (
-          <div className="card p-5">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Set Up Your Study Plan</h2>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Subjects</label>
-              {subjects.map((s, i) => (
-                <div key={i} className="flex gap-2 mb-2">
-                  <input value={s} onChange={e => setSubjects(prev => prev.map((x, idx) => idx === i ? e.target.value : x))}
-                    className="input-field flex-1 text-sm" placeholder={`Subject ${i + 1}`} />
-                  {subjects.length > 1 && (
-                    <button onClick={() => setSubjects(prev => prev.filter((_, idx) => idx !== i))}
-                      className="text-red-400 px-2">✕</button>
-                  )}
-                </div>
-              ))}
-              <button onClick={() => setSubjects(prev => [...prev, ''])} className="btn-ghost w-full py-2 text-sm">
-                <Plus size={16} /> Add Subject
-              </button>
-            </div>
-            <div className="mb-5">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Daily Study Hours: {dailyHours}h</label>
-              <input type="range" min="1" max="10" step="0.5" value={dailyHours}
-                onChange={e => setDailyHours(parseFloat(e.target.value))}
-                className="w-full h-10 accent-green-600" />
-            </div>
-            <button onClick={generatePlan} disabled={loading || subjects.filter(Boolean).length === 0} className="btn-primary w-full">
-              {loading ? <><span className="spinner mr-2" /> Generating AI Plan...</> : '🤖 Generate AI Study Plan'}
-            </button>
-          </div>
-        ) : (
-          <>
-            {/* WEEK CALENDAR */}
-            <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4">
-              {(plan?.week || []).map((day, i) => (
-                <button key={i} onClick={() => setSelectedDay(i)}
-                  className="flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all"
-                  style={{ background: selectedDay === i ? '#16a34a' : 'white', color: selectedDay === i ? 'white' : '#64748b', border: '1.5px solid #e2e8f0' }}>
-                  <span className="text-xs font-semibold">{DAYS[i] || `Day ${i+1}`}</span>
-                  <span className="text-xs">{day.tasks?.length || 0}t</span>
-                </button>
-              ))}
-            </div>
-
-            {/* TODAY'S TASKS */}
-            {plan?.week?.[selectedDay] && (
-              <div className="card p-4 mb-4">
-                <h3 className="text-sm font-bold text-gray-800 mb-3">
-                  📚 {plan.week[selectedDay].day} — {plan.week[selectedDay].tasks?.length} tasks
-                </h3>
-                {plan.week[selectedDay].tasks?.map((task, j) => {
-                  const key = `${selectedDay}-${j}`
-                  const done = completedTasks[key]
-                  return (
-                    <button key={j} onClick={() => toggleTask(selectedDay, j)}
-                      className="w-full flex items-center gap-3 p-3 rounded-xl mb-2 text-left transition-all"
-                      style={{ background: done ? '#f0fdf4' : '#fafafa', border: '1px solid #e2e8f0' }}>
-                      {done ? <CheckCircle2 size={20} className="text-green-500 flex-shrink-0" /> : <Circle size={20} className="text-gray-300 flex-shrink-0" />}
-                      <div className="flex-1">
-                        <p className={`text-sm font-medium ${done ? 'line-through text-gray-400' : 'text-gray-900'}`}>{task.subject}</p>
-                        <p className="text-xs text-gray-400">{task.topic} · {task.hours}h</p>
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </>
-        )}
+    <div className="min-h-[100dvh] bg-slate-950 pb-28 relative overflow-hidden">
+      {/* Background Mesh */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-0 right-0 w-[50%] h-[40%] rounded-full bg-indigo-500/10 blur-[120px]" />
+        <div className="absolute bottom-0 left-0 w-[50%] h-[40%] rounded-full bg-purple-500/10 blur-[120px]" />
       </div>
 
-      <BottomTabBar />
+      <div className="relative z-10 px-6 pt-6">
+        {/* HEADER AREA */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-1">Academic Nexus</span>
+            <h1 className="text-2xl font-black text-white uppercase tracking-tight">Study Planner</h1>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-indigo-500">
+             <BookOpen size={22} />
+          </div>
+        </div>
+
+        {/* PROGRESS OVERVIEW */}
+        <div className="bg-white/5 border border-white/10 rounded-[32px] p-6 backdrop-blur-xl mb-8 relative overflow-hidden group">
+           <div className="absolute top-0 right-0 p-4">
+              <Flame size={24} className="text-orange-500 opacity-20 group-hover:opacity-100 transition-opacity duration-700" />
+           </div>
+           
+           <div className="flex items-end justify-between mb-4">
+              <div>
+                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Daily Progress</p>
+                 <h2 className="text-3xl font-black text-white tracking-tighter">{Math.round(progress)}%</h2>
+              </div>
+              <div className="text-right">
+                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Focus Points</p>
+                 <p className="text-sm font-black text-indigo-500 tracking-tight">{completedCount * 10} / {tasks.length * 10}</p>
+              </div>
+           </div>
+
+           <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                className="h-full bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full" 
+              />
+           </div>
+        </div>
+
+        {/* TASK SECTION HEADER */}
+        <div className="flex items-center justify-between mb-6">
+           <h3 className="text-[11px] font-black text-white uppercase tracking-[0.2em] flex items-center gap-2">
+              <Target size={14} className="text-indigo-500" /> Objectives
+           </h3>
+           <motion.button
+             whileTap={{ scale: 0.9 }}
+             onClick={() => setIsAdding(true)}
+             className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20"
+           >
+             <Plus size={14} className="inline mr-1" /> New Goal
+           </motion.button>
+        </div>
+
+        {/* ADD TASK MODAL (Glass) */}
+        <AnimatePresence>
+          {isAdding && (
+            <>
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[60]"
+                onClick={() => setIsAdding(false)}
+              />
+              <motion.div 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 20, opacity: 0 }}
+                className="fixed inset-x-6 top-1/4 z-[70] bg-slate-900 border border-white/10 rounded-[40px] p-8 shadow-2xl"
+              >
+                <h3 className="text-xl font-black text-white uppercase tracking-tight mb-6">Create Objective</h3>
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Title</label>
+                    <input 
+                      value={newTask.title}
+                      onChange={e => setNewTask({ ...newTask, title: e.target.value })}
+                      placeholder="E.g. Engineering Mathematics Revision"
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white text-[11px] font-black uppercase tracking-widest placeholder:text-gray-700 outline-none focus:border-indigo-500/50 transition-colors"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                     <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Duration (Min)</label>
+                        <select 
+                          value={newTask.duration}
+                          onChange={e => setNewTask({ ...newTask, duration: e.target.value })}
+                          className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-white text-[11px] font-black uppercase tracking-widest outline-none appearance-none"
+                        >
+                           <option value="15">15 Mins</option>
+                           <option value="30">30 Mins</option>
+                           <option value="60">1 Hour</option>
+                           <option value="120">2 Hours</option>
+                        </select>
+                     </div>
+                     <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Priority</label>
+                        <select 
+                          value={newTask.priority}
+                          onChange={e => setNewTask({ ...newTask, priority: e.target.value })}
+                          className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-white text-[11px] font-black uppercase tracking-widest outline-none appearance-none"
+                        >
+                           <option value="low">Routine</option>
+                           <option value="medium">Important</option>
+                           <option value="high">Critical</option>
+                        </select>
+                     </div>
+                  </div>
+                  <div className="flex gap-4 pt-4">
+                    <button onClick={() => setIsAdding(false)} className="flex-1 py-4 rounded-2xl bg-white/5 text-gray-500 text-[10px] font-black uppercase tracking-widest">Cancel</button>
+                    <button onClick={addTask} className="flex-1 py-4 rounded-2xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-600/20">Sync Goal</button>
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* TASK LIST */}
+        <div className="space-y-3">
+          <AnimatePresence mode="popLayout">
+            {loading ? (
+              <div className="py-20 flex flex-col items-center justify-center gap-4">
+                <div className="w-10 h-10 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
+                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Accessing Planner...</p>
+              </div>
+            ) : tasks.length === 0 ? (
+              <div className="py-12 text-center bg-white/5 border border-white/10 rounded-[32px] backdrop-blur-xl">
+                 <div className="text-4xl mb-4">📚</div>
+                 <p className="text-xs font-black text-white uppercase tracking-widest">Schedule Clear</p>
+                 <p className="text-[10px] font-medium text-gray-500 mt-2">Add your first academic objective!</p>
+              </div>
+            ) : tasks.map((task, i) => (
+              <motion.div
+                key={task.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ delay: i * 0.05 }}
+                className={`group flex items-center gap-5 p-5 rounded-[28px] border transition-all duration-300 ${
+                  task.status === 'completed' 
+                    ? 'bg-indigo-600/10 border-indigo-600/20 opacity-60' 
+                    : 'bg-white/5 border-white/10 hover:bg-white/10 shadow-lg shadow-black/20'
+                }`}
+              >
+                <button 
+                  onClick={() => toggleTask(task)}
+                  className={`w-12 h-12 rounded-2xl flex-shrink-0 flex items-center justify-center transition-all ${
+                    task.status === 'completed' 
+                      ? 'bg-indigo-600 text-white' 
+                      : 'bg-white/5 border border-white/10 text-gray-600 group-hover:text-white'
+                  }`}
+                >
+                  {task.status === 'completed' ? <CheckCircle2 size={24} /> : <Circle size={24} />}
+                </button>
+
+                <div className="flex-1 min-w-0">
+                   <div className="flex items-center gap-2 mb-1">
+                      <span className={`text-[8px] font-black uppercase tracking-widest ${
+                        task.priority === 'high' ? 'text-red-500' : task.priority === 'medium' ? 'text-indigo-400' : 'text-gray-500'
+                      }`}>
+                         {task.priority} Priority
+                      </span>
+                      <div className="w-0.5 h-0.5 rounded-full bg-white/20" />
+                      <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-1">
+                         <Clock size={8} /> {task.duration_mins}m
+                      </span>
+                   </div>
+                   <h4 className={`text-sm font-black uppercase tracking-tight truncate ${task.status === 'completed' ? 'line-through text-gray-500' : 'text-white'}`}>
+                      {task.title}
+                   </h4>
+                </div>
+                
+                <ChevronRight size={18} className={`transition-opacity ${task.status === 'completed' ? 'opacity-0' : 'text-gray-700'}`} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      </div>
     </div>
   )
 }

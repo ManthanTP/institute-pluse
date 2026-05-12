@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store/index'
 import toast from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
+import logo from '../../assets/logo.png'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -29,8 +30,8 @@ export default function LoginPage() {
 
       toast.success('Welcome back! 🌿')
 
-      if (profile?.role === 'admin') navigate('/admin/dashboard')
-      else if (profile?.role === 'driver') navigate('/driver/gps')
+      if (profile?.role === 'admin') navigate('/12345678/admin/dashboard')
+      else if (profile?.role === 'faculty') navigate('/faculty/dashboard')
       else navigate('/dashboard')
 
     } catch (err) {
@@ -74,7 +75,7 @@ export default function LoginPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-10"
         >
-          <img src="/logo_no_bg.png" alt="Logo" className="w-20 h-20 mx-auto mb-6 drop-shadow-[0_0_20px_rgba(34,197,94,0.4)]" />
+          <img src={logo} alt="Logo" className="w-20 h-20 mx-auto mb-6 drop-shadow-[0_0_20px_rgba(34,197,94,0.4)]" />
           <h1 className="text-4xl font-black text-white tracking-tighter">Welcome Back</h1>
           <p className="text-gray-500 text-sm mt-2 font-medium tracking-tight">Access your eco-dashboard.</p>
         </motion.div>

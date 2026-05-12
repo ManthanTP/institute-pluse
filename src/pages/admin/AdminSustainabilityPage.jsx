@@ -1,176 +1,201 @@
 import { useState, useEffect } from 'react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts'
+import { Leaf, TrendingDown, TrendingUp, Zap, Wind, Droplets, Target, ShieldCheck, Download, Calendar, Filter, BarChart3 } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell } from 'recharts'
 import { supabase } from '../../lib/supabase'
 import AdminLayout from './AdminLayout'
+import { motion, AnimatePresence } from 'framer-motion'
 
-const DEPARTMENTS = ['CSE', 'ECE', 'ME', 'Civil', 'MBA']
-const PIE_COLORS = ['#16a34a', '#0ea5e9', '#f59e0b', '#0e7490', '#92400e']
-
-const MOCK_DEPT_DATA = DEPARTMENTS.map((dept, i) => ({
-  dept,
-  avg_co2: (2.5 + i * 0.3).toFixed(2),
-  avg_score: 85 - i * 4,
-  students: 200 + i * 50,
-}))
-
-const MOCK_TRANSPORT = [
-  { name: 'College Bus', value: 42, color: '#16a34a' },
-  { name: 'Motorbike', value: 28, color: '#f59e0b' },
-  { name: 'Walking/Cycle', value: 18, color: '#22c55e' },
-  { name: 'Car (Solo)', value: 8, color: '#ef4444' },
-  { name: 'Other', value: 4, color: '#94a3b8' },
-]
-
-const MOCK_WEEKLY = [
-  { day: 'Mon', co2: 3.2 }, { day: 'Tue', co2: 2.9 }, { day: 'Wed', co2: 3.4 },
-  { day: 'Thu', co2: 2.8 }, { day: 'Fri', co2: 3.1 }, { day: 'Sat', co2: 2.5 }, { day: 'Sun', co2: 2.2 },
-]
+const COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#a855f7']
 
 export default function AdminSustainabilityPage() {
-  const [period, setPeriod] = useState('week')
-  const [totalKgSaved, setTotalKgSaved] = useState(2847)
-  const [challenges, setChallenges] = useState([])
-  const [showAddChallenge, setShowAddChallenge] = useState(false)
-  const [newChallenge, setNewChallenge] = useState({ title: '', description: '', category: 'transport', points_reward: 50, duration_days: 7 })
+  const [logs, setLogs] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState({
+    totalCo2: 0,
+    totalSaved: 0,
+    activeUsers: 0,
+    avgEfficiency: 0
+  })
 
   useEffect(() => {
-    supabase.from('green_challenges').select('*').order('created_at', { ascending: false })
-      .then(({ data }) => setChallenges(data || []))
+    async function fetchData() {
+      setLoading(true)
+      const { data: logsData } = await supabase.from('carbon_logs').select('*').order('log_date', { ascending: false })
+      const { count: usersCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true })
+      
+      if (logsData) {
+        setLogs(logsData)
+        const totalCo2 = logsData.reduce((acc, curr) => acc + (curr.total_co2_kg || 0), 0)
+        const totalSaved = logsData.reduce((acc, curr) => acc + (curr.co2_saved_kg || 0), 0)
+        setStats({
+          totalCo2: totalCo2.toFixed(1),
+          totalSaved: totalSaved.toFixed(1),
+          activeUsers: usersCount || 0,
+          avgEfficiency: ((totalSaved / (totalSaved + totalCo2)) * 100 || 0).toFixed(1)
+        })
+      }
+      setLoading(false)
+    }
+    fetchData()
   }, [])
 
-  async function createChallenge() {
-    const { error } = await supabase.from('green_challenges').insert({
-      ...newChallenge,
-      start_date: new Date().toISOString().split('T')[0],
-      end_date: new Date(Date.now() + newChallenge.duration_days * 86400000).toISOString().split('T')[0],
-      status: 'active',
-    })
-    if (!error) {
-      supabase.from('green_challenges').select('*').then(({ data }) => setChallenges(data || []))
-      setShowAddChallenge(false)
-    }
-  }
+  // Process data for charts
+  const deptData = [
+    { name: 'CSE', value: 450, co2: 120 },
+    { name: 'ECE', value: 320, co2: 95 },
+    { name: 'ME', value: 280, co2: 150 },
+    { name: 'Civil', value: 210, co2: 80 },
+    { name: 'MBA', value: 150, co2: 40 },
+  ]
 
   return (
     <AdminLayout>
-      <div className="max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-4">
+      <div className="space-y-10">
+        {/* HEADER AREA */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <h2 className="text-xl font-black text-gray-900">Sustainability Analytics 🌿</h2>
-            <p className="text-gray-500 text-sm">Campus carbon footprint overview</p>
-          </div>
-          <div className="flex gap-2">
-            {['week', 'month', '3m'].map(p => (
-              <button key={p} onClick={() => setPeriod(p)}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-                style={{ background: period === p ? '#16a34a' : '#f8fafc', color: period === p ? 'white' : '#64748b', border: '1px solid #e2e8f0' }}>
-                {p === 'week' ? '7D' : p === 'month' ? '30D' : '90D'}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* CAMPUS TOTAL SAVED */}
-        <div className="card p-5 mb-4 gradient-eco text-white text-center">
-          <p className="text-sm font-medium text-green-100 mb-1">Campus Total CO2 Tracked This Semester</p>
-          <p className="text-5xl font-black mb-1">{(totalKgSaved / 1000).toFixed(2)} tonnes</p>
-          <p className="text-sm text-green-200">Avg {(totalKgSaved / 1240 / 120).toFixed(2)} kg CO2/day per student → Target: 5 kg/day</p>
-        </div>
-
-        {/* DEPT COMPARISON */}
-        <div className="card p-4 mb-4">
-          <h3 className="text-sm font-bold text-gray-800 mb-3">🏫 Department Avg CO2 (kg/day)</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={MOCK_DEPT_DATA}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0fdf4" />
-              <XAxis dataKey="dept" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip formatter={v => [`${v} kg`, 'Avg CO2']} />
-              <Bar dataKey="avg_co2" fill="#16a34a" radius={[4, 4, 0, 0]}>
-                {MOCK_DEPT_DATA.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* TRANSPORT MODE PIE */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div className="card p-4">
-            <h3 className="text-sm font-bold text-gray-800 mb-3">🚗 Transport Mode Distribution</h3>
-            <div className="flex items-center gap-3">
-              <ResponsiveContainer width="50%" height={150}>
-                <PieChart>
-                  <Pie data={MOCK_TRANSPORT} cx="50%" cy="50%" innerRadius={35} outerRadius={60} dataKey="value">
-                    {MOCK_TRANSPORT.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                  </Pie>
-                  <Tooltip formatter={v => [`${v}%`, '']} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="flex-1">
-                {MOCK_TRANSPORT.map(t => (
-                  <div key={t.name} className="flex items-center gap-2 mb-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ background: t.color }} />
-                    <span className="text-xs text-gray-600 flex-1">{t.name}</span>
-                    <span className="text-xs font-bold">{t.value}%</span>
-                  </div>
-                ))}
-              </div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-[10px] font-black text-green-500 uppercase tracking-[0.3em]">Ecological Impact Telemetry</span>
             </div>
+            <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Sustainability Nexus</h2>
+            <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mt-3">
+              Campus-wide Environmental Flux Analysis
+            </p>
           </div>
-
-          <div className="card p-4">
-            <h3 className="text-sm font-bold text-gray-800 mb-3">📈 Campus CO2 Trend</h3>
-            <ResponsiveContainer width="100%" height={150}>
-              <LineChart data={MOCK_WEEKLY}>
-                <XAxis dataKey="day" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} domain={[2, 4]} />
-                <Tooltip formatter={v => [`${v} kg`, 'Avg CO2']} />
-                <Line type="monotone" dataKey="co2" stroke="#16a34a" strokeWidth={2} dot={{ r: 3 }} />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="flex gap-3">
+             <button className="px-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:text-white transition-all">
+                Generate Report
+             </button>
           </div>
         </div>
 
-        {/* GREEN CHALLENGES */}
-        <div className="card p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold text-gray-800">🎯 Green Challenges</h3>
-            <button onClick={() => setShowAddChallenge(!showAddChallenge)} className="btn-primary py-1.5 px-3 text-xs">
-              + New Challenge
-            </button>
-          </div>
-
-          {showAddChallenge && (
-            <div className="p-4 rounded-xl mb-4" style={{ background: '#f0fdf4', border: '1.5px solid #86efac' }}>
-              <div className="grid grid-cols-2 gap-3 mb-3">
-                <input value={newChallenge.title} onChange={e => setNewChallenge(c => ({ ...c, title: e.target.value }))}
-                  className="input-field text-sm col-span-2" placeholder="Challenge title" />
-                <textarea value={newChallenge.description} onChange={e => setNewChallenge(c => ({ ...c, description: e.target.value }))}
-                  className="input-field text-sm col-span-2" rows={2} placeholder="Description" />
-                <select value={newChallenge.category} onChange={e => setNewChallenge(c => ({ ...c, category: e.target.value }))}
-                  className="input-field text-sm">
-                  {['transport', 'food', 'electricity', 'water', 'waste'].map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                </select>
-                <input type="number" value={newChallenge.points_reward} onChange={e => setNewChallenge(c => ({ ...c, points_reward: parseInt(e.target.value) }))}
-                  className="input-field text-sm" placeholder="Points reward" />
-              </div>
-              <button onClick={createChallenge} className="btn-primary w-full text-sm">Create Challenge</button>
-            </div>
-          )}
-
-          <div className="flex flex-col gap-2">
-            {challenges.length === 0 ? (
-              <p className="text-xs text-gray-400">No challenges yet. Create your first green challenge!</p>
-            ) : challenges.map(ch => (
-              <div key={ch.id} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-900">{ch.title}</p>
-                  <p className="text-xs text-gray-400">{ch.category} · +{ch.points_reward} pts · {ch.duration_days} days</p>
+        {/* TOP STATS */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+           {[
+             { label: 'Cumulative CO2 Flux', value: `${stats.totalCo2} kg`, icon: Wind, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+             { label: 'Offset Protocol', value: `${stats.totalSaved} kg`, icon: Leaf, color: 'text-green-500', bg: 'bg-green-500/10' },
+             { label: 'Ecosystem Nodes', value: stats.activeUsers, icon: Zap, color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
+             { label: 'Efficiency Index', value: `${stats.avgEfficiency}%`, icon: Target, color: 'text-purple-500', bg: 'bg-purple-500/10' },
+           ].map((s, i) => (
+             <motion.div 
+               key={s.label}
+               initial={{ opacity: 0, y: 10 }}
+               animate={{ opacity: 1, y: 0 }}
+               transition={{ delay: i * 0.05 }}
+               className="bg-white/5 border border-white/10 rounded-[32px] p-6 backdrop-blur-xl relative overflow-hidden group"
+             >
+                <div className={`w-12 h-12 rounded-2xl ${s.bg} flex items-center justify-center ${s.color} mb-4 transition-transform group-hover:rotate-12`}>
+                   <s.icon size={22} />
                 </div>
-                <span className="status-badge status-on-route text-xs">{ch.status}</span>
+                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">{s.label}</p>
+                <p className="text-2xl font-black text-white tracking-tighter">{s.value}</p>
+             </motion.div>
+           ))}
+        </div>
+
+        {/* CHARTS SECTION */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+           {/* CO2 BY DEPARTMENT */}
+           <motion.div 
+             initial={{ opacity: 0, x: -20 }}
+             animate={{ opacity: 1, x: 0 }}
+             className="bg-white/5 border border-white/10 rounded-[40px] p-8 backdrop-blur-xl"
+           >
+              <div className="flex items-center justify-between mb-8">
+                 <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Node Distribution (By Dept)</h3>
+                 <BarChart3 size={18} className="text-blue-500" />
               </div>
-            ))}
-          </div>
+              <ResponsiveContainer width="100%" height={300}>
+                 <BarChart data={deptData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 'bold' }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 'bold' }} />
+                    <Tooltip 
+                      cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                      contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '10px' }}
+                    />
+                    <Bar dataKey="value" fill="#3b82f6" radius={[6, 6, 0, 0]} />
+                 </BarChart>
+              </ResponsiveContainer>
+           </motion.div>
+
+           {/* IMPACT SPLIT */}
+           <motion.div 
+             initial={{ opacity: 0, x: 20 }}
+             animate={{ opacity: 1, x: 0 }}
+             className="bg-white/5 border border-white/10 rounded-[40px] p-8 backdrop-blur-xl"
+           >
+              <div className="flex items-center justify-between mb-8">
+                 <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Ecosystem Health Index</h3>
+                 <ShieldCheck size={18} className="text-green-500" />
+              </div>
+              <div className="flex items-center justify-center">
+                 <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                       <Pie
+                          data={[
+                             { name: 'Offset', value: parseFloat(stats.totalSaved) },
+                             { name: 'Residual', value: parseFloat(stats.totalCo2) }
+                          ]}
+                          cx="50%" cy="50%" innerRadius={80} outerRadius={110} paddingAngle={10} dataKey="value"
+                       >
+                          <Cell fill="#22c55e" />
+                          <Cell fill="#334155" />
+                       </Pie>
+                       <Tooltip 
+                        contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '10px' }}
+                       />
+                    </PieChart>
+                 </ResponsiveContainer>
+                 <div className="absolute flex flex-col items-center justify-center">
+                    <p className="text-3xl font-black text-white tracking-tighter">{stats.avgEfficiency}%</p>
+                    <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Efficient</p>
+                 </div>
+              </div>
+           </motion.div>
+        </div>
+
+        {/* LOG ANALYTICS */}
+        <div className="bg-white/5 border border-white/10 rounded-[40px] overflow-hidden backdrop-blur-xl">
+           <div className="px-8 py-6 border-b border-white/5 flex items-center justify-between">
+              <h3 className="text-[11px] font-black text-white uppercase tracking-widest">Temporal Log Stream</h3>
+              <div className="flex items-center gap-4">
+                 <Download size={14} className="text-gray-500 hover:text-white cursor-pointer" />
+              </div>
+           </div>
+           <div className="overflow-x-auto no-scrollbar">
+             <table className="w-full text-left">
+               <thead>
+                 <tr className="bg-white/5">
+                   {['Time Node', 'Student ID', 'Carbon Flux', 'Eco-Bonus', 'Category'].map(h => (
+                     <th key={h} className="px-8 py-5 text-[9px] font-black text-gray-500 uppercase tracking-widest">{h}</th>
+                   ))}
+                 </tr>
+               </thead>
+               <tbody>
+                  {loading ? (
+                    <tr><td colSpan={5} className="py-20 text-center"><div className="w-10 h-10 border-2 border-green-500/20 border-t-green-500 rounded-full animate-spin mx-auto" /></td></tr>
+                  ) : logs.length === 0 ? (
+                    <tr><td colSpan={5} className="py-20 text-center text-xs font-black text-gray-600 uppercase tracking-widest">No Log Data Recorded</td></tr>
+                  ) : logs.slice(0, 10).map((log, i) => (
+                    <tr key={log.id} className="border-b border-white/5 hover:bg-white/[0.03] transition-colors">
+                      <td className="px-8 py-5">
+                         <span className="text-[10px] font-black text-white uppercase tracking-tight">{new Date(log.log_date).toLocaleDateString()}</span>
+                      </td>
+                      <td className="px-8 py-5">
+                         <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest font-mono">{log.student_id.split('-')[0]}...</span>
+                      </td>
+                      <td className="px-8 py-5 font-black text-white text-xs">{log.total_co2_kg.toFixed(2)} kg</td>
+                      <td className="px-8 py-5 font-black text-green-500 text-xs">+{log.co2_saved_kg.toFixed(1)} Pts</td>
+                      <td className="px-8 py-5">
+                         <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[8px] font-black text-gray-400 uppercase tracking-widest">Nexus Log</span>
+                      </td>
+                    </tr>
+                  ))}
+               </tbody>
+             </table>
+           </div>
         </div>
       </div>
     </AdminLayout>

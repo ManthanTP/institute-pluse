@@ -24,7 +24,7 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  fetchProfile: async (userId) => {
+  fetchProfile: async (userId, retries = 3) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -32,7 +32,17 @@ export const useAuthStore = create((set, get) => ({
         .eq('id', userId)
         .single()
 
-      if (error) throw error
+      if (error) {
+        if (error.code === 'PGRST116') {
+          if (retries > 0) {
+            // Wait 500ms and retry to allow the database trigger time to finish
+            await new Promise(res => setTimeout(res, 500))
+            return useAuthStore.getState().fetchProfile(userId, retries - 1)
+          }
+          return null // Give up after retries
+        }
+        throw error
+      }
       set({ profile: data })
       return data
     } catch (err) {

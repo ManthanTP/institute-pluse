@@ -7,11 +7,13 @@ export function ProtectedRoute({ children }) {
 
   if (!initialized || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#f0fdf4' }}>
-        <div className="flex flex-col items-center gap-3">
-          <div className="text-4xl animate-pulse-green">🌿</div>
-          <div className="spinner spinner-green" />
-          <p className="text-sm text-gray-500 font-medium">Loading InstitutePulse...</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-16 h-16">
+            <div className="absolute inset-0 border-4 border-green-500/20 rounded-full" />
+            <div className="absolute inset-0 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+          <p className="text-[10px] font-black text-white uppercase tracking-[0.3em] animate-pulse">Loading InstitutePulse...</p>
         </div>
       </div>
     )
@@ -26,43 +28,51 @@ export function ProtectedRoute({ children }) {
 
 export function AdminRoute({ children }) {
   const { user, profile, loading, initialized } = useAuthStore()
-  const location = useLocation()
 
   if (!initialized || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0f172a' }}>
-        <div className="flex flex-col items-center gap-3">
-          <div className="spinner" />
-          <p className="text-sm text-gray-400">Verifying access...</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-16 h-16">
+            <div className="absolute inset-0 border-4 border-red-500/20 rounded-full" />
+            <div className="absolute inset-0 border-4 border-red-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+          <p className="text-[10px] font-black text-white uppercase tracking-[0.3em] animate-pulse">Verifying access...</p>
         </div>
       </div>
     )
   }
 
   if (!user) {
-    return <Navigate to="/secure-admin-panel/login" replace />
+    return <Navigate to="/12345678/admin/login" replace />
   }
 
-  if (profile && profile.role !== 'admin') {
-    return <Navigate to="/secure-admin-panel/login" replace />
+  if (!profile || profile.role !== 'admin') {
+    return <Navigate to="/12345678/admin/login" replace />
   }
 
   return children
 }
 
-export function DriverRoute({ children }) {
+export function FacultyRoute({ children }) {
   const { user, profile, loading, initialized } = useAuthStore()
 
   if (!initialized || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#f0fdf4' }}>
-        <div className="spinner spinner-green" />
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-16 h-16">
+            <div className="absolute inset-0 border-4 border-blue-500/20 rounded-full" />
+            <div className="absolute inset-0 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+          <p className="text-[10px] font-black text-white uppercase tracking-[0.3em] animate-pulse">Faculty Sync...</p>
+        </div>
       </div>
     )
   }
 
   if (!user) return <Navigate to="/login" replace />
-  if (profile && profile.role !== 'driver' && profile.role !== 'admin') {
+  if (!profile || (profile.role !== 'faculty' && profile.role !== 'admin')) {
     return <Navigate to="/dashboard" replace />
   }
 
@@ -74,15 +84,15 @@ export function PublicRoute({ children }) {
 
   if (!initialized || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#f0fdf4' }}>
-        <div className="text-4xl">🌿</div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <div className="text-4xl animate-pulse">🌿</div>
       </div>
     )
   }
 
   if (user && profile) {
-    if (profile.role === 'admin') return <Navigate to="/admin/dashboard" replace />
-    if (profile.role === 'driver') return <Navigate to="/driver/gps" replace />
+    if (profile.role === 'admin') return <Navigate to="/12345678/admin/dashboard" replace />
+    if (profile.role === 'faculty') return <Navigate to="/faculty/dashboard" replace />
     return <Navigate to="/dashboard" replace />
   }
 
