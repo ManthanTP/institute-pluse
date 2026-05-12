@@ -3,6 +3,7 @@ import { CalendarDays, Plus, Search, Edit3, Trash2, Users, MapPin, Clock, Star, 
 import { supabase } from '../../lib/supabase'
 import AdminLayout from './AdminLayout'
 import { motion, AnimatePresence } from 'framer-motion'
+import { createPortal } from 'react-dom'
 import toast from 'react-hot-toast'
 
 const CATEGORIES = ['Workshop', 'Seminar', 'Sustainability', 'Cultural', 'Sports', 'Other']
@@ -237,130 +238,146 @@ export default function AdminEventsPage() {
         </div>
       </div>
 
-      {/* MODAL FOR ADD/EDIT */}
-      <AnimatePresence>
-         {isModalOpen && (
-           <>
-             <motion.div 
-               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-               className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-md"
-               onClick={() => setIsModalOpen(false)}
-             />
-             <motion.div 
-               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-               className="fixed inset-x-6 top-[5%] bottom-[5%] max-w-2xl mx-auto bg-slate-900 border border-white/10 rounded-[48px] z-[101] p-10 overflow-y-auto no-scrollbar shadow-2xl"
-             >
-                <div className="flex items-center justify-between mb-10">
-                   <h2 className="text-2xl font-black text-white uppercase tracking-tighter">{selectedEvent ? 'Modify Campaign' : 'New Campaign Protocol'}</h2>
-                   <button onClick={() => setIsModalOpen(false)} className="p-4 rounded-2xl bg-white/5 border border-white/10 text-gray-500"><X size={20} /></button>
+      {/* MODAL FOR ADD/EDIT (Portal) */}
+      {createPortal(
+        <AnimatePresence>
+          {isModalOpen && (
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 pointer-events-none">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-slate-950/90 backdrop-blur-md pointer-events-auto"
+                onClick={() => setIsModalOpen(false)}
+              />
+              <motion.div 
+                initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                className="relative w-full max-w-2xl bg-slate-900 border border-white/10 rounded-[48px] p-10 shadow-2xl pointer-events-auto overflow-hidden flex flex-col max-h-[90vh]"
+                style={{ paddingBottom: 'calc(2.5rem + env(safe-area-inset-bottom))' }}
+              >
+                <div className="flex items-center justify-between mb-8 flex-shrink-0">
+                  <h2 className="text-2xl font-black text-white uppercase tracking-tighter">{selectedEvent ? 'Modify Campaign' : 'New Campaign Protocol'}</h2>
+                  <button onClick={() => setIsModalOpen(false)} className="p-4 rounded-2xl bg-white/5 border border-white/10 text-gray-400"><X size={20} /></button>
                 </div>
 
-                <form onSubmit={handleSaveEvent} className="space-y-6">
-                   <div className="grid grid-cols-2 gap-6">
-                      <div className="space-y-2 col-span-2">
-                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Campaign Title</label>
-                         <input name="title" defaultValue={selectedEvent?.title} className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-white outline-none focus:border-blue-500/30" required />
-                      </div>
-                      <div className="space-y-2">
-                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Category</label>
-                         <select name="category" defaultValue={selectedEvent?.category || 'Workshop'} className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-white outline-none">
-                            {CATEGORIES.map(c => <option key={c} value={c} className="bg-slate-900">{c}</option>)}
-                         </select>
-                      </div>
-                      <div className="space-y-2">
-                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Banner Color</label>
-                         <input name="banner_color" type="color" defaultValue={selectedEvent?.banner_color || '#16a34a'} className="w-full h-[58px] bg-white/5 border border-white/10 rounded-2xl p-2 cursor-pointer" />
-                      </div>
-                      <div className="space-y-2">
-                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Launch Date</label>
-                         <input name="event_date" type="date" defaultValue={selectedEvent?.event_date} className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-white outline-none" required />
-                      </div>
-                      <div className="space-y-2">
-                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Launch Time</label>
-                         <input name="event_time" type="time" defaultValue={selectedEvent?.event_time} className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-white outline-none" required />
-                      </div>
-                      <div className="space-y-2 col-span-2">
-                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Venue Node</label>
-                         <input name="venue" defaultValue={selectedEvent?.venue} className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-white outline-none" required />
-                      </div>
-                      <div className="space-y-2">
-                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Max Payload (Participants)</label>
-                         <input name="max_participants" type="number" defaultValue={selectedEvent?.max_participants || 100} className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-white outline-none" required />
-                      </div>
-                      <div className="space-y-2">
-                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Eco-Bonus (XP)</label>
-                         <input name="eco_points" type="number" defaultValue={selectedEvent?.eco_points || 50} className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-white outline-none" required />
-                      </div>
-                      <div className="space-y-2 col-span-2">
-                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Operational Status</label>
-                         <select name="status" defaultValue={selectedEvent?.status || 'upcoming'} className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-white outline-none">
-                            <option value="upcoming" className="bg-slate-900">Upcoming</option>
-                            <option value="ongoing" className="bg-slate-900">Ongoing</option>
-                            <option value="completed" className="bg-slate-900">Completed</option>
-                            <option value="cancelled" className="bg-slate-900">Cancelled</option>
-                         </select>
-                      </div>
-                      <div className="space-y-2 col-span-2">
-                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Description Brief</label>
-                         <textarea name="description" defaultValue={selectedEvent?.description} className="w-full bg-white/5 border border-white/10 rounded-3xl p-6 text-sm text-white outline-none min-h-[120px]" />
-                      </div>
-                   </div>
+                <form onSubmit={handleSaveEvent} className="space-y-6 overflow-y-auto no-scrollbar pr-2 pb-4">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2 col-span-2">
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Campaign Title</label>
+                      <input name="title" defaultValue={selectedEvent?.title} className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-white outline-none focus:border-blue-500/30 shadow-inner" required />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Category</label>
+                      <select name="category" defaultValue={selectedEvent?.category || 'Workshop'} className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-white outline-none appearance-none cursor-pointer">
+                        {CATEGORIES.map(c => <option key={c} value={c} className="bg-slate-900">{c}</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Banner Color</label>
+                      <input name="banner_color" type="color" defaultValue={selectedEvent?.banner_color || '#16a34a'} className="w-full h-[58px] bg-white/5 border border-white/10 rounded-2xl p-2 cursor-pointer shadow-inner" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Launch Date</label>
+                      <input name="event_date" type="date" defaultValue={selectedEvent?.event_date} className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-white outline-none shadow-inner" required />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Launch Time</label>
+                      <input name="event_time" type="time" defaultValue={selectedEvent?.event_time} className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-white outline-none shadow-inner" required />
+                    </div>
+                    <div className="space-y-2 col-span-2">
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Venue Node</label>
+                      <input name="venue" defaultValue={selectedEvent?.venue} className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-white outline-none shadow-inner" required />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Max Payload (Participants)</label>
+                      <input name="max_participants" type="number" defaultValue={selectedEvent?.max_participants || 100} className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-white outline-none shadow-inner" required />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Eco-Bonus (XP)</label>
+                      <input name="eco_points" type="number" defaultValue={selectedEvent?.eco_points || 50} className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-white outline-none shadow-inner" required />
+                    </div>
+                    <div className="space-y-2 col-span-2">
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Operational Status</label>
+                      <select name="status" defaultValue={selectedEvent?.status || 'upcoming'} className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-white outline-none appearance-none cursor-pointer">
+                        <option value="upcoming" className="bg-slate-900">Upcoming</option>
+                        <option value="ongoing" className="bg-slate-900">Ongoing</option>
+                        <option value="completed" className="bg-slate-900">Completed</option>
+                        <option value="cancelled" className="bg-slate-900">Cancelled</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2 col-span-2">
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Description Brief</label>
+                      <textarea name="description" defaultValue={selectedEvent?.description} className="w-full bg-white/5 border border-white/10 rounded-3xl p-6 text-sm text-white outline-none min-h-[120px] shadow-inner" />
+                    </div>
+                  </div>
 
-                   <button type="submit" className="w-full py-6 rounded-[28px] bg-blue-600 text-white font-black text-xs uppercase tracking-[0.3em] shadow-xl shadow-blue-600/20 hover:bg-blue-500 transition-all">
-                      Synchronize Campaign Registry
-                   </button>
+                  <button type="submit" className="w-full py-6 rounded-[32px] bg-blue-600 text-white font-black text-[11px] uppercase tracking-[0.3em] shadow-2xl shadow-blue-600/30 hover:bg-blue-500 active:scale-95 transition-all">
+                    Synchronize Campaign Registry
+                  </button>
                 </form>
-             </motion.div>
-           </>
-         )}
-      </AnimatePresence>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
-      {/* MODAL FOR PARTICIPANTS */}
-      <AnimatePresence>
-         {isParticipantsModalOpen && (
-           <>
-             <motion.div 
-               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-               className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-md"
-               onClick={() => setIsParticipantsModalOpen(false)}
-             />
-             <motion.div 
-               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-               className="fixed inset-x-6 top-[10%] bottom-[10%] max-w-3xl mx-auto bg-slate-900 border border-white/10 rounded-[48px] z-[101] p-12 overflow-hidden shadow-2xl flex flex-col"
-             >
-                <div className="flex items-center justify-between mb-10">
-                   <div>
-                      <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Identity Manifest</h2>
-                      <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">{selectedEvent?.title}</p>
-                   </div>
-                   <button onClick={() => setIsParticipantsModalOpen(false)} className="p-4 rounded-2xl bg-white/5 border border-white/10 text-gray-500"><X size={20} /></button>
+      {/* MODAL FOR PARTICIPANTS (Portal) */}
+      {createPortal(
+        <AnimatePresence>
+          {isParticipantsModalOpen && (
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 pointer-events-none">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-slate-950/90 backdrop-blur-md pointer-events-auto"
+                onClick={() => setIsParticipantsModalOpen(false)}
+              />
+              <motion.div 
+                initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                className="relative w-full max-w-3xl bg-slate-900 border border-white/10 rounded-[48px] p-12 shadow-2xl pointer-events-auto overflow-hidden flex flex-col max-h-[85vh]"
+                style={{ paddingBottom: 'calc(3rem + env(safe-area-inset-bottom))' }}
+              >
+                <div className="flex items-center justify-between mb-10 flex-shrink-0">
+                  <div>
+                    <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Identity Manifest</h2>
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">{selectedEvent?.title}</p>
+                  </div>
+                  <button onClick={() => setIsParticipantsModalOpen(false)} className="p-4 rounded-2xl bg-white/5 border border-white/10 text-gray-400"><X size={20} /></button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto no-scrollbar space-y-4 pr-2">
-                   {participants.length === 0 ? (
-                      <div className="py-20 text-center"><p className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Zero Identities Registered</p></div>
-                   ) : participants.map((p, i) => (
-                      <div key={p.id} className="bg-white/5 border border-white/5 rounded-3xl p-6 flex items-center justify-between hover:bg-white/[0.08] transition-all">
-                         <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-[11px] font-black text-blue-500 uppercase">
-                               {p.profiles?.full_name?.[0]}
-                            </div>
-                            <div>
-                               <p className="text-[11px] font-black text-white uppercase tracking-tight">{p.profiles?.full_name}</p>
-                               <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">{p.profiles?.department || 'Student'}</p>
-                            </div>
-                         </div>
-                         <div className="text-right">
-                            <p className="text-[9px] font-black text-white uppercase tracking-widest">{new Date(p.registered_at).toLocaleDateString()}</p>
-                            <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mt-1">Uplinked</p>
-                         </div>
+                <div className="flex-1 overflow-y-auto no-scrollbar space-y-4 pr-2 pb-4">
+                  {participants.length === 0 ? (
+                    <div className="py-20 text-center"><p className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Zero Identities Registered</p></div>
+                  ) : participants.map((p, i) => (
+                    <div key={p.id} className="bg-white/5 border border-white/5 rounded-3xl p-6 flex items-center justify-between hover:bg-white/[0.08] transition-all">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-[11px] font-black text-blue-500 uppercase">
+                          {p.profiles?.full_name?.[0]}
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-black text-white uppercase tracking-tight">{p.profiles?.full_name}</p>
+                          <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">{p.profiles?.department || 'Student'}</p>
+                        </div>
                       </div>
-                   ))}
+                      <div className="text-right">
+                        <p className="text-[9px] font-black text-white uppercase tracking-widest">{new Date(p.registered_at).toLocaleDateString()}</p>
+                        <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mt-1">Uplinked</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-             </motion.div>
-           </>
-         )}
-      </AnimatePresence>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </AdminLayout>
   )
 }

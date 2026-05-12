@@ -63,11 +63,11 @@ function PageLoader() {
 }
 
 // Student Page Wrapper
-function StudentPage({ component: Component, title, showBack = false }) {
+function StudentPage({ component: Component, title, showBack = false, hideChrome = false }) {
   return (
     <Suspense fallback={<PageLoader />}>
       <ProtectedRoute>
-        <StudentLayout title={title} showBack={showBack}>
+        <StudentLayout title={title} showBack={showBack} hideChrome={hideChrome}>
           <Component />
         </StudentLayout>
       </ProtectedRoute>
@@ -148,16 +148,16 @@ export default function App() {
           <Route path="/dashboard" element={<StudentPage component={DashboardPage} title="Home" />} />
           <Route path="/carbon/log" element={<StudentPage component={CarbonLogPage} title="Carbon Tracker" showBack />} />
           <Route path="/carbon/history" element={<StudentPage component={CarbonHistoryPage} title="Carbon Analytics" showBack />} />
-          <Route path="/leaderboard" element={<StudentPage component={LeaderboardPage} title="Leaderboard" showBack />} />
-          <Route path="/events" element={<StudentPage component={EventsPage} title="Events" showBack />} />
-          <Route path="/cafeteria" element={<StudentPage component={CafeteriaPage} title="Eco-Cafeteria" showBack />} />
+          <Route path="/leaderboard" element={<StudentPage component={LeaderboardPage} title="Leaderboard" showBack hideChrome />} />
+          <Route path="/events" element={<StudentPage component={EventsPage} title="Events" showBack hideChrome />} />
+          <Route path="/cafeteria" element={<StudentPage component={CafeteriaPage} title="Eco-Cafeteria" showBack hideChrome />} />
 
-          <Route path="/attendance" element={<StudentPage component={AttendancePage} title="Attendance" showBack />} />
-          <Route path="/complaints" element={<StudentPage component={ComplaintsPage} title="Complaints" showBack />} />
-          <Route path="/lost-found" element={<StudentPage component={LostFoundPage} title="Lost & Found" showBack />} />
-          <Route path="/study-planner" element={<StudentPage component={StudyPlannerPage} title="Study Planner" showBack />} />
-          <Route path="/lab-assistant" element={<StudentPage component={LabAssistantPage} title="Lab Assistant" showBack />} />
-          <Route path="/navigation" element={<StudentPage component={NavigationPage} title="Campus Navigation" showBack />} />
+          <Route path="/attendance" element={<StudentPage component={AttendancePage} title="Attendance" showBack hideChrome />} />
+          <Route path="/complaints" element={<StudentPage component={ComplaintsPage} title="Complaints" showBack hideChrome />} />
+          <Route path="/lost-found" element={<StudentPage component={LostFoundPage} title="Lost & Found" showBack hideChrome />} />
+          <Route path="/study-planner" element={<StudentPage component={StudyPlannerPage} title="Study Planner" showBack hideChrome />} />
+          <Route path="/lab-assistant" element={<StudentPage component={LabAssistantPage} title="Lab Assistant" showBack hideChrome />} />
+          <Route path="/navigation" element={<StudentPage component={NavigationPage} title="Campus Navigation" showBack hideChrome />} />
           <Route path="/chatbot" element={<StudentPage component={ChatbotPage} title="AI Assistant" showBack />} />
           <Route path="/profile" element={<StudentPage component={ProfilePage} title="Profile Settings" showBack />} />
           <Route path="/notifications" element={<StudentPage component={NotificationsPage} title="Notifications" showBack />} />

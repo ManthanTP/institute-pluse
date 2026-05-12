@@ -116,7 +116,7 @@ export default function AdminLayout({ children }) {
       </AnimatePresence>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 lg:ml-72 flex flex-col min-h-screen relative z-10">
+      <main className="flex-1 lg:ml-72 flex flex-col min-h-screen relative">
         {/* TOP BAR */}
         <header className="sticky top-0 z-30 px-6 py-4 backdrop-blur-xl bg-slate-950/80 border-b border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-4">

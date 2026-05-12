@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react'
-import { CalendarDays, Plus, Clock, BookOpen, Target, ChevronRight, CheckCircle2, Circle, GraduationCap, Flame, Sparkles } from 'lucide-react'
+import { CalendarDays, Plus, Clock, BookOpen, Target, ChevronRight, CheckCircle2, Circle, GraduationCap, Flame, Sparkles, ChevronLeft, Home, LayoutGrid, Coffee, User, X } from 'lucide-react'
 import { useAuthStore } from '../../store/index'
 import { supabase } from '../../lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
+import { createPortal } from 'react-dom'
+import { useNavigate } from 'react-router-dom'
 
 export default function StudyPlannerPage() {
+  const navigate = useNavigate()
   const { profile } = useAuthStore()
   const [tasks, setTasks] = useState([])
   const [loading, setLoading] = useState(true)
@@ -35,12 +38,12 @@ export default function StudyPlannerPage() {
     }).select().single()
 
     if (error) {
-      toast.error('Failed to sync task')
+      toast.error('Sync Error')
     } else {
       setTasks([data, ...tasks])
       setNewTask({ title: '', duration: '30', priority: 'medium' })
       setIsAdding(false)
-      toast.success('Nexus Task Synced')
+      toast.success('Objective Synced')
     }
   }
 
@@ -49,7 +52,7 @@ export default function StudyPlannerPage() {
     const { error } = await supabase.from('study_tasks').update({ status: newStatus }).eq('id', task.id)
     if (!error) {
       setTasks(tasks.map(t => t.id === task.id ? { ...t, status: newStatus } : t))
-      if (newStatus === 'completed') toast.success('Objective Completed! 🎯')
+      if (newStatus === 'completed') toast.success('Objective Completed')
     }
   }
 
@@ -57,191 +60,242 @@ export default function StudyPlannerPage() {
   const progress = tasks.length > 0 ? (completedCount / tasks.length) * 100 : 0
 
   return (
-    <div className="min-h-[100dvh] bg-slate-950 pb-28 relative overflow-hidden">
-      {/* Background Mesh */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-0 right-0 w-[50%] h-[40%] rounded-full bg-indigo-500/10 blur-[120px]" />
-        <div className="absolute bottom-0 left-0 w-[50%] h-[40%] rounded-full bg-purple-500/10 blur-[120px]" />
+    <div className="min-h-[100dvh] bg-[#020617] text-white pb-32 relative overflow-x-hidden">
+      {/* Background Glows */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-[-10%] right-[-10%] w-[80%] h-[60%] rounded-full bg-indigo-600/5 blur-[120px]" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[80%] h-[60%] rounded-full bg-purple-900/5 blur-[120px]" />
       </div>
 
-      <div className="relative z-10 px-6 pt-6">
-        {/* HEADER AREA */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex flex-col">
-            <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-1">Academic Nexus</span>
-            <h1 className="text-2xl font-black text-white uppercase tracking-tight">Study Planner</h1>
+      <div className="relative z-10 px-6 pt-8">
+        {/* TOP BAR */}
+        <div className="flex items-center justify-between mb-12">
+          <div className="flex items-center gap-6">
+            <motion.button 
+              whileTap={{ scale: 0.9 }}
+              onClick={() => navigate(-1)}
+              className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-xl"
+            >
+              <ChevronLeft size={24} />
+            </motion.button>
+            <h1 className="text-2xl font-black uppercase tracking-tighter italic">Study Planner</h1>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-indigo-500">
-             <BookOpen size={22} />
+          <div className="w-12 h-12 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center text-indigo-500">
+             <Target size={24} className="animate-pulse" />
           </div>
         </div>
 
-        {/* PROGRESS OVERVIEW */}
-        <div className="bg-white/5 border border-white/10 rounded-[32px] p-6 backdrop-blur-xl mb-8 relative overflow-hidden group">
-           <div className="absolute top-0 right-0 p-4">
-              <Flame size={24} className="text-orange-500 opacity-20 group-hover:opacity-100 transition-opacity duration-700" />
+        {/* PROGRESS CARD */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-[#161b22]/80 border border-white/5 rounded-[40px] p-8 mb-12 backdrop-blur-2xl relative overflow-hidden group"
+        >
+           <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.1] transition-opacity">
+              <Sparkles size={100} />
            </div>
            
-           <div className="flex items-end justify-between mb-4">
+           <div className="flex items-end justify-between mb-6">
               <div>
-                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Daily Progress</p>
-                 <h2 className="text-3xl font-black text-white tracking-tighter">{Math.round(progress)}%</h2>
+                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Ecosystem Efficiency</p>
+                 <h2 className="text-4xl font-black text-white tracking-tighter italic">{Math.round(progress)}%</h2>
               </div>
               <div className="text-right">
-                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Focus Points</p>
-                 <p className="text-sm font-black text-indigo-500 tracking-tight">{completedCount * 10} / {tasks.length * 10}</p>
+                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Completed</p>
+                 <p className="text-lg font-black text-indigo-500 tracking-tight">{completedCount} / {tasks.length}</p>
               </div>
            </div>
 
-           <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+           <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden mb-2">
               <motion.div 
                 initial={{ width: 0 }}
                 animate={{ width: `${progress}%` }}
-                className="h-full bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full" 
+                className="h-full bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full shadow-[0_0_15px_rgba(79,70,229,0.4)]" 
               />
            </div>
-        </div>
+        </motion.div>
 
-        {/* TASK SECTION HEADER */}
-        <div className="flex items-center justify-between mb-6">
-           <h3 className="text-[11px] font-black text-white uppercase tracking-[0.2em] flex items-center gap-2">
-              <Target size={14} className="text-indigo-500" /> Objectives
-           </h3>
+        {/* LIST HEADER */}
+        <div className="flex items-center justify-between mb-8">
+           <div>
+              <h3 className="text-[11px] font-black text-white uppercase tracking-[0.2em] flex items-center gap-2 mb-1">
+                 Objectives
+              </h3>
+              <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest italic">Nexus Academic Telemetry</p>
+           </div>
            <motion.button
-             whileTap={{ scale: 0.9 }}
+             whileTap={{ scale: 0.95 }}
              onClick={() => setIsAdding(true)}
-             className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20"
+             className="w-14 h-14 rounded-[22px] bg-indigo-600 text-white shadow-[0_15px_30px_rgba(79,70,229,0.3)] flex items-center justify-center transition-all hover:bg-indigo-500"
            >
-             <Plus size={14} className="inline mr-1" /> New Goal
+             <Plus size={24} strokeWidth={3} />
            </motion.button>
         </div>
 
-        {/* ADD TASK MODAL (Glass) */}
+        {/* OBJECTIVE LIST */}
+        <div className="space-y-4">
+           {loading ? (
+              <div className="py-20 flex flex-col items-center justify-center gap-4">
+                 <div className="w-10 h-10 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
+                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest italic text-center">Synchronizing Matrix...</p>
+              </div>
+           ) : tasks.length === 0 ? (
+              <div className="py-20 text-center bg-white/5 border border-white/10 rounded-[40px] backdrop-blur-xl">
+                 <div className="text-4xl mb-4 opacity-40">📚</div>
+                 <p className="text-xs font-black text-white uppercase tracking-widest italic">Protocol Idle</p>
+              </div>
+           ) : tasks.map((task, i) => (
+            <motion.div
+              key={task.id}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className={`bg-[#161b22]/80 border border-white/5 rounded-[32px] p-6 backdrop-blur-2xl flex items-center gap-6 group transition-all ${task.status === 'completed' ? 'opacity-40 grayscale-[0.5]' : ''}`}
+            >
+              <button 
+                onClick={() => toggleTask(task)}
+                className={`w-12 h-12 rounded-2xl flex-shrink-0 flex items-center justify-center transition-all border ${
+                  task.status === 'completed' 
+                    ? 'bg-indigo-600 border-indigo-600 text-white' 
+                    : 'bg-white/5 border-white/10 text-gray-700 hover:text-white'
+                }`}
+              >
+                {task.status === 'completed' ? <CheckCircle2 size={24} /> : <Circle size={24} />}
+              </button>
+
+              <div className="flex-1 min-w-0">
+                 <div className="flex items-center gap-3 mb-1">
+                    <span className={`text-[8px] font-black uppercase tracking-widest ${
+                      task.priority === 'high' ? 'text-red-500' : task.priority === 'medium' ? 'text-indigo-400' : 'text-gray-600'
+                    }`}>
+                       {task.priority} Priority
+                    </span>
+                    <span className="text-[8px] font-black text-gray-700 uppercase tracking-widest flex items-center gap-1">
+                       <Clock size={8} /> {task.duration_mins}m
+                    </span>
+                 </div>
+                 <h4 className={`text-sm font-black uppercase tracking-tight truncate ${task.status === 'completed' ? 'line-through text-gray-600' : 'text-white'}`}>
+                    {task.title}
+                 </h4>
+              </div>
+              
+              <ChevronRight size={18} className="text-gray-800" />
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* BOTTOM NAV BAR */}
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-[100]">
+        <div className="bg-[#161b22]/90 backdrop-blur-3xl border border-white/10 rounded-[32px] p-4 flex items-center justify-between shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+          <NavIcon icon={Home} label="Home" onClick={() => navigate('/dashboard')} />
+          <NavIcon icon={LayoutGrid} label="Log" onClick={() => navigate('/carbon-log')} />
+          <NavIcon icon={CalendarDays} label="Events" onClick={() => navigate('/events')} />
+          <NavIcon icon={Coffee} label="Cafe" onClick={() => navigate('/cafeteria')} />
+          <NavIcon icon={User} label="Me" onClick={() => navigate('/profile')} />
+        </div>
+      </div>
+
+      {/* ADD MODAL */}
+      {createPortal(
         <AnimatePresence>
           {isAdding && (
-            <>
+            <div className="fixed inset-0 z-[9999] flex items-end justify-center pointer-events-none">
               <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[60]"
-                onClick={() => setIsAdding(false)}
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-black/90 backdrop-blur-2xl pointer-events-auto" 
+                onClick={() => setIsAdding(false)} 
               />
               <motion.div 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 20, opacity: 0 }}
-                className="fixed inset-x-6 top-1/4 z-[70] bg-slate-900 border border-white/10 rounded-[40px] p-8 shadow-2xl"
+                initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="relative w-full max-w-2xl bg-[#0a0c10] border-t border-white/10 rounded-t-[50px] p-6 md:p-10 shadow-2xl pointer-events-auto flex flex-col"
+                style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}
               >
-                <h3 className="text-xl font-black text-white uppercase tracking-tight mb-6">Create Objective</h3>
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Title</label>
-                    <input 
-                      value={newTask.title}
-                      onChange={e => setNewTask({ ...newTask, title: e.target.value })}
-                      placeholder="E.g. Engineering Mathematics Revision"
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white text-[11px] font-black uppercase tracking-widest placeholder:text-gray-700 outline-none focus:border-indigo-500/50 transition-colors"
-                    />
+                <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-8" />
+                
+                <div className="flex items-center justify-between mb-8">
+                  <div>
+                    <h3 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter leading-tight mb-0.5">Initialize Goal</h3>
+                    <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Academic Matrix Sync</p>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Duration (Min)</label>
+                  <button onClick={() => setIsAdding(false)} className="p-3 rounded-xl bg-white/5 border border-white/10 text-gray-400"><X size={20} /></button>
+                </div>
+
+                <div className="space-y-6 overflow-y-auto no-scrollbar max-h-[60vh] pr-2 pb-10">
+                  <div className="space-y-4">
+                    <InputField label="Mission Parameters" placeholder="Enter objective title..." value={newTask.title} onChange={v => setNewTask({ ...newTask, title: v })} />
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest ml-1">Temporal Node</label>
                         <select 
                           value={newTask.duration}
                           onChange={e => setNewTask({ ...newTask, duration: e.target.value })}
-                          className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-white text-[11px] font-black uppercase tracking-widest outline-none appearance-none"
+                          className="w-full bg-[#161b22] border border-white/5 rounded-3xl p-5 text-white text-[11px] font-black uppercase tracking-widest outline-none appearance-none cursor-pointer"
                         >
-                           <option value="15">15 Mins</option>
-                           <option value="30">30 Mins</option>
-                           <option value="60">1 Hour</option>
-                           <option value="120">2 Hours</option>
+                          <option value="15" className="bg-slate-900">15 Mins</option>
+                          <option value="30" className="bg-slate-900">30 Mins</option>
+                          <option value="60" className="bg-slate-900">1 Hour</option>
+                          <option value="120" className="bg-slate-900">2 Hours</option>
                         </select>
-                     </div>
-                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Priority</label>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest ml-1">Priority Level</label>
                         <select 
                           value={newTask.priority}
                           onChange={e => setNewTask({ ...newTask, priority: e.target.value })}
-                          className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-white text-[11px] font-black uppercase tracking-widest outline-none appearance-none"
+                          className="w-full bg-[#161b22] border border-white/5 rounded-3xl p-5 text-white text-[11px] font-black uppercase tracking-widest outline-none appearance-none cursor-pointer"
                         >
-                           <option value="low">Routine</option>
-                           <option value="medium">Important</option>
-                           <option value="high">Critical</option>
+                          <option value="low" className="bg-slate-900 text-green-500">Routine</option>
+                          <option value="medium" className="bg-slate-900 text-indigo-500">Important</option>
+                          <option value="high" className="bg-slate-900 text-red-500">Critical</option>
                         </select>
-                     </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex gap-4 pt-4">
-                    <button onClick={() => setIsAdding(false)} className="flex-1 py-4 rounded-2xl bg-white/5 text-gray-500 text-[10px] font-black uppercase tracking-widest">Cancel</button>
-                    <button onClick={addTask} className="flex-1 py-4 rounded-2xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-600/20">Sync Goal</button>
-                  </div>
+
+                  <motion.button 
+                    whileTap={{ scale: 0.98 }}
+                    onClick={addTask}
+                    className="w-full py-6 md:py-7 rounded-[28px] md:rounded-[32px] bg-indigo-600 text-white font-black uppercase tracking-[0.3em] md:tracking-[0.4em] text-[10px] md:text-[11px] shadow-[0_15px_40px_rgba(79,70,229,0.4)] transition-all active:scale-95"
+                  >
+                    Sync Objective to Matrix
+                  </motion.button>
                 </div>
               </motion.div>
-            </>
+            </div>
           )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body
+      )}
+    </div>
+  )
+}
 
-        {/* TASK LIST */}
-        <div className="space-y-3">
-          <AnimatePresence mode="popLayout">
-            {loading ? (
-              <div className="py-20 flex flex-col items-center justify-center gap-4">
-                <div className="w-10 h-10 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
-                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Accessing Planner...</p>
-              </div>
-            ) : tasks.length === 0 ? (
-              <div className="py-12 text-center bg-white/5 border border-white/10 rounded-[32px] backdrop-blur-xl">
-                 <div className="text-4xl mb-4">📚</div>
-                 <p className="text-xs font-black text-white uppercase tracking-widest">Schedule Clear</p>
-                 <p className="text-[10px] font-medium text-gray-500 mt-2">Add your first academic objective!</p>
-              </div>
-            ) : tasks.map((task, i) => (
-              <motion.div
-                key={task.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ delay: i * 0.05 }}
-                className={`group flex items-center gap-5 p-5 rounded-[28px] border transition-all duration-300 ${
-                  task.status === 'completed' 
-                    ? 'bg-indigo-600/10 border-indigo-600/20 opacity-60' 
-                    : 'bg-white/5 border-white/10 hover:bg-white/10 shadow-lg shadow-black/20'
-                }`}
-              >
-                <button 
-                  onClick={() => toggleTask(task)}
-                  className={`w-12 h-12 rounded-2xl flex-shrink-0 flex items-center justify-center transition-all ${
-                    task.status === 'completed' 
-                      ? 'bg-indigo-600 text-white' 
-                      : 'bg-white/5 border border-white/10 text-gray-600 group-hover:text-white'
-                  }`}
-                >
-                  {task.status === 'completed' ? <CheckCircle2 size={24} /> : <Circle size={24} />}
-                </button>
-
-                <div className="flex-1 min-w-0">
-                   <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-[8px] font-black uppercase tracking-widest ${
-                        task.priority === 'high' ? 'text-red-500' : task.priority === 'medium' ? 'text-indigo-400' : 'text-gray-500'
-                      }`}>
-                         {task.priority} Priority
-                      </span>
-                      <div className="w-0.5 h-0.5 rounded-full bg-white/20" />
-                      <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-1">
-                         <Clock size={8} /> {task.duration_mins}m
-                      </span>
-                   </div>
-                   <h4 className={`text-sm font-black uppercase tracking-tight truncate ${task.status === 'completed' ? 'line-through text-gray-500' : 'text-white'}`}>
-                      {task.title}
-                   </h4>
-                </div>
-                
-                <ChevronRight size={18} className={`transition-opacity ${task.status === 'completed' ? 'opacity-0' : 'text-gray-700'}`} />
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
+function NavIcon({ icon: Icon, label, active, onClick }) {
+  return (
+    <button 
+      onClick={onClick}
+      className={`flex flex-col items-center gap-1.5 transition-all relative ${active ? 'text-green-500' : 'text-gray-500 hover:text-white'}`}
+    >
+      <div className={`p-2 rounded-xl transition-all ${active ? 'bg-green-500/10 shadow-[0_0_15px_rgba(34,197,94,0.3)]' : ''}`}>
+        <Icon size={20} strokeWidth={active ? 3 : 2} />
       </div>
+      <span className={`text-[8px] font-black uppercase tracking-[0.2em] ${active ? 'opacity-100' : 'opacity-40'}`}>{label}</span>
+    </button>
+  )
+}
+
+function InputField({ label, placeholder, value, onChange }) {
+  return (
+    <div className="space-y-2">
+      <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest ml-1">{label}</label>
+      <input 
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full bg-[#161b22] border border-white/5 rounded-3xl p-5 text-white text-[11px] font-black uppercase tracking-widest outline-none shadow-inner"
+      />
     </div>
   )
 }
