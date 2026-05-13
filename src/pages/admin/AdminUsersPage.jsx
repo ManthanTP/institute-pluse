@@ -10,6 +10,7 @@ const ROLE_FILTER = ['All', 'student', 'faculty', 'admin']
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState([])
+  const [activeTab, setActiveTab] = useState('all') // 'all', 'students'
   const [search, setSearch] = useState('')
   const [activeDept, setActiveDept] = useState('All')
   const [activeRole, setActiveRole] = useState('All')
@@ -22,7 +23,7 @@ export default function AdminUsersPage() {
 
   async function fetchUsers() {
     setLoading(true)
-    const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false })
+    const { data, error } = await supabase.from('profiles').select('*, academic_semesters(name), academic_divisions(name)').order('created_at', { ascending: false })
     if (data) setUsers(data)
     setLoading(false)
   }
@@ -42,6 +43,17 @@ export default function AdminUsersPage() {
     return matchSearch && matchDept && matchRole
   })
 
+  const groupedStudents = users
+    .filter(u => u.role === 'student' && u.academic_semesters && u.academic_divisions)
+    .reduce((acc, student) => {
+      const semName = student.academic_semesters.name;
+      const divName = student.academic_divisions.name;
+      if (!acc[semName]) acc[semName] = {};
+      if (!acc[semName][divName]) acc[semName][divName] = [];
+      acc[semName][divName].push(student);
+      return acc;
+    }, {});
+
   return (
     <AdminLayout>
       <div className="space-y-10">
@@ -58,6 +70,10 @@ export default function AdminUsersPage() {
             </p>
           </div>
           <div className="flex gap-3">
+            <div className="flex bg-[#161b22] border border-white/10 rounded-2xl p-1 mr-4">
+               <button onClick={() => setActiveTab('all')} className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'all' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-white'}`}>All Users</button>
+               <button onClick={() => setActiveTab('students')} className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'students' ? 'bg-green-600 text-white' : 'text-gray-500 hover:text-white'}`}>Student Registry</button>
+            </div>
             <button className="px-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:text-white transition-all">
               Export Registry
             </button>
@@ -98,6 +114,7 @@ export default function AdminUsersPage() {
         </div>
 
         {/* USERS LIST / TABLE */}
+        {activeTab === 'all' ? (
         <div className="space-y-4">
           {/* Mobile Card View */}
           <div className="grid grid-cols-1 gap-4 lg:hidden">
@@ -223,6 +240,45 @@ export default function AdminUsersPage() {
             </div>
           </div>
         </div>
+        ) : (
+          <div className="space-y-8">
+            {Object.keys(groupedStudents).length === 0 ? (
+               <div className="py-20 text-center bg-white/5 border border-white/10 rounded-[40px] backdrop-blur-xl">
+                 <p className="text-xs font-black text-gray-600 uppercase tracking-widest">No Student Registry Data Found</p>
+               </div>
+            ) : Object.keys(groupedStudents).sort().map(semName => (
+               <div key={semName} className="space-y-4">
+                 <h3 className="text-xl font-black text-white uppercase italic border-b border-white/10 pb-4">Semester {semName}</h3>
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {Object.keys(groupedStudents[semName]).sort().map(divName => (
+                       <div key={divName} className="bg-white/5 border border-white/10 rounded-[32px] p-6 backdrop-blur-xl">
+                          <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/5">
+                             <div className="flex items-center gap-2">
+                                <span className="w-8 h-8 rounded-xl bg-green-500/10 border border-green-500/20 text-green-500 flex items-center justify-center font-black text-xs">{divName}</span>
+                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Division {divName}</span>
+                             </div>
+                             <div className="text-[10px] font-black text-white bg-white/10 px-3 py-1 rounded-lg">
+                                {groupedStudents[semName][divName].length} Nodes
+                             </div>
+                          </div>
+                          <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 no-scrollbar">
+                             {groupedStudents[semName][divName].map(student => (
+                               <div key={student.id} onClick={() => setSelectedUser(student)} className="flex items-center gap-3 p-3 bg-black/20 rounded-2xl hover:bg-black/40 transition-colors cursor-pointer group">
+                                 <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-white font-black text-xs flex items-center justify-center group-hover:scale-110 transition-transform">{student.full_name?.[0] || 'S'}</div>
+                                 <div className="flex-1 min-w-0">
+                                    <p className="text-[11px] font-black text-white uppercase tracking-tight truncate">{student.full_name}</p>
+                                    <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">{student.usn || student.email}</p>
+                                 </div>
+                               </div>
+                             ))}
+                          </div>
+                       </div>
+                    ))}
+                 </div>
+               </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* USER DETAIL MODAL */}

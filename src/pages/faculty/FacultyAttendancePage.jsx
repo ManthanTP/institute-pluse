@@ -486,11 +486,12 @@ export default function FacultyAttendancePage() {
                        </p>
                        <div className="flex flex-wrap gap-3 lg:gap-4 justify-center md:justify-start">
                           {activeSession.status === 'active' ? (
-                            <>
+                             <>
                              <button onClick={() => extendSession(5)} className="flex-1 sm:flex-none px-6 lg:px-8 py-3.5 lg:py-5 bg-white/10 border border-white/20 rounded-xl lg:rounded-2xl text-[8px] lg:text-[9px] font-black uppercase text-white tracking-widest hover:bg-white/20 transition-all shadow-xl">+5m</button>
                              <button onClick={() => extendSession(10)} className="flex-1 sm:flex-none px-6 lg:px-8 py-3.5 lg:py-5 bg-white/10 border border-white/20 rounded-xl lg:rounded-2xl text-[8px] lg:text-[9px] font-black uppercase text-white tracking-widest hover:bg-white/20 transition-all shadow-xl">+10m</button>
-                             <button onClick={lockSession} className="w-full sm:w-auto px-8 lg:px-10 py-3.5 lg:py-5 bg-white text-blue-600 rounded-xl lg:rounded-2xl text-[8px] lg:text-[9px] font-black uppercase tracking-widest shadow-2xl hover:bg-gray-50 active:scale-95 transition-all font-black">Terminate Protocol</button>
-                            </>
+                             <button onClick={() => lockSession(activeSession.id)} className="w-full sm:w-auto px-8 lg:px-10 py-3.5 lg:py-5 bg-white text-blue-600 rounded-xl lg:rounded-2xl text-[8px] lg:text-[9px] font-black uppercase tracking-widest shadow-2xl hover:bg-gray-50 active:scale-95 transition-all">Terminate</button>
+                             <button onClick={() => {setActiveSession(null); setParticipants([])}} className="w-full sm:w-auto px-8 lg:px-10 py-3.5 lg:py-5 bg-green-500 text-white rounded-xl lg:rounded-2xl text-[8px] lg:text-[9px] font-black uppercase tracking-widest shadow-2xl hover:bg-green-400 active:scale-95 transition-all">New Session</button>
+                             </>
                           ) : (
                             <button onClick={() => {setActiveSession(null); setParticipants([])}} className="w-full sm:w-auto px-10 py-5 bg-blue-600 text-white rounded-xl lg:rounded-2xl text-[9px] lg:text-[10px] font-black uppercase tracking-widest shadow-2xl hover:bg-blue-500 active:scale-95 transition-all font-black">Create New Session</button>
                           )}

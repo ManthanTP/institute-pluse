@@ -57,6 +57,25 @@ export default function ProfilePage() {
     }
   }, [form.department, form.semester_id])
 
+  const [participatedEvents, setParticipatedEvents] = useState([])
+  const [historyLoading, setHistoryLoading] = useState(false)
+
+  useEffect(() => {
+    async function fetchHistory() {
+      if (!profile?.id) return
+      setHistoryLoading(true)
+      const { data, error } = await supabase
+        .from('event_participants')
+        .select('*, events(*)')
+        .eq('student_id', profile.id)
+        .order('registered_at', { ascending: false })
+      
+      if (data) setParticipatedEvents(data)
+      setHistoryLoading(false)
+    }
+    fetchHistory()
+  }, [profile?.id])
+
   async function handleSave(e) {
     e.preventDefault()
     setLoading(true)
@@ -119,7 +138,7 @@ export default function ProfilePage() {
            {[
              { label: 'ECO XP', val: profile?.eco_points || 0, icon: Sparkles, color: 'text-yellow-500' },
              { label: 'CO2 SAVED', val: `${profile?.total_co2_kg?.toFixed(1)}kg`, icon: Zap, color: 'text-green-500' },
-             { label: 'BADGES', val: '12', icon: Award, color: 'text-blue-500' },
+             { label: 'BADGES', val: participatedEvents.length, icon: Award, color: 'text-blue-500' },
            ].map(stat => (
              <div key={stat.label} className="bg-white/5 border border-white/5 rounded-3xl p-4 text-center">
                 <stat.icon size={16} className={`${stat.color} mx-auto mb-2`} />
@@ -130,7 +149,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Edit Form */}
-        <form onSubmit={handleSave} className="space-y-6">
+        <form onSubmit={handleSave} className="space-y-6 mb-12">
            <div className="bg-white/5 border border-white/10 rounded-[40px] p-8 space-y-6 backdrop-blur-xl">
               <div className="flex items-center gap-3 mb-2">
                  <h3 className="text-[10px] font-black text-blue-500 uppercase tracking-[0.4em]">Personal Telemetry</h3>
@@ -244,6 +263,50 @@ export default function ProfilePage() {
               {loading ? 'Synchronizing...' : 'Update Protocol'} <Save size={18} />
            </motion.button>
         </form>
+
+        {/* Event Participation History */}
+        <div className="space-y-6">
+           <div className="flex items-center gap-3 mb-2">
+              <h3 className="text-[10px] font-black text-orange-500 uppercase tracking-[0.4em]">Identity Manifest (Events)</h3>
+              <div className="flex-1 h-[1px] bg-white/5" />
+           </div>
+
+           {historyLoading ? (
+             <div className="py-10 flex justify-center">
+                <div className="w-6 h-6 border-2 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
+             </div>
+           ) : participatedEvents.length === 0 ? (
+             <div className="bg-white/5 border border-dashed border-white/10 rounded-[32px] p-10 text-center">
+                <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest">No Events Linked to Identity</p>
+             </div>
+           ) : (
+             <div className="space-y-4">
+                {participatedEvents.map((p, i) => (
+                  <motion.div 
+                    key={p.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    className="bg-white/5 border border-white/5 rounded-[32px] p-6 flex items-center justify-between group hover:bg-white/[0.08] transition-all"
+                  >
+                     <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center text-orange-500 border border-orange-500/10 group-hover:scale-110 transition-transform">
+                           <Award size={20} />
+                        </div>
+                        <div>
+                           <h4 className="text-[11px] font-black text-white uppercase tracking-tight line-clamp-1">{p.events?.title}</h4>
+                           <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mt-1">{p.events?.event_date}</p>
+                        </div>
+                     </div>
+                     <div className="text-right">
+                        <p className="text-[9px] font-black text-green-500 uppercase tracking-widest">+{p.events?.eco_points} XP</p>
+                        <p className="text-[7px] font-black text-gray-600 uppercase tracking-widest mt-1">Acquired</p>
+                     </div>
+                  </motion.div>
+                ))}
+             </div>
+           )}
+        </div>
 
         {/* Security Footer */}
         <div className="mt-12 text-center opacity-30">

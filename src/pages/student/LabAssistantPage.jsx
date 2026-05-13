@@ -186,8 +186,13 @@ export default function LabAssistantPage() {
                   <motion.button 
                     whileTap={{ scale: 0.98 }}
                     onClick={() => {
-                      toast.success('Session Initialized')
+                      toast.success('Lab Sequence Initializing...')
                       setSelectedExp(null)
+                      navigate('/chatbot', {
+                        state: {
+                          initialMessage: `I want to start the lab experiment: ${selectedExp.name} (${selectedExp.dept}). The instructions say: "${selectedExp.instructions}". Please guide me step by step.`
+                        }
+                      })
                     }}
                     className="w-full py-6 md:py-7 rounded-[28px] md:rounded-[32px] bg-cyan-600 text-white font-black uppercase tracking-[0.3em] md:tracking-[0.4em] text-[10px] md:text-[11px] shadow-[0_15px_40px_rgba(8,145,178,0.4)] transition-all active:scale-95"
                   >

@@ -7,7 +7,7 @@ import { createPortal } from 'react-dom'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 
-const EVENT_CATEGORIES = ['All', 'Sustainability', 'Technical', 'Workshop', 'Seminar']
+const EVENT_CATEGORIES = ['All', 'History', 'Sustainability', 'Technical', 'Workshop', 'Seminar']
 
 export default function EventsPage() {
   const { profile } = useAuthStore()
@@ -49,7 +49,9 @@ export default function EventsPage() {
     }
   }
 
-  const filtered = activeCategory === 'All' ? events : events.filter(e => e.category === activeCategory)
+  const filtered = activeCategory === 'All' ? events 
+    : activeCategory === 'History' ? events.filter(e => registeredEvents.includes(e.id))
+    : events.filter(e => e.category === activeCategory)
 
   async function handleRegister(event) {
     if (registeredEvents.includes(event.id)) return

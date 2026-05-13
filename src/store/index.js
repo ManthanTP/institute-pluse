@@ -80,9 +80,9 @@ export const useNotifStore = create((set, get) => ({
 
   fetchNotifications: async (userId) => {
     const { data } = await supabase
-      .from('notifications')
+      .from('student_notifications')
       .select('*')
-      .eq('user_id', userId)
+      .eq('student_id', userId)
       .order('created_at', { ascending: false })
       .limit(50)
 
@@ -96,9 +96,9 @@ export const useNotifStore = create((set, get) => ({
 
   markAllRead: async (userId) => {
     await supabase
-      .from('notifications')
+      .from('student_notifications')
       .update({ is_read: true })
-      .eq('user_id', userId)
+      .eq('student_id', userId)
       .eq('is_read', false)
 
     set(state => ({
@@ -109,7 +109,7 @@ export const useNotifStore = create((set, get) => ({
 
   markRead: async (notifId) => {
     await supabase
-      .from('notifications')
+      .from('student_notifications')
       .update({ is_read: true })
       .eq('id', notifId)
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Bell, BellOff, Filter, CheckCircle2, Info, Bus, ShoppingBag, GraduationCap, AlertCircle, Trophy, Leaf } from 'lucide-react'
+import { ArrowLeft, Bell, BellOff, Filter, CheckCircle2, Info, ShoppingBag, GraduationCap, AlertCircle, Trophy, Leaf } from 'lucide-react'
 import { format, isToday, isYesterday } from 'date-fns'
 import { useNotifStore, useAuthStore } from '../../store/index'
 import BottomTabBar from '../../components/BottomTabBar'
@@ -9,18 +9,18 @@ import { motion, AnimatePresence } from 'framer-motion'
 const TYPE_CONFIG = {
   eco: { icon: Leaf, color: 'text-green-500', bg: 'bg-green-500/10' },
   badge: { icon: Trophy, color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
-  bus: { icon: Bus, color: 'text-blue-500', bg: 'bg-blue-500/10' },
   order: { icon: ShoppingBag, color: 'text-orange-500', bg: 'bg-orange-500/10' },
   attendance: { icon: GraduationCap, color: 'text-teal-500', bg: 'bg-teal-500/10' },
   complaint: { icon: AlertCircle, color: 'text-red-500', bg: 'bg-red-500/10' },
   challenge: { icon: Trophy, color: 'text-purple-500', bg: 'bg-purple-500/10' },
+  announcement: { icon: Info, color: 'text-blue-500', bg: 'bg-blue-500/10' },
   general: { icon: Info, color: 'text-gray-400', bg: 'bg-white/5' }
 }
 
 const FILTER_TABS = [
   { label: 'All', type: null },
   { label: 'Eco', type: 'eco' },
-  { label: 'Bus', type: 'bus' },
+  { label: 'Badges', type: 'badge' },
   { label: 'Food', type: 'order' },
   { label: 'Attend', type: 'attendance' },
   { label: 'Issues', type: 'complaint' },

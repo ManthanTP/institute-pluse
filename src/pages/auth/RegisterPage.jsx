@@ -50,6 +50,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [agreed, setAgreed] = useState(false)
+  const [adminKey, setAdminKey] = useState('')
 
   useEffect(() => {
     async function loadAcademicData() {
@@ -66,10 +67,10 @@ export default function RegisterPage() {
     d.semester_id === form.semester_id
   )
 
-  // Clear division if department or semester changes
   useEffect(() => {
+    setAdminKey('')
     setForm(f => ({ ...f, division_id: '' }))
-  }, [form.department, form.semester_id])
+  }, [form.role, form.department, form.semester_id])
 
   function update(field, value) {
     setForm(f => ({ ...f, [field]: value }))
@@ -81,6 +82,15 @@ export default function RegisterPage() {
     if (form.password !== form.confirm_password) return setError('Passwords do not match.')
     if (form.password.length < 6) return setError('Password too short.')
     if (form.role === 'student' && !form.usn) return setError('USN is required for students.')
+    
+    // Key validation
+    if (form.role === 'faculty' && adminKey !== 'NEXUS_FACULTY_2026') {
+      return setError('Invalid Faculty Registration Key.')
+    }
+    if (form.role === 'admin' && adminKey !== 'NEXUS_ADMIN_2026') {
+      return setError('Invalid Administrative Access Key.')
+    }
+
     if (!agreed) return setError('Please agree to terms.')
 
     setLoading(true)
@@ -263,10 +273,10 @@ export default function RegisterPage() {
 
                 {/* Role & Department */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div className="space-y-1.5">
+                  <div className="space-y-1.5 sm:col-span-2">
                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Account Role</label>
                     <div className="flex gap-2">
-                      {['student', 'faculty'].map(r => (
+                      {['student', 'faculty', 'admin'].map(r => (
                         <button
                           key={r}
                           type="button"
@@ -281,7 +291,7 @@ export default function RegisterPage() {
                       ))}
                     </div>
                   </div>
-                  <div className="space-y-1.5">
+                  <div className="space-y-1.5 sm:col-span-2">
                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Department</label>
                     <div className="relative group">
                       <Building size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-500 transition-colors" />
@@ -339,6 +349,31 @@ export default function RegisterPage() {
                             {filteredDivisions.map(d => <option key={d.id} value={d.id} className="bg-slate-900">Division {d.name}</option>)}
                           </select>
                         </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Secure Key (Faculty or Admin) */}
+                <AnimatePresence>
+                  {(form.role === 'faculty' || form.role === 'admin') && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="space-y-1.5 overflow-hidden"
+                    >
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">
+                        {form.role === 'admin' ? 'Administrative Access Key' : 'Faculty Registration Key'}
+                      </label>
+                      <div className="relative group">
+                        <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-500 transition-colors" />
+                        <input
+                          type="password" value={adminKey} onChange={e => setAdminKey(e.target.value)}
+                          className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white placeholder:text-gray-600 outline-none focus:border-green-500/50 focus:bg-white/[0.08] transition-all"
+                          placeholder={form.role === 'admin' ? "Protocol key for admin access" : "Required for faculty accounts"} 
+                          required
+                        />
                       </div>
                     </motion.div>
                   )}

@@ -6,8 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { createPortal } from 'react-dom'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
-
-const CATEGORIES = ['Electronics', 'Personal', 'Books', 'Others']
+import BottomTabBar from '../../components/BottomTabBar'
 
 export default function LostFoundPage() {
   const { profile } = useAuthStore()
@@ -17,42 +16,75 @@ export default function LostFoundPage() {
   const [isAdding, setIsAdding] = useState(false)
   const [filter, setFilter] = useState('All')
   const [searchQuery, setSearchQuery] = useState('')
-  const [newItem, setNewItem] = useState({ title: '', description: '', location: '', category: 'Electronics' })
+  const [submitting, setSubmitting] = useState(false)
+  const [newItem, setNewItem] = useState({ item_name: '', description: '', location: '', type: 'lost' })
+
+  const [locations, setLocations] = useState([])
 
   useEffect(() => {
     fetchItems()
+    fetchLocations()
   }, [])
+
+  async function fetchLocations() {
+    const { data } = await supabase.from('campus_locations').select('*').order('building').order('name')
+    if (data) setLocations(data)
+  }
 
   async function fetchItems() {
     setLoading(true)
-    const { data } = await supabase.from('lost_found_items').select('*').order('created_at', { ascending: false })
+    const { data, error } = await supabase
+      .from('lost_found_items')
+      .select('*, reporter:reported_by(full_name)')
+      .order('created_at', { ascending: false })
+    if (error) console.error('Fetch error:', error)
     if (data) setItems(data)
     setLoading(false)
   }
 
   async function reportItem() {
-    if (!newItem.title || !profile?.id) return
+    if (!newItem.item_name.trim()) {
+      toast.error('Item name is required')
+      return
+    }
+    if (!newItem.description.trim()) {
+      toast.error('Description is required')
+      return
+    }
+    if (!profile?.id) {
+      toast.error('Please login first')
+      return
+    }
+
+    setSubmitting(true)
     const { data, error } = await supabase.from('lost_found_items').insert({
       reported_by: profile.id,
-      title: newItem.title,
-      description: newItem.description,
-      location_found: newItem.location,
-      status: 'lost',
-      category: newItem.category
-    }).select().single()
+      item_name: newItem.item_name.trim(),
+      description: newItem.description.trim(),
+      location_found: newItem.location.trim() || null,
+      type: newItem.type,
+      status: 'open'
+    }).select('*, reporter:reported_by(full_name)').single()
 
-    if (!error) {
+    if (error) {
+      console.error('Report error:', error)
+      toast.error('Failed to submit report: ' + (error.message || 'Unknown error'))
+    } else {
       setItems([data, ...items])
       setIsAdding(false)
-      setNewItem({ title: '', description: '', location: '', category: 'Electronics' })
-      toast.success('Report Synchronized')
+      setNewItem({ item_name: '', description: '', location: '', type: 'lost' })
+      toast.success('Report Published Successfully! 📡')
     }
+    setSubmitting(false)
   }
 
   const filtered = items.filter(i => {
-    const matchesFilter = filter === 'All' || i.status === filter.toLowerCase()
-    const matchesSearch = i.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         i.description.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesFilter = filter === 'All' || 
+      (filter === 'Lost' && i.type === 'lost') ||
+      (filter === 'Found' && i.type === 'found') ||
+      (filter === 'Claimed' && i.status === 'claimed')
+    const matchesSearch = (i.item_name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         (i.description || '').toLowerCase().includes(searchQuery.toLowerCase())
     return matchesFilter && matchesSearch
   })
 
@@ -64,50 +96,53 @@ export default function LostFoundPage() {
         <div className="absolute bottom-[-10%] right-[-10%] w-[80%] h-[60%] rounded-full bg-blue-900/5 blur-[120px]" />
       </div>
 
-      <div className="relative z-10 px-6 pt-8">
+      <div className="relative z-10 px-5 pt-6">
         {/* TOP BAR */}
-        <div className="flex items-center justify-between mb-12">
-          <div className="flex items-center gap-6">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
             <motion.button 
               whileTap={{ scale: 0.9 }}
-              onClick={() => navigate(-1)}
-              className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-xl"
+              onClick={() => navigate('/dashboard')}
+              className="w-11 h-11 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-xl"
             >
-              <ChevronLeft size={24} />
+              <ChevronLeft size={22} />
             </motion.button>
-            <h1 className="text-2xl font-black uppercase tracking-tighter italic">Lost & Found</h1>
+            <div>
+              <h1 className="text-xl font-black uppercase tracking-tighter">Lost & Found</h1>
+              <p className="text-[8px] font-black text-orange-500 uppercase tracking-[0.3em]">Asset Recovery Hub</p>
+            </div>
           </div>
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => setIsAdding(true)}
-            className="w-12 h-12 rounded-2xl bg-orange-600 text-white flex items-center justify-center shadow-[0_0_20px_rgba(234,88,12,0.3)]"
+            className="h-11 px-5 rounded-2xl bg-orange-600 text-white flex items-center gap-2 shadow-[0_0_20px_rgba(234,88,12,0.3)] text-[9px] font-black uppercase tracking-widest"
           >
-             <Plus size={24} />
+             <Plus size={16} /> Report
           </motion.button>
         </div>
 
         {/* SEARCH BAR */}
-        <div className="relative mb-10">
-          <div className="absolute left-6 top-1/2 -translate-y-1/2 text-black/40">
-            <Search size={20} />
+        <div className="relative mb-6">
+          <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500">
+            <Search size={18} />
           </div>
           <input 
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search Protocol..."
-            className="w-full bg-white rounded-3xl py-6 pl-16 pr-6 text-[13px] font-black text-black uppercase tracking-[0.2em] shadow-[0_0_30px_rgba(255,255,255,0.1)] outline-none"
+            placeholder="Search items..."
+            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-14 pr-5 text-sm text-white placeholder:text-gray-600 outline-none focus:border-orange-500/50 transition-all"
           />
         </div>
 
         {/* CATEGORY TABS */}
-        <div className="flex gap-3 overflow-x-auto no-scrollbar mb-10 pb-2">
-          {['All', 'Lost', 'Found', 'Returned'].map(f => (
+        <div className="flex gap-2 overflow-x-auto no-scrollbar mb-8 pb-1">
+          {['All', 'Lost', 'Found', 'Claimed'].map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${
+              className={`px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${
                 filter === f 
-                  ? 'bg-orange-600 border-orange-600 text-white shadow-[0_0_20px_rgba(234,88,12,0.3)]' 
+                  ? 'bg-orange-600 border-orange-600 text-white shadow-[0_0_15px_rgba(234,88,12,0.3)]' 
                   : 'bg-white/5 border-white/10 text-gray-500'
               }`}
             >
@@ -117,72 +152,66 @@ export default function LostFoundPage() {
         </div>
 
         {/* ITEMS LIST */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {loading ? (
              <div className="py-20 flex flex-col items-center justify-center gap-4">
                 <div className="w-10 h-10 border-2 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
-                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest italic">Scanning Database...</p>
+                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Scanning Database...</p>
              </div>
           ) : filtered.length === 0 ? (
-            <div className="py-20 text-center bg-white/5 border border-white/10 rounded-[40px] backdrop-blur-xl">
-               <div className="text-4xl mb-4 opacity-40">🔍</div>
-               <p className="text-xs font-black text-white uppercase tracking-widest italic">No Data Nodes Found</p>
+            <div className="py-16 text-center bg-white/5 border border-white/10 rounded-3xl backdrop-blur-xl">
+               <div className="text-4xl mb-3 opacity-40">🔍</div>
+               <p className="text-xs font-black text-white uppercase tracking-widest">No Items Found</p>
+               <p className="text-[10px] text-gray-500 mt-2">Be the first to report a lost or found item</p>
             </div>
           ) : filtered.map((item, i) => (
             <motion.div
               key={item.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className="bg-[#161b22]/80 border border-white/5 rounded-[40px] p-8 backdrop-blur-2xl relative overflow-hidden group"
+              transition={{ delay: i * 0.04 }}
+              className="bg-[#161b22]/80 border border-white/5 rounded-3xl p-6 backdrop-blur-2xl relative overflow-hidden group"
             >
-              <div className="flex items-center justify-between mb-6">
-                <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${
-                  item.status === 'returned' ? 'bg-green-500/10 border-green-500/20 text-green-500' : 
-                  item.status === 'found' ? 'bg-blue-500/10 border-blue-500/20 text-blue-500' : 
-                  'bg-orange-500/10 border-orange-500/20 text-orange-500'
-                }`}>
-                  {item.status}
-                </span>
-                <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest flex items-center gap-1.5">
-                   <Calendar size={12} /> {new Date(item.created_at).toLocaleDateString()}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <span className={`px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border ${
+                    item.type === 'found' ? 'bg-blue-500/10 border-blue-500/20 text-blue-500' : 
+                    'bg-orange-500/10 border-orange-500/20 text-orange-500'
+                  }`}>
+                    {item.type}
+                  </span>
+                  <span className={`px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border ${
+                    item.status === 'claimed' ? 'bg-green-500/10 border-green-500/20 text-green-500' : 
+                    'bg-white/5 border-white/10 text-gray-500'
+                  }`}>
+                    {item.status}
+                  </span>
+                </div>
+                <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest flex items-center gap-1">
+                   <Calendar size={10} /> {new Date(item.created_at).toLocaleDateString()}
                 </span>
               </div>
 
-              <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-4 leading-none">{item.title}</h3>
-              <p className="text-xs font-medium text-gray-500 leading-relaxed line-clamp-2 mb-8">{item.description}</p>
+              <h3 className="text-lg font-black text-white uppercase tracking-tight mb-2 leading-tight">{item.item_name}</h3>
+              <p className="text-[11px] font-medium text-gray-500 leading-relaxed line-clamp-2 mb-5">{item.description}</p>
               
-              <div className="flex items-center justify-between pt-6 border-t border-white/5">
-                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-gray-400">
-                       <MapPin size={16} />
+              <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                 <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-gray-400">
+                       <MapPin size={14} />
                     </div>
-                    <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest truncate max-w-[150px]">{item.location_found}</span>
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate max-w-[140px]">{item.location_found || 'Not specified'}</span>
                  </div>
-                 <button className="text-[10px] font-black text-orange-500 uppercase tracking-[0.2em] hover:text-white transition-colors">
-                    Claim Hub
-                 </button>
-              </div>
-
-              {/* Decorative Element */}
-              <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.1] transition-opacity">
-                 <ShieldAlert size={80} />
+                 <div className="text-[9px] font-black text-gray-600 uppercase tracking-widest">
+                   By {item.reporter?.full_name || 'Anonymous'}
+                 </div>
               </div>
             </motion.div>
           ))}
         </div>
       </div>
 
-      {/* BOTTOM NAV BAR */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-[100]">
-        <div className="bg-[#161b22]/90 backdrop-blur-3xl border border-white/10 rounded-[32px] p-4 flex items-center justify-between shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-          <NavIcon icon={Home} label="Home" onClick={() => navigate('/dashboard')} />
-          <NavIcon icon={LayoutGrid} label="Log" onClick={() => navigate('/carbon-log')} />
-          <NavIcon icon={CalendarDays} label="Events" onClick={() => navigate('/events')} />
-          <NavIcon icon={Coffee} label="Cafe" onClick={() => navigate('/cafeteria')} />
-          <NavIcon icon={User} label="Me" onClick={() => navigate('/profile')} />
-        </div>
-      </div>
+      <BottomTabBar />
 
       {/* REPORT MODAL (Portal) */}
       {createPortal(
@@ -197,53 +226,90 @@ export default function LostFoundPage() {
               <motion.div 
                 initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="relative w-full max-w-2xl bg-[#0a0c10] border-t border-white/10 rounded-t-[50px] p-6 md:p-10 shadow-2xl pointer-events-auto flex flex-col"
-                style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}
+                className="relative w-full max-w-2xl bg-[#0a0c10] border-t border-white/10 rounded-t-[40px] p-6 shadow-2xl pointer-events-auto flex flex-col"
+                style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))' }}
               >
-                <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-8" />
+                <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-6" />
                 
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter leading-tight mb-0.5">Report Node</h2>
-                    <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest leading-none">Nexus Asset Recovery</p>
+                    <h2 className="text-xl font-black text-white uppercase tracking-tighter leading-tight mb-0.5">Report Item</h2>
+                    <p className="text-[8px] font-black text-orange-500 uppercase tracking-widest">Asset Recovery Protocol</p>
                   </div>
-                  <button onClick={() => setIsAdding(false)} className="p-3 rounded-xl bg-white/5 border border-white/10 text-gray-400"><X size={20} /></button>
+                  <button onClick={() => setIsAdding(false)} className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-400"><X size={18} /></button>
                 </div>
 
-                <div className="space-y-6 overflow-y-auto no-scrollbar max-h-[60vh] pr-2 pb-10">
-                  <div className="space-y-4">
-                    <InputField label="Asset Title" placeholder="E.g. Blue Nike Backpack" value={newItem.title} onChange={v => setNewItem({ ...newItem, title: v })} />
-                    <InputField label="Hub Location" placeholder="E.g. Block B, 2nd Floor" value={newItem.location} onChange={v => setNewItem({ ...newItem, location: v })} />
-                    
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest ml-1">Classification</label>
-                      <select 
-                        value={newItem.category}
-                        onChange={e => setNewItem({ ...newItem, category: e.target.value })}
-                        className="w-full bg-[#161b22] border border-white/5 rounded-3xl p-5 text-white text-[11px] font-black uppercase tracking-widest outline-none appearance-none cursor-pointer"
-                      >
-                        {CATEGORIES.map(c => <option key={c} value={c} className="bg-slate-900">{c}</option>)}
-                      </select>
+                <div className="space-y-5 overflow-y-auto no-scrollbar max-h-[60vh] pr-1 pb-4">
+                  {/* Type Selector */}
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Report Type</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {['lost', 'found'].map(t => (
+                        <button
+                          key={t}
+                          onClick={() => setNewItem({ ...newItem, type: t })}
+                          className={`py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                            newItem.type === t 
+                              ? t === 'lost' 
+                                ? 'bg-orange-600 border-orange-600 text-white shadow-lg shadow-orange-600/20' 
+                                : 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20'
+                              : 'bg-white/5 border-white/10 text-gray-500'
+                          }`}
+                        >
+                          {t === 'lost' ? '🔴 I Lost Something' : '🟢 I Found Something'}
+                        </button>
+                      ))}
                     </div>
+                  </div>
 
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest ml-1">Telemetry Brief</label>
-                      <textarea 
-                        value={newItem.description}
-                        onChange={e => setNewItem({ ...newItem, description: e.target.value })}
-                        rows={3}
-                        placeholder="Provide identifying characteristics..."
-                        className="w-full bg-[#161b22] border border-white/5 rounded-3xl p-5 text-white text-[11px] font-black uppercase tracking-widest outline-none resize-none shadow-inner"
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Item Name *</label>
+                    <input 
+                      value={newItem.item_name}
+                      onChange={e => setNewItem({ ...newItem, item_name: e.target.value })}
+                      placeholder="E.g. Blue Nike Backpack"
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white placeholder:text-gray-600 outline-none focus:border-orange-500/50 transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Location Node</label>
+                    <select
+                      value={newItem.location}
+                      onChange={e => setNewItem({ ...newItem, location: e.target.value })}
+                      className="w-full bg-[#0a0c10] border border-white/10 rounded-2xl p-4 text-sm text-white outline-none focus:border-orange-500/50 transition-all appearance-none"
+                    >
+                      <option value="" className="bg-slate-900">Select a Location Node...</option>
+                      {locations.map(loc => (
+                        <option key={loc.id} value={`${loc.building} - ${loc.name}`} className="bg-slate-900">
+                          {loc.building} - {loc.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Description *</label>
+                    <textarea 
+                      value={newItem.description}
+                      onChange={e => setNewItem({ ...newItem, description: e.target.value })}
+                      rows={3}
+                      placeholder="Provide identifying details..."
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white placeholder:text-gray-600 outline-none resize-none focus:border-orange-500/50 transition-all"
+                    />
                   </div>
 
                   <motion.button 
                     whileTap={{ scale: 0.98 }}
                     onClick={reportItem}
-                    className="w-full py-6 md:py-7 rounded-[28px] md:rounded-[32px] bg-orange-600 text-white text-[10px] md:text-[11px] font-black uppercase tracking-[0.3em] md:tracking-[0.4em] shadow-[0_15px_40px_rgba(234,88,12,0.4)]"
+                    disabled={submitting}
+                    className="w-full py-5 rounded-2xl bg-orange-600 text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-[0_10px_30px_rgba(234,88,12,0.4)] disabled:opacity-50 flex items-center justify-center gap-2"
                   >
-                    Confirm & Publish Node
+                    {submitting ? (
+                      <><div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> Submitting...</>
+                    ) : (
+                      'Publish Report'
+                    )}
                   </motion.button>
                 </div>
               </motion.div>
@@ -252,34 +318,6 @@ export default function LostFoundPage() {
         </AnimatePresence>,
         document.body
       )}
-    </div>
-  )
-}
-
-function NavIcon({ icon: Icon, label, active, onClick }) {
-  return (
-    <button 
-      onClick={onClick}
-      className={`flex flex-col items-center gap-1.5 transition-all relative ${active ? 'text-green-500' : 'text-gray-500 hover:text-white'}`}
-    >
-      <div className={`p-2 rounded-xl transition-all ${active ? 'bg-green-500/10 shadow-[0_0_15px_rgba(34,197,94,0.3)]' : ''}`}>
-        <Icon size={20} strokeWidth={active ? 3 : 2} />
-      </div>
-      <span className={`text-[8px] font-black uppercase tracking-[0.2em] ${active ? 'opacity-100' : 'opacity-40'}`}>{label}</span>
-    </button>
-  )
-}
-
-function InputField({ label, placeholder, value, onChange }) {
-  return (
-    <div className="space-y-2">
-      <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest ml-1">{label}</label>
-      <input 
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full bg-[#161b22] border border-white/5 rounded-3xl p-6 text-white text-[13px] font-black uppercase tracking-widest outline-none shadow-inner"
-      />
     </div>
   )
 }

@@ -13,9 +13,13 @@ function getModel() {
     genAI = new GoogleGenerativeAI(API_KEY)
     // Fallback logic for model availability
     try {
-      model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+      model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
     } catch (e) {
-      model = genAI.getGenerativeModel({ model: 'gemini-pro' })
+      try {
+        model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
+      } catch (e2) {
+        model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' })
+      }
     }
   }
   return model
@@ -130,9 +134,12 @@ function getStaticStudyPlan(subjects, daily_hours) {
 
 // ── AI CHATBOT ──
 export async function chatWithAssistant(messages) {
-  const m = getModel()
-  if (!m) {
+  if (!API_KEY || API_KEY === 'your_gemini_api_key') {
     return "Hi! I'm InstitutePulse AI Assistant. I'm currently running in offline mode. Please configure your Gemini API key for full AI capabilities. In the meantime, I can tell you that: Taking the college bus saves ~0.36 kg CO2 per 5km vs motorbike. Vegetarian meals save ~1 kg CO2 vs non-veg. Logging daily earns you eco-points and badges! 🌿"
+  }
+
+  if (!genAI) {
+    genAI = new GoogleGenerativeAI(API_KEY)
   }
 
   try {
@@ -154,31 +161,69 @@ Key facts:
 
 Be concise, helpful, eco-aware, and encouraging. Use emojis occasionally.`
 
-    const chat = m.startChat({
-      systemInstruction: systemPrompt,
-      history: messages.slice(0, -1).map(msg => ({
-        role: msg.role === 'user' ? 'user' : 'model',
-        parts: [{ text: msg.content }]
-      }))
+    // Correct pattern for system instructions in newer SDK versions
+    const chatModel = genAI.getGenerativeModel({ 
+      model: 'gemini-2.5-flash',
+      systemInstruction: systemPrompt 
     })
+
+    // Ensure history starts with 'user' role (SDK requirement)
+    let history = messages.slice(0, -1).map(msg => ({
+      role: msg.role === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.content }]
+    }))
+
+    const firstUserIndex = history.findIndex(m => m.role === 'user')
+    if (firstUserIndex !== -1) {
+      history = history.slice(firstUserIndex)
+    } else {
+      history = [] // No user messages in history yet
+    }
+
+    const chat = chatModel.startChat({ history })
 
     const lastMessage = messages[messages.length - 1]
     const result = await chat.sendMessage(lastMessage.content)
     return result.response.text()
   } catch (err) {
     console.error('Gemini chat error:', err)
-    return 'I encountered an issue connecting to the AI service. Please check your API key configuration. 🌿'
+    
+    const isLeaked = err.message?.toLowerCase().includes('leaked') || 
+                     err.toString().toLowerCase().includes('leaked')
+
+    if (isLeaked) {
+      return '⚠️ Your Gemini API Key has been reported as LEAKED and disabled by Google. To fix this:\n1. Go to https://aistudio.google.com/apikey\n2. Create a NEW API Key.\n3. Update the VITE_GEMINI_API_KEY in your .env file.\n4. Restart your dev server. 🌿'
+    }
+
+    // Handle 503 / High Demand / Other errors with rotation
+    const fallbackModels = ['gemini-2.0-flash', 'gemini-flash-latest']
+    for (const modelName of fallbackModels) {
+      try {
+        console.log(`Trying fallback model: ${modelName}`)
+        const fallbackModel = genAI.getGenerativeModel({ model: modelName })
+        const result = await fallbackModel.generateContent(messages[messages.length - 1].content)
+        return result.response.text()
+      } catch (fallbackErr) {
+        console.error(`Fallback to ${modelName} failed:`, fallbackErr)
+      }
+    }
+
+    return 'The AI service is currently experiencing high demand. Please try again in a moment. 🌿'
   }
 }
 
 // ── LAB ASSISTANT ──
 export async function askLabAssistant(subject, question) {
-  const m = getModel()
-  if (!m) {
+  if (!API_KEY || API_KEY === 'your_gemini_api_key') {
     return `📚 **${subject} Lab Assistant**\n\nI'm in offline mode. Please configure your Gemini API key for full AI lab assistance.\n\nFor your question: "${question}"\n\nI recommend consulting your lab manual and textbook. Remember: digital learning saves paper and earns you eco-points! 🌱`
   }
 
+  if (!genAI) {
+    genAI = new GoogleGenerativeAI(API_KEY)
+  }
+
   try {
+    const labModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
     const prompt = `You are a virtual lab assistant for ${subject}.
 Help students understand experiments, procedures, and prepare for viva examinations.
 Be clear, structured, and educational.
@@ -187,10 +232,24 @@ Student question: ${question}
 
 Provide a helpful, structured response.`
 
-    const result = await m.generateContent(prompt)
+    const result = await labModel.generateContent(prompt)
     return result.response.text()
   } catch (err) {
     console.error('Gemini lab assistant error:', err)
-    return 'I encountered an issue. Please try again. 🌿'
+    
+    const isLeaked = err.message?.toLowerCase().includes('leaked') || 
+                     err.toString().toLowerCase().includes('leaked')
+
+    if (isLeaked) {
+      return '⚠️ Your Gemini API Key has been reported as LEAKED and disabled by Google. Please generate a new key at https://aistudio.google.com/apikey and update your .env file. 🌿'
+    }
+
+    try {
+      const fallbackModel = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
+      const result = await fallbackModel.generateContent(question)
+      return result.response.text()
+    } catch (fallbackErr) {
+      return 'I encountered an issue. Please check your AI quota or connection. 🌿'
+    }
   }
 }

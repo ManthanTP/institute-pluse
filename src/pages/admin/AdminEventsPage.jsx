@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { CalendarDays, Plus, Search, Edit3, Trash2, Users, MapPin, Clock, Star, X, CheckCircle2, AlertCircle, Filter, MoreHorizontal, LayoutGrid, Calendar } from 'lucide-react'
+import { CalendarDays, Plus, Search, Edit3, Trash2, Users, MapPin, Clock, Star, X, CheckCircle2, AlertCircle, Filter, MoreHorizontal, LayoutGrid, Calendar, Download } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import AdminLayout from './AdminLayout'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -87,6 +87,36 @@ export default function AdminEventsPage() {
       setIsModalOpen(false)
       fetchEvents()
     }
+  }
+
+  function handleDownloadCSV() {
+    if (!participants || participants.length === 0) {
+      toast.error('No participants to download');
+      return;
+    }
+
+    const headers = ['Name', 'Email', 'Department', 'Registered At'];
+    const csvContent = [
+      headers.join(','),
+      ...participants.map(p => {
+        const name = `"${p.profiles?.full_name || ''}"`;
+        const email = `"${p.profiles?.email || ''}"`;
+        const dept = `"${p.profiles?.department || ''}"`;
+        const date = `"${new Date(p.registered_at).toLocaleString()}"`;
+        return [name, email, dept, date].join(',');
+      })
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${selectedEvent?.title?.replace(/\s+/g, '_') || 'event'}_manifest.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Manifest Exported');
   }
 
   const filtered = events.filter(e => e.title.toLowerCase().includes(search.toLowerCase()))
@@ -348,7 +378,15 @@ export default function AdminEventsPage() {
                     <h2 className="text-xl lg:text-2xl font-black text-white uppercase tracking-tighter italic">Identity Manifest</h2>
                     <p className="text-[8px] lg:text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1 line-clamp-1">{selectedEvent?.title}</p>
                   </div>
-                  <button onClick={() => setIsParticipantsModalOpen(false)} className="p-3 lg:p-4 rounded-xl lg:rounded-2xl bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-colors"><X size={20} /></button>
+                  <div className="flex items-center gap-3">
+                    <button 
+                      onClick={handleDownloadCSV}
+                      className="px-4 py-2 bg-blue-500/10 text-blue-500 border border-blue-500/20 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-500/20 transition-all flex items-center gap-2"
+                    >
+                      <Download size={14} /> Export CSV
+                    </button>
+                    <button onClick={() => setIsParticipantsModalOpen(false)} className="p-3 lg:p-4 rounded-xl lg:rounded-2xl bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-colors"><X size={20} /></button>
+                  </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto no-scrollbar space-y-3 lg:space-y-4 pr-1 pb-4">
@@ -367,7 +405,7 @@ export default function AdminEventsPage() {
                       </div>
                       <div className="text-right">
                         <p className="text-[8px] lg:text-[9px] font-black text-white uppercase tracking-widest">{new Date(p.registered_at).toLocaleDateString()}</p>
-                        <p className="text-[7px] lg:text-[8px] font-black text-gray-500 uppercase tracking-widest mt-1">Uplinked</p>
+                        <p className="text-[7px] lg:text-[8px] font-gray-500 uppercase tracking-widest mt-1">Uplinked</p>
                       </div>
                     </div>
                   ))}

@@ -1,15 +1,30 @@
 import { useState, useEffect } from 'react'
-import { Megaphone, Send, Clock, Trash2, Globe, Users, ShieldCheck, Plus, MessageSquare, AlertCircle } from 'lucide-react'
+import { Megaphone, Send, Clock, Trash2, Globe, Users, ShieldCheck, Plus, MessageSquare, AlertCircle, ChevronDown } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import FacultyLayout from './FacultyLayout'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
 
+const AUDIENCE_OPTIONS = [
+  { value: 'all', label: 'Global Broadcast' },
+  { value: 'students', label: 'All Students' },
+  { value: 'faculty', label: 'Faculty Only' },
+]
+
+const PRIORITY_OPTIONS = [
+  { value: 'info', label: 'Information', color: 'bg-blue-500' },
+  { value: 'warning', label: 'Warning', color: 'bg-yellow-500' },
+  { value: 'urgent', label: 'Urgent', color: 'bg-red-500' },
+]
+
 export default function FacultyAnnouncementsPage() {
   const [announcements, setAnnouncements] = useState([])
   const [loading, setLoading] = useState(true)
+  const [title, setTitle] = useState('')
   const [message, setMessage] = useState('')
   const [audience, setAudience] = useState('all')
+  const [priority, setPriority] = useState('info')
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     fetchAnnouncements()
@@ -20,159 +35,231 @@ export default function FacultyAnnouncementsPage() {
       setLoading(true)
       const { data, error } = await supabase
         .from('announcements')
-        .select('*')
+        .select('*, author:created_by(full_name)')
         .order('created_at', { ascending: false })
       
       if (error) throw error
-      
-      if (data) {
-        setAnnouncements(data.map(a => ({
-          id: a.id,
-          title: a.title,
-          content: a.content,
-          date: new Date(a.created_at).toLocaleDateString(),
-          audience: a.audience_type === 'division' ? `Div ${a.target_id}` : 'Global',
-          type: a.priority || 'info'
-        })))
-      }
+      if (data) setAnnouncements(data)
     } catch (err) {
       console.error('Announcements Error:', err)
-      toast.error('Announcement Node Synchronization Failed')
+      toast.error('Failed to load announcements')
     } finally {
       setLoading(false)
     }
   }
 
   async function handleBroadcast() {
-    if (!message) return
+    if (!message.trim()) {
+      toast.error('Message is required')
+      return
+    }
     
     try {
+      setSubmitting(true)
+      const user = (await supabase.auth.getUser()).data.user
+
       const { error } = await supabase
         .from('announcements')
         .insert({
-          title: 'Faculty Update',
-          content: message,
-          audience_type: audience === 'all' ? 'global' : 'division',
+          title: title.trim() || 'Announcement',
+          content: message.trim(),
+          audience_type: audience === 'all' ? 'global' : 'department',
           target_id: audience === 'all' ? null : audience,
-          created_by: (await supabase.auth.getUser()).data.user.id
+          priority,
+          created_by: user?.id
         })
       
       if (error) throw error
 
-      toast.success('Broadcast Sequence Initiated')
+      toast.success('Announcement Published ✓')
+      setTitle('')
       setMessage('')
+      setPriority('info')
       fetchAnnouncements()
     } catch (err) {
       console.error('Broadcast Error:', err)
-      toast.error('Failed to deploy broadcast')
+      toast.error('Failed: ' + (err.message || 'Unknown error'))
+    } finally {
+      setSubmitting(false)
     }
+  }
+
+  async function deleteAnnouncement(id) {
+    const { error } = await supabase.from('announcements').delete().eq('id', id)
+    if (!error) {
+      toast.success('Deleted')
+      setAnnouncements(prev => prev.filter(a => a.id !== id))
+    } else {
+      toast.error('Delete failed')
+    }
+  }
+
+  function getTimeAgo(dateStr) {
+    const diff = Date.now() - new Date(dateStr).getTime()
+    const mins = Math.floor(diff / 60000)
+    if (mins < 1) return 'Just now'
+    if (mins < 60) return `${mins}m ago`
+    const hours = Math.floor(mins / 60)
+    if (hours < 24) return `${hours}h ago`
+    return new Date(dateStr).toLocaleDateString()
   }
 
   return (
     <FacultyLayout>
-      <div className="space-y-8 lg:space-y-12 pb-20">
+      <div className="space-y-6 lg:space-y-8 pb-20">
         {/* HEADER */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 lg:gap-8">
-          <div className="text-center md:text-left">
-            <div className="flex items-center justify-center md:justify-start gap-2 mb-2 lg:mb-3">
-              <Megaphone size={12} className="text-blue-500" />
-              <span className="text-[8px] lg:text-[10px] font-black text-blue-500 uppercase tracking-[0.4em]">Campus Broadcast Protocol</span>
-            </div>
-            <h2 className="text-3xl lg:text-5xl font-black text-white tracking-tighter uppercase leading-none italic">Public <span className="text-blue-500">Announcements</span></h2>
-            <p className="text-gray-500 text-[8px] lg:text-[10px] font-black uppercase tracking-[0.2em] mt-3 italic">
-              Deploying institutional directives via the Nexus
-            </p>
+        <div className="text-center md:text-left">
+          <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
+            <Megaphone size={12} className="text-blue-500" />
+            <span className="text-[8px] lg:text-[10px] font-black text-blue-500 uppercase tracking-[0.3em]">Broadcast Center</span>
           </div>
+          <h2 className="text-2xl lg:text-4xl font-black text-white tracking-tighter uppercase leading-none">Public <span className="text-blue-500">Announcements</span></h2>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
            {/* BROADCAST TERMINAL */}
-           <div className="lg:col-span-1 space-y-6">
-              <div className="bg-[#161b22] border border-white/10 rounded-3xl lg:rounded-[48px] p-6 lg:p-10 space-y-8 shadow-2xl">
-                 <h4 className="text-[9px] lg:text-[10px] font-black text-white uppercase tracking-[0.4em] text-center lg:text-left">Broadcast Terminal</h4>
+           <div className="lg:col-span-1 space-y-5">
+              <div className="bg-[#161b22] border border-white/10 rounded-2xl lg:rounded-3xl p-5 lg:p-7 space-y-5">
+                 <h4 className="text-[9px] font-black text-white uppercase tracking-[0.3em]">New Broadcast</h4>
                  
-                 <div className="space-y-6">
-                    <div className="space-y-3">
-                       <label className="text-[8px] lg:text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 italic">Target Audience</label>
-                       <select 
-                         value={audience}
-                         onChange={(e) => setAudience(e.target.value)}
-                         className="w-full bg-white/5 border border-white/10 rounded-xl lg:rounded-2xl py-4 lg:py-5 px-5 lg:px-6 text-[9px] lg:text-[10px] font-black uppercase tracking-widest text-white focus:outline-none focus:border-blue-500 transition-all appearance-none shadow-inner"
-                       >
-                          <option value="all">Global Broadcast</option>
-                          {['A', 'B', 'C', 'D', 'E', 'F'].map(div => (
-                            <option key={div} value={`div_${div.toLowerCase()}`}>Division {div}</option>
-                          ))}
-                       </select>
+                 <div className="space-y-4">
+                    {/* Title */}
+                    <div className="space-y-2">
+                       <label className="text-[8px] font-black text-gray-500 uppercase tracking-widest ml-1">Title</label>
+                       <input
+                         value={title}
+                         onChange={e => setTitle(e.target.value)}
+                         placeholder="Announcement title..."
+                         className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 px-4 text-sm text-white placeholder:text-gray-600 outline-none focus:border-blue-500/50 transition-all"
+                       />
                     </div>
 
-                    <div className="space-y-3">
-                       <label className="text-[8px] lg:text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 italic">Message Payload</label>
+                    {/* Audience - Custom dropdown */}
+                    <div className="space-y-2">
+                       <label className="text-[8px] font-black text-gray-500 uppercase tracking-widest ml-1">Target Audience</label>
+                       <div className="relative">
+                         <select 
+                           value={audience}
+                           onChange={(e) => setAudience(e.target.value)}
+                           className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 px-4 text-sm text-white focus:outline-none focus:border-blue-500/50 transition-all appearance-none cursor-pointer"
+                           style={{ colorScheme: 'dark' }}
+                         >
+                            {AUDIENCE_OPTIONS.map(opt => (
+                              <option key={opt.value} value={opt.value} style={{ background: '#161b22', color: 'white' }}>{opt.label}</option>
+                            ))}
+                         </select>
+                         <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                       </div>
+                    </div>
+
+                    {/* Priority */}
+                    <div className="space-y-2">
+                       <label className="text-[8px] font-black text-gray-500 uppercase tracking-widest ml-1">Priority Level</label>
+                       <div className="grid grid-cols-3 gap-2">
+                         {PRIORITY_OPTIONS.map(opt => (
+                           <button
+                             key={opt.value}
+                             onClick={() => setPriority(opt.value)}
+                             className={`py-2.5 rounded-lg text-[8px] font-black uppercase tracking-widest border transition-all ${
+                               priority === opt.value 
+                                 ? opt.value === 'urgent' ? 'bg-red-600 border-red-600 text-white' 
+                                 : opt.value === 'warning' ? 'bg-yellow-500 border-yellow-500 text-slate-950'
+                                 : 'bg-blue-600 border-blue-600 text-white'
+                                 : 'bg-white/5 border-white/10 text-gray-500'
+                             }`}
+                           >
+                             {opt.label}
+                           </button>
+                         ))}
+                       </div>
+                    </div>
+
+                    {/* Message */}
+                    <div className="space-y-2">
+                       <label className="text-[8px] font-black text-gray-500 uppercase tracking-widest ml-1">Message</label>
                        <textarea 
-                         placeholder="ENTER ANNOUNCEMENT CONTENT..."
+                         placeholder="Write your announcement..."
                          value={message}
                          onChange={(e) => setMessage(e.target.value)}
-                         rows={5}
-                         className="w-full bg-white/5 border border-white/10 rounded-2xl lg:rounded-[32px] py-5 lg:py-6 px-5 lg:px-6 text-[10px] lg:text-[11px] font-black uppercase tracking-widest text-white focus:outline-none focus:border-blue-500 transition-all resize-none shadow-inner"
+                         rows={4}
+                         className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 px-4 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500/50 transition-all resize-none"
                        />
                     </div>
 
                     <button 
                       onClick={handleBroadcast}
-                      className="w-full py-4 lg:py-6 bg-blue-600 text-white rounded-xl lg:rounded-[32px] text-[9px] lg:text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-600/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
+                      disabled={submitting || !message.trim()}
+                      className="w-full py-4 bg-blue-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                     >
-                       <Send size={16} /> Deploy Broadcast
+                       {submitting ? <><div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> Publishing...</> : <><Send size={14} /> Publish</>}
                     </button>
                  </div>
-              </div>
-
-              <div className="p-6 lg:p-8 bg-blue-500/10 border border-blue-500/20 rounded-2xl lg:rounded-[32px] flex items-center gap-4 shadow-xl">
-                 <ShieldCheck size={20} className="text-blue-500 shrink-0" />
-                 <p className="text-[8px] lg:text-[9px] font-black text-blue-500 uppercase tracking-widest leading-relaxed">Broadcasts are sent via Push Notification and In-App Feed to all synchronized terminals.</p>
               </div>
            </div>
 
            {/* RECENT FEED */}
-           <div className="lg:col-span-2 space-y-6 lg:space-y-8">
-              <h4 className="text-[9px] lg:text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] px-4 text-center lg:text-left italic">Broadcast History Log</h4>
+           <div className="lg:col-span-2 space-y-4">
+              <h4 className="text-[9px] font-black text-gray-500 uppercase tracking-[0.3em] px-1">History ({announcements.length})</h4>
               
-              <div className="space-y-4 lg:space-y-6">
-                 <AnimatePresence mode="popLayout">
-                    {announcements.map((ann, idx) => (
-                       <motion.div 
-                         key={ann.id}
-                         initial={{ opacity: 0, y: 10 }}
-                         animate={{ opacity: 1, y: 0 }}
-                         className="bg-[#161b22]/50 border border-white/5 rounded-3xl lg:rounded-[40px] p-6 lg:p-10 hover:border-white/10 transition-all group shadow-2xl relative overflow-hidden"
-                       >
-                          <div className="flex items-start justify-between mb-4 lg:mb-6">
-                             <div className="flex items-center gap-4">
-                                <div className={`w-10 h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl flex items-center justify-center font-black text-lg ${ann.type === 'urgent' ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-blue-500/10 text-blue-500 border border-blue-500/20'}`}>
-                                   {ann.type === 'urgent' ? <AlertCircle size={18} lg:size={20} /> : <MessageSquare size={18} lg:size={20} />}
-                                </div>
-                                <div>
-                                   <h4 className="text-lg lg:text-xl font-black text-white uppercase tracking-tight truncate max-w-[200px] sm:max-w-none">{ann.title}</h4>
-                                   <div className="flex items-center gap-2 mt-1">
-                                      <span className="text-[8px] lg:text-[9px] font-black text-gray-500 uppercase tracking-widest">To {ann.audience}</span>
-                                      <span className="w-1 h-1 rounded-full bg-gray-700" />
-                                      <span className="text-[8px] lg:text-[9px] font-black text-gray-500 uppercase tracking-widest italic">{ann.date}</span>
-                                   </div>
-                                </div>
-                             </div>
-                             <button className="p-2.5 lg:p-3 bg-white/5 rounded-lg lg:rounded-xl text-gray-600 hover:text-red-500 transition-all opacity-0 lg:group-hover:opacity-100 group-hover:opacity-100 border border-white/5 shadow-inner"><Trash2 size={16} /></button>
-                          </div>
-                          <p className="text-xs lg:text-sm text-gray-400 font-medium leading-relaxed italic">"{ann.content}"</p>
-                       </motion.div>
-                    ))}
-                 </AnimatePresence>
-
-                 {announcements.length === 0 && (
-                   <div className="py-20 text-center flex flex-col items-center gap-4">
-                     <Megaphone size={40} className="text-gray-800 opacity-20" />
-                     <p className="text-[9px] lg:text-[11px] font-black text-gray-700 uppercase tracking-[0.4em] italic px-6">No previous broadcast protocols found in history</p>
-                   </div>
-                 )}
-              </div>
+              {loading ? (
+                <div className="py-12 flex flex-col items-center gap-3">
+                  <div className="w-8 h-8 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
+                  <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Loading...</p>
+                </div>
+              ) : announcements.length === 0 ? (
+                <div className="py-12 text-center flex flex-col items-center gap-3">
+                  <Megaphone size={32} className="text-gray-800 opacity-20" />
+                  <p className="text-[10px] font-black text-gray-700 uppercase tracking-[0.3em]">No announcements yet</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <AnimatePresence mode="popLayout">
+                     {announcements.map((ann) => (
+                        <motion.div 
+                          key={ann.id}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="bg-[#161b22]/50 border border-white/5 rounded-2xl p-5 hover:border-white/10 transition-all group relative overflow-hidden"
+                        >
+                           <div className="flex items-start justify-between mb-3">
+                              <div className="flex items-center gap-3">
+                                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm border ${
+                                   ann.priority === 'urgent' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 
+                                   ann.priority === 'warning' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' :
+                                   'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                                 }`}>
+                                    {ann.priority === 'urgent' ? <AlertCircle size={16} /> : <MessageSquare size={16} />}
+                                 </div>
+                                 <div>
+                                    <h4 className="text-sm font-black text-white uppercase tracking-tight truncate max-w-[200px] sm:max-w-none">{ann.title}</h4>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                       <span className="text-[7px] font-black text-gray-500 uppercase tracking-widest">
+                                         {ann.audience_type === 'global' ? 'Global' : ann.target_id || 'Targeted'}
+                                       </span>
+                                       <span className="w-1 h-1 rounded-full bg-gray-700" />
+                                       <span className="text-[7px] font-black text-gray-500 uppercase tracking-widest">{getTimeAgo(ann.created_at)}</span>
+                                       {ann.author?.full_name && (
+                                         <>
+                                           <span className="w-1 h-1 rounded-full bg-gray-700" />
+                                           <span className="text-[7px] font-black text-gray-500 uppercase tracking-widest">By {ann.author.full_name}</span>
+                                         </>
+                                       )}
+                                    </div>
+                                 </div>
+                              </div>
+                              <button 
+                                onClick={() => deleteAnnouncement(ann.id)}
+                                className="p-2 bg-white/5 rounded-lg text-gray-600 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100 border border-white/5"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                           </div>
+                           <p className="text-xs text-gray-400 font-medium leading-relaxed pl-12">{ann.content}</p>
+                        </motion.div>
+                     ))}
+                  </AnimatePresence>
+                </div>
+              )}
            </div>
         </div>
       </div>
