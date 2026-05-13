@@ -136,15 +136,25 @@ export default function ProfilePage() {
         {/* Stats Grid */}
         <div className="grid grid-cols-3 gap-4 mb-10">
            {[
-             { label: 'ECO XP', val: profile?.eco_points || 0, icon: Sparkles, color: 'text-yellow-500' },
-             { label: 'CO2 SAVED', val: `${profile?.total_co2_kg?.toFixed(1)}kg`, icon: Zap, color: 'text-green-500' },
-             { label: 'BADGES', val: participatedEvents.length, icon: Award, color: 'text-blue-500' },
+             { label: 'ECO XP', val: profile?.eco_points || 0, icon: Sparkles, color: 'text-yellow-500', tip: 'Points earned from sustainable actions' },
+             { label: 'CO2 SAVED', val: `${profile?.total_co2_kg?.toFixed(1)}kg`, icon: Zap, color: 'text-green-500', tip: 'Total carbon footprint reduction' },
+             { label: 'BADGES', val: participatedEvents.length, icon: Award, color: 'text-blue-500', tip: 'Event participation milestones' },
            ].map(stat => (
-             <div key={stat.label} className="bg-white/5 border border-white/5 rounded-3xl p-4 text-center">
+             <motion.div 
+               key={stat.label} 
+               whileHover={{ y: -5 }}
+               className="bg-white/5 border border-white/5 rounded-3xl p-4 text-center group relative cursor-help"
+             >
                 <stat.icon size={16} className={`${stat.color} mx-auto mb-2`} />
                 <p className="text-lg font-black text-white leading-none mb-1">{stat.val}</p>
                 <p className="text-[7px] font-black text-gray-500 uppercase tracking-widest">{stat.label}</p>
-             </div>
+                
+                {/* Tooltip */}
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 px-3 py-2 bg-slate-900 border border-white/10 rounded-xl text-[7px] font-black uppercase tracking-widest text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-2xl">
+                   {stat.tip}
+                   <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-900" />
+                </div>
+             </motion.div>
            ))}
         </div>
 

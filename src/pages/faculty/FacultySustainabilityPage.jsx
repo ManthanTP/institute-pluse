@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Leaf, Wind, Droplets, Zap, ShieldCheck, TrendingUp, History, Download, Award, Globe, TreePine } from 'lucide-react'
+import { Leaf, Wind, Droplets, Zap, ShieldCheck, TrendingUp, History, Download, Award, Globe, TreePine, Info } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import FacultyLayout from './FacultyLayout'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -62,7 +62,18 @@ export default function FacultySustainabilityPage() {
               <Leaf size={12} className="text-emerald-500" />
               <span className="text-[8px] lg:text-[10px] font-black text-emerald-500 uppercase tracking-[0.4em]">Environmental Impact Protocol</span>
             </div>
-            <h2 className="text-3xl lg:text-5xl font-black text-white tracking-tighter uppercase leading-none italic">Campus <span className="text-emerald-500">Greenhouse</span></h2>
+            <h2 className="text-3xl lg:text-5xl font-black text-white tracking-tighter uppercase leading-none italic flex items-center justify-center md:justify-start gap-4">
+               Campus <span className="text-emerald-500">Greenhouse</span>
+               <div className="group relative">
+                  <Info size={16} className="text-gray-600 hover:text-white cursor-help transition-colors" />
+                  <div className="absolute left-0 top-full mt-4 w-64 p-4 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                     <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-2">Protocol Brief</p>
+                     <p className="text-[11px] font-medium text-gray-400 leading-relaxed normal-case">
+                        The Greenhouse monitors the digital-first ecological impact of your academic activities. Automated attendance and paperless workflows are converted into real-time carbon offset metrics.
+                     </p>
+                  </div>
+               </div>
+            </h2>
             <p className="text-gray-500 text-[8px] lg:text-[10px] font-black uppercase tracking-[0.2em] mt-3 italic">
               Monitoring ecological footprints in real-time
             </p>

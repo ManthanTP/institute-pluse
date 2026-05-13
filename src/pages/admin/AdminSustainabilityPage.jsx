@@ -55,6 +55,27 @@ export default function AdminSustainabilityPage() {
     fetchData()
   }, [])
 
+  const handleGenerateReport = () => {
+    const reportData = {
+      timestamp: new Date().toISOString(),
+      summary: stats,
+      department_breakdown: deptData,
+      raw_logs_sample: logs.slice(0, 50).map(l => ({
+        date: l.log_date,
+        student_id: l.student_id,
+        co2_kg: l.total_kg,
+        points: l.eco_points_earned
+      }))
+    }
+    const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `sustainability-report-${new Date().getTime()}.json`
+    link.click()
+    toast.success('Sustainability Report Generated')
+  }
+
   return (
     <AdminLayout>
       <div className="space-y-10">
@@ -71,7 +92,10 @@ export default function AdminSustainabilityPage() {
             </p>
           </div>
           <div className="flex gap-3">
-             <button className="px-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:text-white transition-all">
+             <button 
+               onClick={handleGenerateReport}
+               className="px-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:text-white transition-all"
+             >
                 Generate Report
              </button>
           </div>

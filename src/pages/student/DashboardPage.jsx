@@ -165,8 +165,18 @@ export default function DashboardPage() {
               }`}>
                 {hasLogged ? 'Protocol Active' : 'System Ready'}
               </span>
-              <h2 className="text-4xl font-black text-white mb-2 leading-none tracking-tighter">
-                {ecoScore}% <span className="text-sm font-black text-gray-500 uppercase tracking-widest ml-2">Efficiency</span>
+              <h2 className="text-4xl font-black text-white mb-2 leading-none tracking-tighter flex items-center gap-4">
+                {ecoScore}% 
+                <div className="group relative">
+                   <Info size={14} className="text-gray-500 hover:text-white cursor-help transition-colors" />
+                   <div className="absolute left-0 top-full mt-4 w-60 p-4 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                      <p className="text-[9px] font-black text-green-500 uppercase tracking-widest mb-2">Efficiency Rating</p>
+                      <p className="text-[10px] font-medium text-gray-400 leading-relaxed normal-case">
+                         Calculated based on your daily sustainable actions, event participation, and digital footprint reduction. Higher scores yield more ECO XP.
+                      </p>
+                   </div>
+                </div>
+                <span className="text-sm font-black text-gray-500 uppercase tracking-widest ml-2">Efficiency</span>
               </h2>
               <p className="text-[10px] mb-8 leading-relaxed font-black text-gray-500 uppercase tracking-[0.1em]">
                 {hasLogged 

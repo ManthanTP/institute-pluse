@@ -56,16 +56,13 @@
 | 23 | Admin Notifications — sections, auto-notify | `admin/AdminNotificationsPage.jsx` | Add categorized notifications |
 | 24 | Admin Audit Logs — not working + explain | `admin/AdminAuditPage.jsx` | Fix logging + add usage guide |
 
-## Phase 5: Polish & UX
-*Minor issues and cleanup*
-
-| # | Issue | Files | Fix |
-|---|-------|-------|-----|
-| 27 | Student Profile — badges explanation, back button | `student/ProfilePage.jsx` | Add badge tooltips, fix navigation |
-| 28 | Leaderboard — student only, eco points student only | `student/LeaderboardPage.jsx` | Add role filtering |
-| 12 | Campus Greenhouse — unclear purpose | Various | Add onboarding tooltip/explanation |
-| 26b | System Settings + Admin Profile — add features | `admin/AdminSettingsPage.jsx`, `admin/AdminProfilePage.jsx` | Add useful settings |
-| 18b | Owner Dashboard — Cafeteria Hub access | `pages/owner/` | Add cafeteria navigation link |
+### Phase 5: Polish & UX ✅
+**Status: COMPLETED**
+- [x] **Student Profile**: Added badge tooltips and fixed navigation logic.
+- [x] **Leaderboard Hardening**: Implemented role-based filtering (students only).
+- [x] **Campus Greenhouse Onboarding**: Added informative tooltips across sustainability modules.
+- [x] **Admin Settings Hub**: Re-engineered with functional toggles and maintenance protocols.
+- [x] **Owner Accessibility**: Integrated cafeteria navigation into the owner dashboard.
 
 ---
 

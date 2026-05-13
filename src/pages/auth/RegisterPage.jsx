@@ -84,10 +84,13 @@ export default function RegisterPage() {
     if (form.role === 'student' && !form.usn) return setError('USN is required for students.')
     
     // Key validation
-    if (form.role === 'faculty' && adminKey !== 'NEXUS_FACULTY_2026') {
+    const FACULTY_KEY = import.meta.env.VITE_FACULTY_SECRET_KEY || 'NEXUS_FACULTY_2026'
+    const ADMIN_KEY = import.meta.env.VITE_ADMIN_SECRET_KEY || 'NEXUS_ADMIN_2026'
+
+    if (form.role === 'faculty' && adminKey !== FACULTY_KEY) {
       return setError('Invalid Faculty Registration Key.')
     }
-    if (form.role === 'admin' && adminKey !== 'NEXUS_ADMIN_2026') {
+    if (form.role === 'admin' && adminKey !== ADMIN_KEY) {
       return setError('Invalid Administrative Access Key.')
     }
 

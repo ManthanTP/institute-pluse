@@ -16,18 +16,40 @@ export default function AdminAuditPage() {
   async function fetchLogs() {
     try {
       setLoading(true)
-      // Mock Data
-      setLogs([
-        { id: 1, action: 'User Update', user: 'Admin 01', target: 'Student Profile (ID: 293)', time: '2 mins ago', severity: 'low' },
-        { id: 2, action: 'Security Override', user: 'System Root', target: 'Attendance Registry (DIV A)', time: '15 mins ago', severity: 'high' },
-        { id: 3, action: 'Export Initiated', user: 'Prof. Miller', target: 'Sustainability Report (Q2)', time: '1 hour ago', severity: 'medium' },
-        { id: 4, action: 'Broadcast Deployed', user: 'Admin 02', target: 'Emergency Channel', time: '3 hours ago', severity: 'medium' },
-      ])
+      const { data, error } = await supabase
+        .from('audit_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100)
+      
+      if (error) throw error
+      if (data) setLogs(data)
     } catch (err) {
       toast.error('Audit Stream Synchronization Failed')
+      console.error('Audit Error:', err)
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleExportAudit = () => {
+    if (!logs.length) return toast.error('No logs to export')
+    const headers = ['Action', 'Admin', 'Target', 'Time', 'Severity']
+    const csvData = logs.map(l => [
+      l.action,
+      l.admin_name || 'System',
+      l.target || 'General',
+      new Date(l.created_at).toLocaleString(),
+      l.severity
+    ])
+    const csvContent = [headers, ...csvData].map(e => e.join(',')).join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `nexus-audit-${new Date().getTime()}.csv`
+    link.click()
+    toast.success('Audit Manifest Exported')
   }
 
   return (
@@ -44,7 +66,10 @@ export default function AdminAuditPage() {
           </div>
 
           <div className="flex items-center gap-4">
-             <button className="px-10 py-5 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-white transition-all flex items-center gap-3">
+             <button 
+               onClick={handleExportAudit}
+               className="px-10 py-5 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-white transition-all flex items-center gap-3"
+             >
                 <Download size={16} /> Export Audit Stream
              </button>
           </div>

@@ -126,6 +126,23 @@ export default function AdminDashboard() {
     return () => { supabase.removeChannel(channel) }
   }, [])
 
+  const handleDiagnosticExport = () => {
+    const diagnosticData = {
+      timestamp: new Date().toISOString(),
+      metrics: stats,
+      chartData: chartData,
+      status: 'Normal',
+      version: '2.4.0'
+    }
+    const blob = new Blob([JSON.stringify(diagnosticData, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `nexus-diagnostic-${new Date().getTime()}.json`
+    link.click()
+    toast.success('Diagnostic Report Exported')
+  }
+
   return (
     <AdminLayout>
       <div className="space-y-8 lg:space-y-10 pb-20">
@@ -142,7 +159,10 @@ export default function AdminDashboard() {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
-             <button className="px-6 py-4 rounded-xl lg:rounded-2xl bg-white/5 border border-white/10 text-[8px] lg:text-[10px] font-black uppercase tracking-widest hover:text-white transition-all backdrop-blur-xl">
+             <button 
+               onClick={handleDiagnosticExport}
+               className="px-6 py-4 rounded-xl lg:rounded-2xl bg-white/5 border border-white/10 text-[8px] lg:text-[10px] font-black uppercase tracking-widest hover:text-white transition-all backdrop-blur-xl"
+             >
                 Diagnostic Export
              </button>
              <button onClick={() => window.location.reload()} className="px-6 py-4 rounded-xl lg:rounded-2xl bg-green-600 text-white text-[8px] lg:text-[10px] font-black uppercase tracking-widest hover:bg-green-500 shadow-lg shadow-green-600/20 transition-all">

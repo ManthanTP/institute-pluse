@@ -61,12 +61,21 @@ export default function OwnerDashboard() {
           <StatCard icon={Utensils} label="Hero Item" value={stats.popularItem} color="#a855f7" />
         </div>
 
-        <div className="bg-white/5 border border-white/10 rounded-[40px] p-8 backdrop-blur-xl">
-           <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] mb-8">System Greeting</h3>
-           <div className="max-w-2xl">
-              <p className="text-xl font-black text-white uppercase tracking-tight leading-relaxed">
+        <div className="bg-white/5 border border-white/10 rounded-[40px] p-8 backdrop-blur-xl relative overflow-hidden group">
+           <div className="absolute top-0 right-0 p-12 opacity-5 rotate-12 group-hover:rotate-0 transition-transform duration-700 pointer-events-none">
+              <Utensils size={120} />
+           </div>
+           <div className="relative z-10 max-w-2xl">
+              <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] mb-8">System Greeting</h3>
+              <p className="text-xl font-black text-white uppercase tracking-tight leading-relaxed mb-8">
                 Welcome back, Director. Your cafeteria nodes are fully operational. Access the <span className="text-orange-500">Cafeteria Hub</span> to manage active fuel sequences and the nutrient registry.
               </p>
+              <button 
+                onClick={() => window.location.href = '/owner/cafeteria'}
+                className="px-8 py-4 bg-orange-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-orange-600/20 hover:scale-105 transition-all flex items-center gap-3"
+              >
+                 Enter Cafeteria Hub <TrendingUp size={16} />
+              </button>
            </div>
         </div>
       </div>

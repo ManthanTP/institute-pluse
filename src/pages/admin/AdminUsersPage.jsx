@@ -36,6 +36,35 @@ export default function AdminUsersPage() {
     }
   }
 
+  const handleExportRegistry = () => {
+    const headers = ['Full Name', 'Email', 'Role', 'Department', 'Eco Points', 'Joined Date']
+    const csvData = filtered.map(u => [
+      u.full_name,
+      u.email,
+      u.role,
+      u.department || 'General',
+      u.eco_points || 0,
+      new Date(u.created_at).toLocaleDateString()
+    ])
+    const csvContent = [headers, ...csvData].map(e => e.join(',')).join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `nexus-registry-${new Date().getTime()}.csv`
+    link.click()
+    toast.success('Registry Exported Successfully')
+  }
+
+  async function updatePoints(userId, newPoints) {
+    const { error } = await supabase.from('profiles').update({ eco_points: parseInt(newPoints) }).eq('id', userId)
+    if (!error) {
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, eco_points: parseInt(newPoints) } : u))
+      setSelectedUser(prev => ({ ...prev, eco_points: parseInt(newPoints) }))
+      toast.success('Ecosystem Credits Recalibrated')
+    }
+  }
+
   const filtered = users.filter(u => {
     const matchSearch = u.full_name?.toLowerCase().includes(search.toLowerCase()) || u.email?.toLowerCase().includes(search.toLowerCase())
     const matchDept = activeDept === 'All' || u.department === activeDept
@@ -74,7 +103,10 @@ export default function AdminUsersPage() {
                <button onClick={() => setActiveTab('all')} className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'all' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-white'}`}>All Users</button>
                <button onClick={() => setActiveTab('students')} className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'students' ? 'bg-green-600 text-white' : 'text-gray-500 hover:text-white'}`}>Student Registry</button>
             </div>
-            <button className="px-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:text-white transition-all">
+            <button 
+              onClick={handleExportRegistry}
+              className="px-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:text-white transition-all"
+            >
               Export Registry
             </button>
           </div>
@@ -326,6 +358,21 @@ export default function AdminUsersPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-[32px] p-8 mb-10">
+                <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em] mb-4">Point Calibration Node</p>
+                <div className="flex items-center gap-4">
+                  <input 
+                    type="number"
+                    defaultValue={selectedUser.eco_points || 0}
+                    onBlur={(e) => updatePoints(selectedUser.id, e.target.value)}
+                    className="flex-1 bg-black/20 border border-white/10 rounded-2xl p-4 text-white font-black text-xl outline-none focus:border-blue-500/50"
+                  />
+                  <div className="px-6 py-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-500 font-black text-[10px] uppercase tracking-widest">
+                    Eco Points
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-4">
