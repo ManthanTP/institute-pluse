@@ -215,7 +215,7 @@ Driver Login → Start GPS Sharing → Realtime Location Updates → Students Tr
 
 ---
 
-## 10. Design System — "Nexus"
+## 10. Design System — "Pulse"
 
 ### Theme
 - **Base:** Slate-950 dark mode with glassmorphic cards

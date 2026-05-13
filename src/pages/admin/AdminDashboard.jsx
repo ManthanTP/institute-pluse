@@ -138,7 +138,7 @@ export default function AdminDashboard() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `nexus-diagnostic-${new Date().getTime()}.json`
+    link.download = `pulse-diagnostic-${new Date().getTime()}.json`
     link.click()
     toast.success('Diagnostic Report Exported')
   }
@@ -151,7 +151,7 @@ export default function AdminDashboard() {
           <div className="text-center md:text-left">
             <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
-              <span className="text-[8px] lg:text-[10px] font-black text-green-500 uppercase tracking-[0.3em]">Real-time Nexus Command</span>
+              <span className="text-[8px] lg:text-[10px] font-black text-green-500 uppercase tracking-[0.3em]">Real-time Pulse Command</span>
             </div>
             <h2 className="text-3xl lg:text-4xl font-black text-white tracking-tighter uppercase leading-none italic">Campus <span className="text-green-500">Core</span></h2>
             <p className="text-gray-500 text-[8px] lg:text-[10px] font-black uppercase tracking-[0.2em] mt-3 italic">
@@ -281,7 +281,7 @@ export default function AdminDashboard() {
             className="bg-white/5 border border-white/10 rounded-3xl lg:rounded-[40px] p-6 lg:p-8 backdrop-blur-xl relative overflow-hidden"
           >
             <div className="flex items-center justify-between mb-8">
-              <h3 className="text-[8px] lg:text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Nexus Core Status</h3>
+              <h3 className="text-[8px] lg:text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Pulse Core Status</h3>
             </div>
             <div className="space-y-6">
                <div className="flex items-center justify-between">
@@ -304,7 +304,7 @@ export default function AdminDashboard() {
                </div>
                <div className="pt-6 border-t border-white/5">
                   <p className="text-[8px] lg:text-[9px] font-black text-gray-600 uppercase tracking-widest leading-relaxed">
-                     All subsystems operational. Nexus kernel version 2.4.0 active. Security protocols at maximum threshold. Encryption level: AES-256-GCM.
+                     All subsystems operational. Pulse kernel version 2.4.0 active. Security protocols at maximum threshold. Encryption level: AES-256-GCM.
                   </p>
                </div>
             </div>

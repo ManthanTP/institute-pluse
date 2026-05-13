@@ -53,9 +53,9 @@ export default function StudentLayout({ children, title, showBack = false, hideC
     navigate('/login')
   }
 
-  const fullName = profile?.full_name || 'Nexus User'
+  const fullName = profile?.full_name || 'InstitutePulse User'
   const firstName = profile?.full_name?.split(' ')[0] || 'User'
-  const activeLabel = STUDENT_NAV.find(n => n.path === location.pathname)?.label || title || 'Nexus'
+  const activeLabel = STUDENT_NAV.find(n => n.path === location.pathname)?.label || title || 'InstitutePulse'
 
   return (
     <div className="flex min-h-[100dvh] bg-[#020617] text-white overflow-hidden selection:bg-green-500/30 selection:text-white">
@@ -77,7 +77,7 @@ export default function StudentLayout({ children, title, showBack = false, hideC
             <img src={logo} alt="Logo" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(34,197,94,0.2)]" />
             <div>
               <p className="text-white font-black text-sm uppercase tracking-tighter">InstitutePulse</p>
-              <p className="text-green-500 font-black text-[9px] uppercase tracking-[0.3em]">Student Nexus</p>
+              <p className="text-green-500 font-black text-[9px] uppercase tracking-[0.3em]">Student Hub</p>
             </div>
           </div>
 

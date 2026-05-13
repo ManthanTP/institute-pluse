@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { TrendingDown, TrendingUp, Calendar, Leaf, Wind, Droplets, Zap, ChevronRight, Share2, Download, Info, Bus, UtensilsCrossed } from 'lucide-react'
+import { TrendingDown, TrendingUp, Calendar, Leaf, Wind, Droplets, Zap, ChevronRight, Share2, Download, Info, Bus, UtensilsCrossed, ArrowLeft } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store/index'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -103,21 +103,27 @@ export default function CarbonHistoryPage() {
       <div className="relative z-10 px-6 pt-6">
         {/* HEADER AREA */}
         <div className="flex items-center justify-between mb-8">
-          <div className="flex flex-col">
-            <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-1">Impact Analytics</span>
-            <h1 className="text-2xl font-black text-white uppercase tracking-tight leading-none mb-2">Carbon History</h1>
-            <p className="text-[9px] font-black text-green-500 uppercase tracking-[0.3em] flex items-center gap-1.5">
-               <TrendingDown size={10} /> Emissions Reduction Active
-            </p>
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => window.history.back()}
+              className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400"
+            >
+              <ArrowLeft size={18} />
+            </button>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-1">Impact Analytics</span>
+              <h1 className="text-2xl font-black text-white uppercase tracking-tight leading-none mb-1">Carbon History</h1>
+              <p className="text-[9px] font-black text-green-500 uppercase tracking-[0.3em] flex items-center gap-1.5">
+                 <TrendingDown size={10} /> Emissions Reduction Active
+              </p>
+            </div>
           </div>
-          <div className="flex gap-2">
-             <button 
-               onClick={handleShare}
-               className="p-3 rounded-2xl bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-all"
-             >
-                <Share2 size={18} />
-             </button>
-          </div>
+          <button 
+            onClick={handleShare}
+            className="p-3 rounded-2xl bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-all"
+          >
+            <Share2 size={18} />
+          </button>
         </div>
 
         {/* OVERVIEW CARDS */}
@@ -305,7 +311,7 @@ export default function CarbonHistoryPage() {
            <div className="absolute top-0 right-0 p-4">
               <Info size={24} className="text-blue-500 opacity-20" />
            </div>
-           <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em] mb-2">Nexus Insight</h4>
+           <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em] mb-2">InstitutePulseAI Insight</h4>
            <p className="text-[12px] font-medium text-white/80 leading-relaxed max-w-[80%]">
              Reducing your meal's carbon footprint by switching to vegetarian options can save up to 1.2 kg of CO2 per meal!
            </p>

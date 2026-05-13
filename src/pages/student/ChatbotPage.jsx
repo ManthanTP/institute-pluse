@@ -21,7 +21,7 @@ export default function ChatbotPage() {
   const [messages, setMessages] = useState([
     { 
       role: 'bot', 
-      content: `Hello ${profile?.full_name?.split(' ')[0] || 'there'}! 👋 I'm your InstitutePulse AI Assistant. I can help with sustainability tips, eco-points, campus navigation, study planning, and more. What would you like to know?`,
+      content: `Hello ${profile?.full_name?.split(' ')[0] || 'there'}! 👋 I'm InstitutePulseAI, your intelligent campus assistant. I can help with sustainability tips, eco-points, campus navigation, study planning, and more. What would you like to know?`,
       time: new Date()
     }
   ])
@@ -35,6 +35,7 @@ export default function ChatbotPage() {
 
   useEffect(() => {
     if (location.state?.initialMessage) {
+      toast.success('Initializing AI Context...')
       handleDirectSend(location.state.initialMessage)
       // clear state to prevent re-sending on reload
       navigate(location.pathname, { replace: true, state: {} })
@@ -126,7 +127,7 @@ export default function ChatbotPage() {
                </div>
             </div>
             <div>
-              <h1 className="text-base font-black text-white uppercase tracking-tight leading-none mb-0.5">Nexus AI</h1>
+              <h1 className="text-base font-black text-white uppercase tracking-tight leading-none mb-0.5">InstitutePulseAI</h1>
               <p className="text-[8px] font-black text-green-500 uppercase tracking-[0.2em] flex items-center gap-1">
                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> Online
               </p>

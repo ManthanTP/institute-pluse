@@ -486,7 +486,7 @@ export default function AttendancePage() {
       </div>
 
       {/* BOTTOM NAV BAR */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-[100]">
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-[100] md:hidden">
         <div className="bg-[#161b22]/90 backdrop-blur-3xl border border-white/10 rounded-[32px] p-4 flex items-center justify-between shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
           <NavIcon icon={Home} label="Home" onClick={() => navigate('/dashboard')} />
           <NavIcon icon={LayoutGrid} label="Log" onClick={() => navigate('/carbon-log')} />

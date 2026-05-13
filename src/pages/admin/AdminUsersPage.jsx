@@ -51,7 +51,7 @@ export default function AdminUsersPage() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `nexus-registry-${new Date().getTime()}.csv`
+    link.download = `pulse-registry-${new Date().getTime()}.csv`
     link.click()
     toast.success('Registry Exported Successfully')
   }
@@ -93,7 +93,7 @@ export default function AdminUsersPage() {
               <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
               <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em]">Directory Management Module</span>
             </div>
-            <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Nexus Registry</h2>
+            <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Pulse Registry</h2>
             <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mt-3">
               {filtered.length} Active Identity Nodes Tracked
             </p>

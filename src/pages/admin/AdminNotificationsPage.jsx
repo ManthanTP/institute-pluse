@@ -60,7 +60,7 @@ export default function AdminNotificationsPage() {
           <div>
             <div className="flex items-center gap-2 mb-3">
               <Bell size={14} className="text-blue-500" />
-              <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.4em]">Global Alert Nexus</span>
+              <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.4em]">Global Alert Pulse</span>
             </div>
             <h2 className="text-5xl font-black text-white tracking-tighter uppercase leading-none italic">System <span className="text-blue-500">Alerts</span></h2>
           </div>

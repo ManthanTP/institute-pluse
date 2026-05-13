@@ -76,7 +76,7 @@ export default function AdminSettingsPage() {
                  <div className="space-y-3">
                     <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 text-orange-500">Master DB Endpoint</label>
                     <div className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 text-[10px] font-black uppercase tracking-[0.2em] text-white flex items-center justify-between">
-                       <span>https://api-core-nexus.supabase.co</span>
+                       <span>https://api-core-pulse.supabase.co</span>
                        <Lock size={14} className="text-gray-700" />
                     </div>
                  </div>
@@ -94,7 +94,7 @@ export default function AdminSettingsPage() {
               <div className="flex items-center justify-between">
                  <div className="flex items-center gap-4">
                     <Cpu size={24} className="text-purple-500" />
-                    <h4 className="text-[11px] font-black text-white uppercase tracking-[0.4em]">Maintenance Nexus</h4>
+                    <h4 className="text-[11px] font-black text-white uppercase tracking-[0.4em]">Maintenance Pulse</h4>
                  </div>
                  <div className="flex items-center gap-3">
                     <span className={`text-[9px] font-black uppercase tracking-widest ${maintenanceMode ? 'text-red-500' : 'text-gray-500'}`}>

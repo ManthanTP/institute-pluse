@@ -13,7 +13,7 @@ const AdminStubPage = ({ title }) => {
           Module <span className="text-blue-500">Under Construction</span>
         </h2>
         <p className="text-gray-500 text-sm font-black uppercase tracking-[0.2em] max-w-md italic">
-          The {title || 'requested'} administrative terminal is currently being synchronized with the Core Nexus.
+          The {title || 'requested'} administrative terminal is currently being synchronized with the Pulse Core.
         </p>
       </div>
     </AdminLayout>

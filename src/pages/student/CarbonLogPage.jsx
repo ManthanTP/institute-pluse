@@ -191,6 +191,22 @@ export default function CarbonLogPage() {
 
 
 
+      {/* HEADER */}
+      <header className="px-6 py-6 border-b border-white/5 relative z-10 backdrop-blur-xl bg-slate-950/40 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => navigate('/dashboard')}
+            className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400"
+          >
+            <ArrowLeft size={18} />
+          </button>
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Sustainability Log</span>
+            <h2 className="text-xl font-black text-white uppercase tracking-tight">Daily Pulse</h2>
+          </div>
+        </div>
+      </header>
+
       <main className="px-6 pt-6 relative z-10 max-w-lg mx-auto">
         {/* LIVE SCORE CARD */}
         <motion.div 
@@ -426,7 +442,7 @@ export default function CarbonLogPage() {
         </motion.button>
 
         <p className="text-center text-[10px] font-black text-gray-600 uppercase tracking-[0.4em] mt-10 opacity-50">
-           Project InstitutePulse • Nexus Node
+           Project InstitutePulse • Pulse Node
         </p>
       </main>
 
@@ -498,7 +514,7 @@ function SuccessOverlay({ ecoScore, ecoPoints, aiTips, onDone, onHistory }) {
             onClick={onDone}
             className="w-full py-5 bg-green-600 text-white rounded-[32px] font-black text-sm uppercase tracking-[0.3em] shadow-xl shadow-green-600/20 flex items-center justify-center gap-3"
           >
-            Return to Nexus <ArrowRight size={18} />
+            Return to Home <ArrowRight size={18} />
           </motion.button>
           <button
             onClick={onHistory}

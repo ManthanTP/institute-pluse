@@ -15,7 +15,7 @@ export default function BottomTabBar() {
   const location = useLocation()
 
   return (
-    <nav className="fixed bottom-0 left-0 w-full px-6 pb-8 pt-2 z-50 pointer-events-none">
+    <nav className="fixed bottom-0 left-0 w-full px-6 pb-8 pt-2 z-50 pointer-events-none md:hidden">
       <div className="max-w-md md:max-w-xl mx-auto h-20 bg-slate-900/80 backdrop-blur-2xl border border-white/10 rounded-[32px] shadow-2xl flex items-center justify-around px-4 pointer-events-auto">
         {tabs.map((tab) => {
           const Icon = tab.icon

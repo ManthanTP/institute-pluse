@@ -86,7 +86,7 @@ export default function LeaderboardPage() {
               <Award size={120} />
            </div>
            <div className="relative z-10">
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] mb-2 opacity-80">Your Nexus Standpoint</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] mb-2 opacity-80">Your Pulse Rank</p>
               <div className="flex items-baseline gap-3 mb-6">
                  <h2 className="text-5xl font-black tracking-tighter italic">#{userRank || '--'}</h2>
                  <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Global Position</span>
@@ -156,7 +156,7 @@ export default function LeaderboardPage() {
               </div>
               <div className="flex-1 min-w-0">
                  <h4 className="text-[13px] font-black text-white uppercase tracking-tight truncate">{leader.full_name}</h4>
-                 <p className="text-[8px] font-black text-gray-600 uppercase tracking-widest mt-0.5">{leader.department || 'Nexus User'}</p>
+                 <p className="text-[8px] font-black text-gray-600 uppercase tracking-widest mt-0.5">{leader.department || 'Pulse User'}</p>
               </div>
               <div className="text-right">
                  <div className="flex items-center gap-1 justify-end">
@@ -171,7 +171,7 @@ export default function LeaderboardPage() {
       </div>
 
       {/* BOTTOM NAV BAR */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-[100]">
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-[100] md:hidden">
         <div className="bg-[#161b22]/90 backdrop-blur-3xl border border-white/10 rounded-[32px] p-4 flex items-center justify-between shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
           <NavIcon icon={Home} label="Home" onClick={() => navigate('/dashboard')} />
           <NavIcon icon={LayoutGrid} label="Log" onClick={() => navigate('/carbon-log')} />

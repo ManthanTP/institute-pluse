@@ -119,7 +119,7 @@ export default function FacultyDashboard() {
 
   return (
     <FacultyLayout>
-      <div className="nexus-container pb-20">
+      <div className="pulse-container pb-20">
         {/* GREETING */}
         <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
@@ -127,7 +127,7 @@ export default function FacultyDashboard() {
               <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
               <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em]">Institutional Node Active</span>
             </div>
-            <h2 className="text-5xl font-black text-white tracking-tighter uppercase leading-none italic">Faculty <span className="text-blue-500">Nexus</span></h2>
+            <h2 className="text-5xl font-black text-white tracking-tighter uppercase leading-none italic">Faculty <span className="text-blue-500">Hub</span></h2>
             <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mt-3 italic">
               {new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>

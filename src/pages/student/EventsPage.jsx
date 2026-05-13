@@ -165,7 +165,7 @@ export default function EventsPage() {
                   <div className="space-y-1 text-right">
                     <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Location</p>
                     <p className="text-[13px] font-black text-white uppercase truncate">{event.venue}</p>
-                    <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Nexus Hub</p>
+                    <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Event Hub</p>
                   </div>
                 </div>
 
@@ -185,7 +185,7 @@ export default function EventsPage() {
       </div>
 
       {/* BOTTOM NAV BAR */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-[100]">
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-[100] md:hidden">
         <div className="bg-[#161b22]/90 backdrop-blur-3xl border border-white/10 rounded-[32px] p-4 flex items-center justify-between shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
           <NavIcon icon={Home} label="Home" onClick={() => navigate('/dashboard')} />
           <NavIcon icon={LayoutGrid} label="Log" onClick={() => navigate('/carbon-log')} />

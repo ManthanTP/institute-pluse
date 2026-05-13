@@ -45,7 +45,7 @@ export default function FacultyChallengesPage() {
       }
     } catch (err) {
       console.error('Challenges Error:', err)
-      toast.error('Challenge Nexus Sync Failed')
+      toast.error('Challenge Pulse Sync Failed')
     } finally {
       setLoading(false)
     }

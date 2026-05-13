@@ -252,7 +252,7 @@ export default function FacultyEventsPage() {
                       <input name="event_time" type="time" defaultValue={selectedEvent?.event_time} className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-white outline-none shadow-inner" required />
                     </div>
                     <div className="space-y-2 col-span-2">
-                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Venue Nexus</label>
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Pulse Venue</label>
                       <input name="venue" defaultValue={selectedEvent?.venue} className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-white outline-none shadow-inner" required />
                     </div>
                     <div className="space-y-2">

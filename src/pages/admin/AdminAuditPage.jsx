@@ -47,7 +47,7 @@ export default function AdminAuditPage() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `nexus-audit-${new Date().getTime()}.csv`
+    link.download = `pulse-audit-${new Date().getTime()}.csv`
     link.click()
     toast.success('Audit Manifest Exported')
   }

@@ -28,7 +28,7 @@ export default function OwnerProfilePage() {
         <div className="p-8 rounded-[32px] bg-white/5 border border-white/10 backdrop-blur-xl">
            <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4 text-center italic">Security Protocol</p>
            <p className="text-[11px] font-medium text-gray-400 text-center leading-relaxed">
-             This account has privileged access to the cafeteria registry and telemetry. Ensure all operational changes are verified through the Core Nexus protocols.
+             This account has privileged access to the cafeteria registry and telemetry. Ensure all operational changes are verified through the Pulse Core protocols.
            </p>
         </div>
       </div>

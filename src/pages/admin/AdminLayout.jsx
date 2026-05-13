@@ -53,7 +53,7 @@ export default function AdminLayout({ children }) {
               <img src={logo} alt="Admin Logo" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(34,197,94,0.3)]" />
               <div>
                 <p className="text-white font-black text-sm uppercase tracking-tighter">InstitutePulse</p>
-                <p className="text-green-500 font-black text-[9px] uppercase tracking-[0.3em]">Core Nexus</p>
+                <p className="text-green-500 font-black text-[9px] uppercase tracking-[0.3em]">Pulse Core</p>
               </div>
             </div>
             <button className="lg:hidden p-3 bg-white/5 rounded-2xl" onClick={() => setSidebarOpen(false)}>

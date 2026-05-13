@@ -135,7 +135,7 @@ function getStaticStudyPlan(subjects, daily_hours) {
 // ── AI CHATBOT ──
 export async function chatWithAssistant(messages) {
   if (!API_KEY || API_KEY === 'your_gemini_api_key') {
-    return "Hi! I'm InstitutePulse AI Assistant. I'm currently running in offline mode. Please configure your Gemini API key for full AI capabilities. In the meantime, I can tell you that: Taking the college bus saves ~0.36 kg CO2 per 5km vs motorbike. Vegetarian meals save ~1 kg CO2 vs non-veg. Logging daily earns you eco-points and badges! 🌿"
+    return "Hi! I'm InstitutePulseAI. I'm currently running in offline mode. Please configure your Gemini API key for full AI capabilities. In the meantime, I can tell you that: Taking the college bus saves ~0.36 kg CO2 per 5km vs motorbike. Vegetarian meals save ~1 kg CO2 vs non-veg. Logging daily earns you eco-points and badges! 🌿"
   }
 
   if (!genAI) {
@@ -143,7 +143,7 @@ export async function chatWithAssistant(messages) {
   }
 
   try {
-    const systemPrompt = `You are InstitutePulse — a Smart Campus Sustainability Assistant.
+    const systemPrompt = `You are InstitutePulseAI — the Smart Campus Sustainability & Academic Intelligence for InstitutePulse.
 You know about:
 - Carbon footprint tracking (transport, food, electricity, water, waste)
 - Campus bus routes and eco-benefits of public transport

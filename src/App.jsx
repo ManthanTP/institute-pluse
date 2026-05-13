@@ -77,7 +77,7 @@ function PageLoader() {
           <div className="absolute inset-0 border-4 border-green-500/20 rounded-full" />
           <div className="absolute inset-0 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
         </div>
-        <p className="text-[10px] font-black text-white uppercase tracking-[0.3em] animate-pulse">Syncing Nexus</p>
+        <p className="text-[10px] font-black text-white uppercase tracking-[0.3em] animate-pulse">Syncing InstitutePulse</p>
       </div>
     </div>
   )
@@ -153,8 +153,8 @@ function App() {
 
           {/* ══════════ STUDENT ══════════ */}
           <Route path="/dashboard" element={<StudentPage component={DashboardPage} title="Home" />} />
-          <Route path="/carbon/log" element={<StudentPage component={CarbonLogPage} title="Carbon Tracker" showBack />} />
-          <Route path="/carbon/history" element={<StudentPage component={CarbonHistoryPage} title="Carbon Analytics" showBack />} />
+          <Route path="/carbon/log" element={<StudentPage component={CarbonLogPage} title="Carbon Tracker" showBack hideChrome />} />
+          <Route path="/carbon/history" element={<StudentPage component={CarbonHistoryPage} title="Carbon Analytics" showBack hideChrome />} />
           <Route path="/leaderboard" element={<StudentPage component={LeaderboardPage} title="Leaderboard" showBack hideChrome />} />
           <Route path="/events" element={<StudentPage component={EventsPage} title="Events" showBack hideChrome />} />
           <Route path="/cafeteria" element={<StudentPage component={CafeteriaPage} title="Eco-Cafeteria" showBack hideChrome />} />
@@ -165,9 +165,9 @@ function App() {
           <Route path="/study-planner" element={<StudentPage component={StudyPlannerPage} title="Study Planner" showBack hideChrome />} />
           <Route path="/lab-assistant" element={<StudentPage component={LabAssistantPage} title="Lab Assistant" showBack hideChrome />} />
           <Route path="/navigation" element={<StudentPage component={NavigationPage} title="Campus Navigation" showBack hideChrome />} />
-          <Route path="/chatbot" element={<StudentPage component={ChatbotPage} title="AI Assistant" showBack />} />
-          <Route path="/profile" element={<StudentPage component={ProfilePage} title="Profile Settings" showBack />} />
-          <Route path="/notifications" element={<StudentPage component={NotificationsPage} title="Notifications" showBack />} />
+          <Route path="/chatbot" element={<StudentPage component={ChatbotPage} title="AI Assistant" showBack hideChrome />} />
+          <Route path="/profile" element={<StudentPage component={ProfilePage} title="Profile Settings" showBack hideChrome />} />
+          <Route path="/notifications" element={<StudentPage component={NotificationsPage} title="Notifications" showBack hideChrome />} />
 
            {/* ══════════ FACULTY ══════════ */}
            <Route path="/faculty/dashboard" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyDashboard /></Suspense></FacultyRoute>} />

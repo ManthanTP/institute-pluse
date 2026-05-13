@@ -100,10 +100,10 @@ export default function DashboardPage() {
       <div className="relative z-10 px-6 pt-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
-           <div>
-              <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] mb-1">Nexus Node Active</p>
-              <h1 className="text-xl font-black text-white tracking-tighter">Welcome, {profile?.full_name?.split(' ')[0]}</h1>
-           </div>
+            <div>
+               <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] mb-1">InstitutePulse Node Active</p>
+               <h1 className="text-xl font-black text-white tracking-tighter">Welcome, {profile?.full_name?.split(' ')[0]}</h1>
+            </div>
            <button 
              onClick={() => navigate('/profile')}
              className="p-3 rounded-2xl bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-colors"
@@ -274,7 +274,7 @@ export default function DashboardPage() {
            <div className="relative z-10">
               <div className="flex items-center gap-2 mb-4">
                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                 <span className="text-[8px] font-black text-blue-500 uppercase tracking-[0.4em]">Neural Insight Active</span>
+                 <span className="text-[8px] font-black text-blue-500 uppercase tracking-[0.4em]">InstitutePulseAI Insight Active</span>
               </div>
               <p className="text-[12px] font-medium text-white/80 leading-relaxed italic mb-6">
                  "{ECO_TIPS[tipIndex]}"

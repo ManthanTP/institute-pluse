@@ -106,7 +106,7 @@ export default function AdminLoginPage() {
                  <ShieldAlert size={32} className="text-red-500 animate-pulse" />
                </div>
             </div>
-            <p className="mt-8 text-[10px] font-black text-white uppercase tracking-[0.4em] animate-pulse">Scanning Nexus Root</p>
+            <p className="mt-8 text-[10px] font-black text-white uppercase tracking-[0.4em] animate-pulse">Scanning Pulse Root</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -121,7 +121,7 @@ export default function AdminLoginPage() {
             <img src={logo} alt="Logo" className="w-24 h-24 mx-auto mb-8 drop-shadow-[0_0_30px_rgba(239,68,68,0.3)] grayscale opacity-80" />
             <div className="absolute inset-0 bg-red-500/10 blur-3xl rounded-full scale-150 animate-pulse" />
           </div>
-          <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Nexus Root</h1>
+          <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Pulse Root</h1>
           <p className="text-red-500 text-[10px] font-black uppercase tracking-[0.4em] mt-3">Admin Core Entry • v2.0</p>
         </motion.div>
 
@@ -154,7 +154,7 @@ export default function AdminLoginPage() {
                 <input 
                   type="email" value={email} onChange={e => setEmail(e.target.value)}
                   className="w-full bg-slate-950/50 border border-white/5 rounded-[22px] py-4.5 pl-14 pr-5 text-sm text-white placeholder:text-gray-700 outline-none focus:border-red-500/30 focus:bg-slate-950/80 transition-all"
-                  placeholder="root@pulse.nexus" required
+                  placeholder="root@pulse.admin" required
                   disabled={lockout > 0}
                 />
               </div>

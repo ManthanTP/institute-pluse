@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { CalendarDays, Plus, Clock, BookOpen, Target, ChevronRight, CheckCircle2, Circle, GraduationCap, Flame, Sparkles, ChevronLeft, Home, LayoutGrid, Coffee, User, X } from 'lucide-react'
+import { CalendarDays, Plus, Clock, BookOpen, Target, ChevronRight, CheckCircle2, Circle, GraduationCap, Flame, Sparkles, ChevronLeft, Home, LayoutGrid, Coffee, User, X, Trash2, Play, Pause, RotateCcw } from 'lucide-react'
 import { useAuthStore } from '../../store/index'
 import { supabase } from '../../lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -14,6 +14,7 @@ export default function StudyPlannerPage() {
   const [loading, setLoading] = useState(true)
   const [newTask, setNewTask] = useState({ title: '', duration: '30', priority: 'medium' })
   const [isAdding, setIsAdding] = useState(false)
+  const [activeFocus, setActiveFocus] = useState(null)
 
   useEffect(() => {
     fetchTasks()
@@ -56,6 +57,26 @@ export default function StudyPlannerPage() {
     }
   }
 
+  async function deleteTask(id) {
+    const { error } = await supabase.from('study_tasks').delete().eq('id', id)
+    if (!error) {
+      setTasks(tasks.filter(t => t.id !== id))
+      toast.success('Objective Removed')
+    }
+  }
+
+  function handleAIOptimize() {
+    if (tasks.length === 0) {
+      toast.error('Add objectives to initialize AI optimization')
+      return
+    }
+    
+    const taskList = tasks.map(t => `- ${t.title} (${t.duration_mins}m, ${t.priority} priority)`).join('\n')
+    const prompt = `I have the following study objectives for today:\n${taskList}\n\nPlease help me optimize my study schedule. Suggest an efficient order to tackle these tasks, including short breaks, and give me some productivity tips based on this workload.`
+    
+    navigate('/chatbot', { state: { initialMessage: prompt } })
+  }
+
   const completedCount = tasks.filter(t => t.status === 'completed').length
   const progress = tasks.length > 0 ? (completedCount / tasks.length) * 100 : 0
 
@@ -80,8 +101,17 @@ export default function StudyPlannerPage() {
             </motion.button>
             <h1 className="text-2xl font-black uppercase tracking-tighter italic">Study Planner</h1>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center text-indigo-500">
-             <Target size={24} className="animate-pulse" />
+          <div className="flex items-center gap-3">
+            <motion.button 
+              whileTap={{ scale: 0.9 }}
+              onClick={handleAIOptimize}
+              className="w-12 h-12 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center text-indigo-500"
+            >
+               <Sparkles size={24} className="animate-pulse" />
+            </motion.button>
+            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-500">
+               <Target size={24} />
+            </div>
           </div>
         </div>
 
@@ -113,6 +143,16 @@ export default function StudyPlannerPage() {
                 className="h-full bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full shadow-[0_0_15px_rgba(79,70,229,0.4)]" 
               />
            </div>
+           
+           <div className="mt-8">
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setActiveFocus({ duration: 25, title: 'Deep Work Session' })}
+                className="w-full py-4 bg-white text-slate-950 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3 shadow-xl"
+              >
+                 <Play size={14} fill="currentColor" /> Initialize Focus Protocol
+              </motion.button>
+           </div>
         </motion.div>
 
         {/* LIST HEADER */}
@@ -121,7 +161,7 @@ export default function StudyPlannerPage() {
               <h3 className="text-[11px] font-black text-white uppercase tracking-[0.2em] flex items-center gap-2 mb-1">
                  Objectives
               </h3>
-              <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest italic">Nexus Academic Telemetry</p>
+              <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest italic">InstitutePulseAI Telemetry</p>
            </div>
            <motion.button
              whileTap={{ scale: 0.95 }}
@@ -162,7 +202,10 @@ export default function StudyPlannerPage() {
                 {task.status === 'completed' ? <CheckCircle2 size={24} /> : <Circle size={24} />}
               </button>
 
-              <div className="flex-1 min-w-0">
+              <button 
+                onClick={() => task.status !== 'completed' && setActiveFocus({ duration: task.duration_mins, title: task.title })}
+                className="flex-1 min-w-0 text-left"
+              >
                  <div className="flex items-center gap-3 mb-1">
                     <span className={`text-[8px] font-black uppercase tracking-widest ${
                       task.priority === 'high' ? 'text-red-500' : task.priority === 'medium' ? 'text-indigo-400' : 'text-gray-600'
@@ -176,16 +219,31 @@ export default function StudyPlannerPage() {
                  <h4 className={`text-sm font-black uppercase tracking-tight truncate ${task.status === 'completed' ? 'line-through text-gray-600' : 'text-white'}`}>
                     {task.title}
                  </h4>
-              </div>
+              </button>
               
-              <ChevronRight size={18} className="text-gray-800" />
+              <div className="flex items-center gap-2">
+                 {task.status !== 'completed' && (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setActiveFocus({ duration: task.duration_mins, title: task.title }); }}
+                      className="p-3 rounded-xl bg-indigo-600/10 text-indigo-500 hover:bg-indigo-600 hover:text-white transition-all"
+                    >
+                       <Play size={16} fill="currentColor" />
+                    </button>
+                 )}
+                 <button 
+                   onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }}
+                   className="p-3 rounded-xl bg-red-500/5 text-red-500/40 hover:text-red-500 hover:bg-red-500/10 transition-all"
+                 >
+                    <Trash2 size={16} />
+                 </button>
+              </div>
             </motion.div>
           ))}
         </div>
       </div>
 
       {/* BOTTOM NAV BAR */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-[100]">
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-[100] md:hidden">
         <div className="bg-[#161b22]/90 backdrop-blur-3xl border border-white/10 rounded-[32px] p-4 flex items-center justify-between shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
           <NavIcon icon={Home} label="Home" onClick={() => navigate('/dashboard')} />
           <NavIcon icon={LayoutGrid} label="Log" onClick={() => navigate('/carbon-log')} />
@@ -268,7 +326,105 @@ export default function StudyPlannerPage() {
         </AnimatePresence>,
         document.body
       )}
+
+      {/* FOCUS TIMER MODAL */}
+      {createPortal(
+        <AnimatePresence>
+          {activeFocus && (
+            <FocusTimer 
+              initialMins={activeFocus.duration} 
+              title={activeFocus.title}
+              onClose={() => setActiveFocus(null)} 
+            />
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
+  )
+}
+
+function FocusTimer({ initialMins, title, onClose }) {
+  const [timeLeft, setTimeLeft] = useState(initialMins * 60)
+  const [isActive, setIsActive] = useState(false)
+
+  useEffect(() => {
+    let interval = null
+    if (isActive && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft(prev => prev - 1)
+      }, 1000)
+    } else if (timeLeft === 0) {
+      clearInterval(interval)
+      toast.success('Focus Session Complete! 🌿')
+    }
+    return () => clearInterval(interval)
+  }, [isActive, timeLeft])
+
+  const mins = Math.floor(timeLeft / 60)
+  const secs = timeLeft % 60
+  const progress = ((initialMins * 60 - timeLeft) / (initialMins * 60)) * 100
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[10000] bg-[#020617] flex flex-col items-center justify-center p-8"
+    >
+       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[60%] bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none" />
+       
+       <button onClick={onClose} className="absolute top-8 left-8 p-4 rounded-2xl bg-white/5 border border-white/10 text-gray-400">
+          <X size={24} />
+       </button>
+
+       <div className="relative w-72 h-72 mb-12">
+          <svg className="w-full h-full -rotate-90">
+             <circle 
+               cx="50%" cy="50%" r="48%" 
+               className="stroke-white/5 fill-none" strokeWidth="4" 
+             />
+             <motion.circle 
+               cx="50%" cy="50%" r="48%" 
+               className="stroke-indigo-500 fill-none" strokeWidth="4" 
+               strokeDasharray="100 100"
+               animate={{ strokeDashoffset: 100 - progress }}
+               transition={{ duration: 1 }}
+               style={{ strokeLinecap: 'round' }}
+             />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+             <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] mb-2">Protocol Active</p>
+             <h2 className="text-6xl font-black text-white tracking-tighter italic">
+               {mins}:{secs < 10 ? `0${secs}` : secs}
+             </h2>
+          </div>
+       </div>
+
+       <div className="text-center mb-12">
+          <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-2 italic">{title}</h3>
+          <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest leading-relaxed max-w-[240px] mx-auto">
+             Minimize all external neural inputs. Synchronize with your study objectives.
+          </p>
+       </div>
+
+       <div className="flex items-center gap-6">
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setIsActive(!isActive)}
+            className={`w-20 h-20 rounded-full flex items-center justify-center transition-all ${
+              isActive ? 'bg-white text-slate-950' : 'bg-indigo-600 text-white shadow-xl shadow-indigo-600/20'
+            }`}
+          >
+             {isActive ? <Pause size={28} fill="currentColor" /> : <Play size={28} fill="currentColor" className="ml-1" />}
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={() => { setTimeLeft(initialMins * 60); setIsActive(false); }}
+            className="w-16 h-16 rounded-full bg-white/5 border border-white/10 text-gray-400 flex items-center justify-center"
+          >
+             <RotateCcw size={20} />
+          </motion.button>
+       </div>
+    </motion.div>
   )
 }
 

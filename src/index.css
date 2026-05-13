@@ -10,7 +10,7 @@
   color: #f8fafc;
   -webkit-tap-highlight-color: transparent;
 
-  /* Nexus Theme Tokens */
+  /* InstitutePulse Theme Tokens */
   --color-brand-light: #dcfce7;
   --color-brand: #16a34a;
   --color-brand-dark: #15803d;
@@ -44,26 +44,26 @@ body {
 }
 
 /* Desktop Optimization Classes */
-.nexus-container {
+.pulse-container {
   max-width: 1280px;
   margin: 0 auto;
   width: 100%;
 }
 
-.nexus-grid {
+.pulse-grid {
   display: grid;
   grid-template-columns: repeat(1, minmax(0, 1fr));
   gap: 1.5rem;
 }
 
 @media (min-width: 768px) {
-  .nexus-grid {
+  .pulse-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 1024px) {
-  .nexus-grid {
+  .pulse-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
@@ -84,7 +84,7 @@ body {
   transform: translateY(-4px);
 }
 
-.btn-nexus {
+.btn-pulse {
   background: #16a34a;
   color: white;
   font-weight: 900;
@@ -97,17 +97,17 @@ body {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.btn-nexus:hover {
+.btn-pulse:hover {
   background: #15803d;
   transform: scale(1.02);
   box-shadow: 0 15px 30px -5px rgba(22, 163, 74, 0.4);
 }
 
-.btn-nexus:active {
+.btn-pulse:active {
   transform: scale(0.98);
 }
 
-.input-nexus {
+.input-pulse {
   width: 100%;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -119,7 +119,7 @@ body {
   outline: none;
 }
 
-.input-nexus:focus {
+.input-pulse:focus {
   border-color: rgba(34, 197, 94, 0.5);
   background: rgba(255, 255, 255, 0.06);
   box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.1);

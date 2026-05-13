@@ -104,7 +104,7 @@ export default function ProfilePage() {
            <button onClick={() => navigate(-1)} className="p-3 rounded-2xl bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-colors">
               <ArrowLeft size={20} />
            </button>
-           <h1 className="text-sm font-black text-white uppercase tracking-[0.4em]">Nexus Profile</h1>
+           <h1 className="text-sm font-black text-white uppercase tracking-[0.4em]">InstitutePulse Profile</h1>
            <div className="w-11" /> {/* Spacer */}
         </div>
 
@@ -320,7 +320,7 @@ export default function ProfilePage() {
 
         {/* Security Footer */}
         <div className="mt-12 text-center opacity-30">
-           <p className="text-[8px] font-black text-gray-500 uppercase tracking-[0.5em]">Identity Secured by InstitutePulse Nexus</p>
+           <p className="text-[8px] font-black text-gray-500 uppercase tracking-[0.5em]">Identity Secured by InstitutePulse</p>
         </div>
       </div>
     </div>

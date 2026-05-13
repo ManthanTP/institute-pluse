@@ -42,7 +42,7 @@ InstitutePulse follows a **role-based dashboard architecture** where every authe
 ### Tech Stack
 
 - **Frontend:** React 19 + Vite 6
-- **Styling:** Tailwind CSS 4 + Custom Glassmorphic Design System ("Nexus")
+- **Styling:** Tailwind CSS 4 + Custom Glassmorphic Design System ("Pulse")
 - **State:** Zustand
 - **Routing:** React Router 7
 - **Animation:** Framer Motion
@@ -165,7 +165,7 @@ npx cap open android
 
 ---
 
-## 🎨 Design System — "Nexus"
+## 🎨 Design System — "Pulse"
 
 - **Theme:** Dark glassmorphic (slate-950 base)
 - **Cards:** `glass-card` class with backdrop-blur and subtle borders

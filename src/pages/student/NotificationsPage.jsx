@@ -63,9 +63,17 @@ export default function NotificationsPage() {
 
       {/* TOP ROW WITH TITLE & ACTIONS */}
       <div className="flex items-center justify-between px-6 py-6 relative z-10">
-        <div className="flex flex-col">
-          <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Activity Stream</span>
-          <h2 className="text-xl font-black text-white uppercase tracking-tight">Recent Alerts</h2>
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => navigate(-1)}
+            className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400"
+          >
+            <ArrowLeft size={18} />
+          </button>
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Activity Stream</span>
+            <h2 className="text-xl font-black text-white uppercase tracking-tight">Recent Alerts</h2>
+          </div>
         </div>
         {unreadCount > 0 && (
           <motion.button

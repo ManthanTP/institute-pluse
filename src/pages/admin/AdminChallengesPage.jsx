@@ -41,7 +41,7 @@ export default function AdminChallengesPage() {
       setChallenges(data || [])
     } catch (err) {
       console.error(err)
-      toast.error('Challenge Nexus Synchronization Failed')
+      toast.error('Challenge Pulse Synchronization Failed')
     } finally {
       setLoading(false)
     }

@@ -1,24 +1,61 @@
-import { useState } from 'react'
-import { Beaker, FlaskConical, Search, BookOpen, Clock, AlertCircle, Sparkles, Wand2, Terminal, Shield, ChevronLeft, Home, LayoutGrid, CalendarDays, Coffee, User, X } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Beaker, FlaskConical, Search, BookOpen, Clock, AlertCircle, Sparkles, Wand2, Terminal, Shield, ChevronLeft, Home, LayoutGrid, CalendarDays, Coffee, User, X, Plus, Notebook, Edit2, Trash2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { createPortal } from 'react-dom'
-
-const EXPERIMENTS = [
-  { id: '1', name: 'Newton\'s Ring Experiment', dept: 'Physics', duration: '3 Hours', difficulty: 'Intermediate', risk: 'Low', instructions: 'Measure the diameter of Newton\'s rings to find wavelength.' },
-  { id: '2', name: 'Young\'s Modulus', dept: 'Mechanical', duration: '2 Hours', difficulty: 'Advanced', risk: 'Medium', instructions: 'Determine the elastic property of material.' },
-  { id: '3', name: 'Spectrometer Calibration', dept: 'Physics', duration: '4 Hours', difficulty: 'Intermediate', risk: 'Low', instructions: 'Calibrate using mercury lamp lines.' },
-  { id: '4', name: 'Digital Logic Design', dept: 'CS/IS', duration: '3 Hours', difficulty: 'Easy', risk: 'None', instructions: 'Design a 4-bit adder using logic gates.' },
-  { id: '5', name: 'Chemical Titration', dept: 'Chemistry', duration: '2 Hours', difficulty: 'Intermediate', risk: 'High', instructions: 'Acid-base titration for concentration analysis.' },
-]
+import { useAuthStore } from '../../store/index'
+import { supabase } from '../../lib/supabase'
 
 export default function LabAssistantPage() {
   const navigate = useNavigate()
+  const { profile } = useAuthStore()
   const [search, setSearch] = useState('')
+  const [experiments, setExperiments] = useState([])
   const [selectedExp, setSelectedExp] = useState(null)
+  const [journal, setJournal] = useState([])
+  const [newNote, setNewNote] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editForm, setEditForm] = useState({ name: '', dept: '', duration: '', difficulty: 'Intermediate', risk: 'Low', instructions: '' })
 
-  const filtered = EXPERIMENTS.filter(e => 
+  const isAdmin = ['admin', 'faculty', 'owner'].includes(profile?.role)
+
+  useEffect(() => {
+    fetchExperiments()
+  }, [])
+
+  async function fetchExperiments() {
+    setLoading(true)
+    const { data, error } = await supabase.from('lab_experiments').select('*').order('created_at', { ascending: false })
+    if (data) setExperiments(data)
+    setLoading(false)
+  }
+
+  async function saveExperiment() {
+    if (!editForm.name || !editForm.dept) return
+    const { error } = editForm.id 
+      ? await supabase.from('lab_experiments').update(editForm).eq('id', editForm.id)
+      : await supabase.from('lab_experiments').insert(editForm)
+    
+    if (!error) {
+      toast.success(editForm.id ? 'Experiment Updated' : 'Experiment Added')
+      setIsEditing(false)
+      setEditForm({ name: '', dept: '', duration: '', difficulty: 'Intermediate', risk: 'Low', instructions: '' })
+      fetchExperiments()
+    }
+  }
+
+  async function deleteExperiment(id, e) {
+    e.stopPropagation()
+    const { error } = await supabase.from('lab_experiments').delete().eq('id', id)
+    if (!error) {
+      toast.success('Experiment Removed')
+      fetchExperiments()
+    }
+  }
+
+  const filtered = experiments.filter(e => 
     e.name.toLowerCase().includes(search.toLowerCase()) || 
     e.dept.toLowerCase().includes(search.toLowerCase())
   )
@@ -42,10 +79,19 @@ export default function LabAssistantPage() {
             >
               <ChevronLeft size={24} />
             </motion.button>
-            <h1 className="text-2xl font-black uppercase tracking-tighter italic">Lab Assistant</h1>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-cyan-600/10 border border-cyan-500/20 flex items-center justify-center text-cyan-500">
-             <FlaskConical size={24} className="animate-pulse" />
+          <div className="flex items-center gap-3">
+            {isAdmin && (
+              <motion.button 
+                whileTap={{ scale: 0.9 }}
+                onClick={() => { setEditForm({ name: '', dept: '', duration: '', difficulty: 'Intermediate', risk: 'Low', instructions: '' }); setIsEditing(true); }}
+                className="w-12 h-12 rounded-2xl bg-cyan-600/10 border border-cyan-500/20 flex items-center justify-center text-cyan-500"
+              >
+                 <Plus size={24} />
+              </motion.button>
+            )}
+            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-500">
+               <FlaskConical size={24} />
+            </div>
           </div>
         </div>
 
@@ -64,8 +110,12 @@ export default function LabAssistantPage() {
         </div>
 
         {/* EXPERIMENT LIST */}
-        <div className="space-y-6">
-          {filtered.map((exp, i) => (
+          {loading ? (
+            <div className="py-20 flex flex-col items-center justify-center gap-4">
+               <div className="w-10 h-10 border-2 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin" />
+               <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest italic text-center">Identifying Protocols...</p>
+            </div>
+          ) : filtered.map((exp, i) => (
             <motion.div
               key={exp.id}
               initial={{ opacity: 0, y: 10 }}
@@ -89,9 +139,22 @@ export default function LabAssistantPage() {
                       Risk: {exp.risk}
                     </span>
                  </div>
-                 <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-600 uppercase tracking-widest">
-                    <Clock size={12} /> {exp.duration}
-                 </div>
+                 {isAdmin && (
+                    <div className="flex items-center gap-3">
+                       <button 
+                         onClick={(e) => { e.stopPropagation(); setEditForm(exp); setIsEditing(true); }}
+                         className="p-2 rounded-lg bg-white/5 text-gray-500 hover:text-white hover:bg-white/10 transition-all"
+                       >
+                          <Edit2 size={14} />
+                       </button>
+                       <button 
+                         onClick={(e) => deleteExperiment(exp.id, e)}
+                         className="p-2 rounded-lg bg-red-500/5 text-red-500/40 hover:text-red-500 hover:bg-red-500/10 transition-all"
+                       >
+                          <Trash2 size={14} />
+                       </button>
+                    </div>
+                 )}
               </div>
 
               <h3 className="text-xl font-black text-white uppercase tracking-tight mb-6 leading-tight">{exp.name}</h3>
@@ -100,6 +163,9 @@ export default function LabAssistantPage() {
                  <div className="flex items-center gap-2">
                     <Terminal size={14} className="text-gray-600" />
                     <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">{exp.difficulty}</span>
+                 </div>
+                 <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-600 uppercase tracking-widest ml-auto">
+                    <Clock size={12} /> {exp.duration}
                  </div>
                  <div className="flex items-center gap-2 text-cyan-500">
                     <Sparkles size={14} />
@@ -119,7 +185,7 @@ export default function LabAssistantPage() {
       </div>
 
       {/* BOTTOM NAV BAR */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-[100]">
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-[100] md:hidden">
         <div className="bg-[#161b22]/90 backdrop-blur-3xl border border-white/10 rounded-[32px] p-4 flex items-center justify-between shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
           <NavIcon icon={Home} label="Home" onClick={() => navigate('/dashboard')} />
           <NavIcon icon={LayoutGrid} label="Log" onClick={() => navigate('/carbon-log')} />
@@ -182,6 +248,45 @@ export default function LabAssistantPage() {
                        </p>
                     </div>
                   </div>
+                  
+                  <div className="bg-[#161b22] border border-white/5 rounded-[32px] p-8">
+                     <div className="flex items-center justify-between mb-6">
+                        <h4 className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] flex items-center gap-2">
+                           <BookOpen size={14} /> Lab Journal
+                        </h4>
+                        <span className="text-[8px] font-black text-gray-700 uppercase tracking-widest">{journal.length} Entries</span>
+                     </div>
+                     
+                     <div className="space-y-4 mb-6 max-h-40 overflow-y-auto no-scrollbar">
+                        {journal.map((note, i) => (
+                           <div key={i} className="bg-white/5 rounded-2xl p-4 border border-white/5">
+                              <p className="text-[11px] text-gray-300 leading-relaxed font-medium">{note.text}</p>
+                              <p className="text-[7px] text-gray-600 font-black uppercase tracking-widest mt-2">{note.time}</p>
+                           </div>
+                        ))}
+                        {journal.length === 0 && <p className="text-center text-[9px] text-gray-700 font-black uppercase tracking-widest py-4">No observations recorded</p>}
+                     </div>
+
+                     <div className="flex gap-3">
+                        <input 
+                           value={newNote}
+                           onChange={e => setNewNote(e.target.value)}
+                           placeholder="Record observation..."
+                           className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-[11px] text-white outline-none focus:border-emerald-500/50 transition-all"
+                        />
+                        <button 
+                           onClick={() => {
+                              if (!newNote.trim()) return
+                              setJournal([...journal, { text: newNote, time: new Date().toLocaleTimeString() }])
+                              setNewNote('')
+                              toast.success('Observation Recorded')
+                           }}
+                           className="p-3 rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/20"
+                        >
+                           <Plus size={20} />
+                        </button>
+                     </div>
+                  </div>
 
                   <motion.button 
                     whileTap={{ scale: 0.98 }}
@@ -198,6 +303,78 @@ export default function LabAssistantPage() {
                   >
                     Initialize Lab Sequence
                   </motion.button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
+
+      {/* ADMIN EDIT MODAL */}
+      {createPortal(
+        <AnimatePresence>
+          {isEditing && (
+            <div className="fixed inset-0 z-[9999] flex items-end justify-center pointer-events-none">
+              <motion.div 
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-black/90 backdrop-blur-2xl pointer-events-auto" 
+                onClick={() => setIsEditing(false)} 
+              />
+              <motion.div 
+                initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="relative w-full max-w-2xl bg-[#0a0c10] border-t border-white/10 rounded-t-[50px] p-6 md:p-10 shadow-2xl pointer-events-auto flex flex-col"
+                style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}
+              >
+                <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-8" />
+                <div className="flex items-center justify-between mb-8">
+                  <h3 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter">{editForm.id ? 'Modify Protocol' : 'Initialize Protocol'}</h3>
+                  <button onClick={() => setIsEditing(false)} className="p-3 rounded-xl bg-white/5 border border-white/10 text-gray-400"><X size={20} /></button>
+                </div>
+
+                <div className="space-y-6 overflow-y-auto no-scrollbar max-h-[60vh] pb-10">
+                   <div className="space-y-4">
+                      <div className="space-y-2">
+                         <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest ml-1">Protocol Name</label>
+                         <input value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className="w-full bg-[#161b22] border border-white/5 rounded-3xl p-5 text-white text-[11px] font-black uppercase tracking-widest outline-none" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                         <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest ml-1">Department</label>
+                            <input value={editForm.dept} onChange={e => setEditForm({...editForm, dept: e.target.value})} className="w-full bg-[#161b22] border border-white/5 rounded-3xl p-5 text-white text-[11px] font-black uppercase tracking-widest outline-none" />
+                         </div>
+                         <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest ml-1">Duration</label>
+                            <input value={editForm.duration} onChange={e => setEditForm({...editForm, duration: e.target.value})} className="w-full bg-[#161b22] border border-white/5 rounded-3xl p-5 text-white text-[11px] font-black uppercase tracking-widest outline-none" />
+                         </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                         <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest ml-1">Difficulty</label>
+                            <select value={editForm.difficulty} onChange={e => setEditForm({...editForm, difficulty: e.target.value})} className="w-full bg-[#161b22] border border-white/5 rounded-3xl p-5 text-white text-[11px] font-black uppercase tracking-widest outline-none appearance-none">
+                               <option>Easy</option><option>Intermediate</option><option>Advanced</option>
+                            </select>
+                         </div>
+                         <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest ml-1">Safety Risk</label>
+                            <select value={editForm.risk} onChange={e => setEditForm({...editForm, risk: e.target.value})} className="w-full bg-[#161b22] border border-white/5 rounded-3xl p-5 text-white text-[11px] font-black uppercase tracking-widest outline-none appearance-none">
+                               <option>None</option><option>Low</option><option>Medium</option><option>High</option>
+                            </select>
+                         </div>
+                      </div>
+                      <div className="space-y-2">
+                         <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest ml-1">Critical Instructions</label>
+                         <textarea value={editForm.instructions} onChange={e => setEditForm({...editForm, instructions: e.target.value})} rows={4} className="w-full bg-[#161b22] border border-white/5 rounded-3xl p-5 text-white text-[11px] font-black uppercase tracking-widest outline-none resize-none" />
+                      </div>
+                   </div>
+
+                   <button 
+                     onClick={saveExperiment}
+                     className="w-full py-6 rounded-[32px] bg-cyan-600 text-white font-black uppercase tracking-[0.4em] text-[11px] shadow-[0_15px_40px_rgba(8,145,178,0.4)]"
+                   >
+                     {editForm.id ? 'Commit Changes' : 'Initialize Sequence'}
+                   </button>
                 </div>
               </motion.div>
             </div>

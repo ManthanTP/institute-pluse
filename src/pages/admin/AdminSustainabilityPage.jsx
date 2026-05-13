@@ -86,7 +86,7 @@ export default function AdminSustainabilityPage() {
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
               <span className="text-[10px] font-black text-green-500 uppercase tracking-[0.3em]">Ecological Impact Telemetry</span>
             </div>
-            <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Sustainability Nexus</h2>
+            <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Sustainability Hub</h2>
             <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mt-3">
               Campus-wide Environmental Flux Analysis
             </p>
@@ -252,7 +252,7 @@ export default function AdminSustainabilityPage() {
                          <td className="px-8 py-5 font-black text-white text-xs">{(log.total_kg || 0).toFixed(2)} kg</td>
                          <td className="px-8 py-5 font-black text-green-500 text-xs">+{(log.eco_points_earned || 0)} Pts</td>
                          <td className="px-8 py-5">
-                            <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[8px] font-black text-gray-400 uppercase tracking-widest">Nexus Log</span>
+                            <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[8px] font-black text-gray-400 uppercase tracking-widest">Pulse Log</span>
                          </td>
                        </tr>
                      ))}

@@ -84,8 +84,8 @@ export default function RegisterPage() {
     if (form.role === 'student' && !form.usn) return setError('USN is required for students.')
     
     // Key validation
-    const FACULTY_KEY = import.meta.env.VITE_FACULTY_SECRET_KEY || 'NEXUS_FACULTY_2026'
-    const ADMIN_KEY = import.meta.env.VITE_ADMIN_SECRET_KEY || 'NEXUS_ADMIN_2026'
+    const FACULTY_KEY = import.meta.env.VITE_FACULTY_SECRET_KEY || 'PULSE_FACULTY_2026'
+    const ADMIN_KEY = import.meta.env.VITE_ADMIN_SECRET_KEY || 'PULSE_ADMIN_2026'
 
     if (form.role === 'faculty' && adminKey !== FACULTY_KEY) {
       return setError('Invalid Faculty Registration Key.')
@@ -123,7 +123,7 @@ export default function RegisterPage() {
         navigate('/login')
       } else if (data.session) {
         // Auto-confirmed (e.g. email confirmation disabled)
-        toast.success('Nexus Identity Initialized! 🌿')
+        toast.success('Pulse Identity Initialized! 🌿')
         if (form.role === 'faculty') navigate('/faculty/dashboard')
         else if (form.role === 'admin') navigate('/12345678/admin/dashboard')
         else navigate('/dashboard')
