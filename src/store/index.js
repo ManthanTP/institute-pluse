@@ -139,7 +139,7 @@ export const useCarbonStore = create((set, get) => ({
       .select('*')
       .eq('student_id', userId)
       .eq('log_date', today)
-      .single()
+      .maybeSingle()
 
     set({ todayLog: data || null })
     return data

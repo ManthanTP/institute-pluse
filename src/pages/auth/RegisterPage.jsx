@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Lock, User, Phone, Building, ArrowRight, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
@@ -92,41 +92,29 @@ export default function RegisterPage() {
           data: {
             full_name: form.full_name,
             role: form.role,
+            phone: form.phone || '',
             department: form.department,
-            usn: form.usn,
-            semester_id: form.semester_id,
-            division_id: form.division_id
+            usn: form.role === 'student' ? form.usn : '',
+            semester_id: form.role === 'student' ? (form.semester_id || '') : '',
+            division_id: form.role === 'student' ? (form.division_id || '') : ''
           }
         }
       })
       if (authError) throw authError
 
-      if (data.user) {
-        // Ensure profile is fully populated
-        const { error: profileError } = await supabase.from('profiles')
-          .update({
-            full_name: form.full_name,
-            role: form.role,
-            phone: form.phone || null,
-            department: form.department,
-            usn: form.role === 'student' ? form.usn : null,
-            semester_id: form.role === 'student' ? (form.semester_id || null) : null,
-            division_id: form.role === 'student' ? (form.division_id || null) : null,
-            eco_points: 100, // Premium launch bonus
-            logging_streak: 0,
-            total_co2_kg: 0,
-          })
-          .eq('id', data.user.id)
-
-        if (profileError) console.error('Profile init error:', profileError)
+      // The handle_new_user trigger auto-creates the profile with all fields
+      // User needs to confirm email before they can login
+      if (data.user && !data.session) {
+        // Email confirmation required
+        toast.success('Check your email to confirm your account! 📧')
+        navigate('/login')
+      } else if (data.session) {
+        // Auto-confirmed (e.g. email confirmation disabled)
+        toast.success('Nexus Identity Initialized! 🌿')
+        if (form.role === 'faculty') navigate('/faculty/dashboard')
+        else if (form.role === 'admin') navigate('/12345678/admin/dashboard')
+        else navigate('/dashboard')
       }
-
-      toast.success('Nexus Identity Initialized! 🌿')
-
-      // Redirect based on selected role
-      if (form.role === 'faculty') navigate('/faculty/dashboard')
-      else if (form.role === 'admin') navigate('/12345678/admin/dashboard')
-      else navigate('/dashboard')
 
     } catch (err) {
       setError(err.message || 'Registration failed.')
