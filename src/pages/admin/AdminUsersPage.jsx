@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import AdminLayout from './AdminLayout'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
+import { exportTablePDF } from '../../lib/pdfExport'
 
 const DEPT_FILTER = ['All', 'CSE', 'ECE', 'ME', 'Civil', 'MBA', 'Other']
 const ROLE_FILTER = ['All', 'student', 'faculty', 'admin']
@@ -38,7 +39,7 @@ export default function AdminUsersPage() {
 
   const handleExportRegistry = () => {
     const headers = ['Full Name', 'Email', 'Role', 'Department', 'Eco Points', 'Joined Date']
-    const csvData = filtered.map(u => [
+    const rows = filtered.map(u => [
       u.full_name,
       u.email,
       u.role,
@@ -46,14 +47,21 @@ export default function AdminUsersPage() {
       u.eco_points || 0,
       new Date(u.created_at).toLocaleDateString()
     ])
-    const csvContent = [headers, ...csvData].map(e => e.join(',')).join('\n')
-    const blob = new Blob([csvContent], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `pulse-registry-${new Date().getTime()}.csv`
-    link.click()
-    toast.success('Registry Exported Successfully')
+
+    exportTablePDF({
+      title: 'Pulse Identity Registry',
+      subtitle: `System Directory Manifest • ${new Date().toLocaleDateString()}`,
+      headers,
+      rows,
+      filename: `pulse-registry-${new Date().getTime()}`,
+      summaryCards: [
+        { label: 'Total Identities', value: filtered.length },
+        { label: 'Department Filter', value: activeDept },
+        { label: 'Clearance Level', value: activeRole }
+      ]
+    })
+
+    toast.success('Registry Exported Successfully as PDF')
   }
 
   async function updatePoints(userId, newPoints) {

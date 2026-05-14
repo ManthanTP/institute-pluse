@@ -35,7 +35,7 @@ export default function AdminComplaintsPage() {
     setLoading(true)
     const { data, error } = await supabase
       .from('complaints')
-      .select('*, student:student_id(full_name, email, department)')
+      .select('*, student:profiles!student_id(full_name, email, department)')
       .order('created_at', { ascending: false })
     if (error) {
       console.error('Fetch error:', error)

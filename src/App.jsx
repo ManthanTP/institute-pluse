@@ -13,6 +13,7 @@ import { ProtectedRoute, AdminRoute, FacultyRoute, PublicRoute, OwnerRoute } fro
 
 // ─── STUDENT PAGES ──────────────────────────────────────────────
 const DashboardPage = lazy(() => import('./pages/student/DashboardPage'))
+const AnnouncementsPage = lazy(() => import('./pages/student/AnnouncementsPage'))
 const CarbonLogPage = lazy(() => import('./pages/student/CarbonLogPage'))
 const CarbonHistoryPage = lazy(() => import('./pages/student/CarbonHistoryPage'))
 const LeaderboardPage = lazy(() => import('./pages/student/LeaderboardPage'))
@@ -23,11 +24,10 @@ const AttendancePage = lazy(() => import('./pages/student/AttendancePage'))
 const ComplaintsPage = lazy(() => import('./pages/student/ComplaintsPage'))
 const LostFoundPage = lazy(() => import('./pages/student/LostFoundPage'))
 const StudyPlannerPage = lazy(() => import('./pages/student/StudyPlannerPage'))
-const LabAssistantPage = lazy(() => import('./pages/student/LabAssistantPage'))
 const NavigationPage = lazy(() => import('./pages/student/NavigationPage'))
-const ChatbotPage = lazy(() => import('./pages/student/ChatbotPage'))
 const ProfilePage = lazy(() => import('./pages/student/ProfilePage'))
 const NotificationsPage = lazy(() => import('./pages/student/NotificationsPage'))
+const HelpPage = lazy(() => import('./pages/shared/HelpPage'))
 
 // ─── FACULTY PAGES ──────────────────────────────────────────────
 const FacultyDashboard = lazy(() => import('./pages/faculty/FacultyDashboard'))
@@ -62,6 +62,7 @@ const AdminSettingsPage = lazy(() => import('./pages/admin/AdminSettingsPage'))
 const AdminAuditPage = lazy(() => import('./pages/admin/AdminAuditPage'))
 const AdminNavigationPage = lazy(() => import('./pages/admin/AdminNavigationPage'))
 const AdminProfilePage = lazy(() => import('./pages/admin/AdminProfilePage'))
+const AdminHelpPage = lazy(() => import('./pages/admin/AdminHelpPage'))
 const AdminStubPage = lazy(() => import('./pages/admin/AdminStubPage'))
 
 
@@ -153,6 +154,7 @@ function App() {
 
           {/* ══════════ STUDENT ══════════ */}
           <Route path="/dashboard" element={<StudentPage component={DashboardPage} title="Home" />} />
+          <Route path="/announcements" element={<StudentPage component={AnnouncementsPage} title="Announcements" showBack hideChrome />} />
           <Route path="/carbon/log" element={<StudentPage component={CarbonLogPage} title="Carbon Tracker" showBack hideChrome />} />
           <Route path="/carbon/history" element={<StudentPage component={CarbonHistoryPage} title="Carbon Analytics" showBack hideChrome />} />
           <Route path="/leaderboard" element={<StudentPage component={LeaderboardPage} title="Leaderboard" showBack hideChrome />} />
@@ -163,11 +165,10 @@ function App() {
           <Route path="/complaints" element={<StudentPage component={ComplaintsPage} title="Complaints" showBack hideChrome />} />
           <Route path="/lost-found" element={<StudentPage component={LostFoundPage} title="Lost & Found" showBack hideChrome />} />
           <Route path="/study-planner" element={<StudentPage component={StudyPlannerPage} title="Study Planner" showBack hideChrome />} />
-          <Route path="/lab-assistant" element={<StudentPage component={LabAssistantPage} title="Lab Assistant" showBack hideChrome />} />
           <Route path="/navigation" element={<StudentPage component={NavigationPage} title="Campus Navigation" showBack hideChrome />} />
-          <Route path="/chatbot" element={<StudentPage component={ChatbotPage} title="AI Assistant" showBack hideChrome />} />
           <Route path="/profile" element={<StudentPage component={ProfilePage} title="Profile Settings" showBack hideChrome />} />
           <Route path="/notifications" element={<StudentPage component={NotificationsPage} title="Notifications" showBack hideChrome />} />
+          <Route path="/help" element={<StudentPage component={HelpPage} title="Help & Support" showBack hideChrome />} />
 
            {/* ══════════ FACULTY ══════════ */}
            <Route path="/faculty/dashboard" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyDashboard /></Suspense></FacultyRoute>} />
@@ -182,6 +183,7 @@ function App() {
            <Route path="/faculty/announcements" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyAnnouncementsPage /></Suspense></FacultyRoute>} />
            <Route path="/faculty/notifications" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyNotificationsPage /></Suspense></FacultyRoute>} />
            <Route path="/faculty/profile" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyProfilePage /></Suspense></FacultyRoute>} />
+           <Route path="/faculty/help" element={<FacultyRoute><Suspense fallback={<PageLoader />}><HelpPage /></Suspense></FacultyRoute>} />
 
 
           {/* ══════════ OWNER ══════════ */}
@@ -206,6 +208,7 @@ function App() {
            <Route path="/12345678/admin/audit" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminAuditPage /></Suspense></AdminRoute>} />
            <Route path="/12345678/admin/navigation" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminNavigationPage /></Suspense></AdminRoute>} />
            <Route path="/12345678/admin/profile" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminProfilePage /></Suspense></AdminRoute>} />
+           <Route path="/12345678/admin/help" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminHelpPage /></Suspense></AdminRoute>} />
            <Route path="/12345678/admin" element={<Navigate to="/12345678/admin/dashboard" replace />} />
 
 

@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import FacultyLayout from './FacultyLayout'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
+import { exportTablePDF } from '../../lib/pdfExport'
 
 export default function FacultySustainabilityPage() {
   const [impact, setImpact] = useState({ paperSaved: 0, co2Reduced: 0, treesEquivalent: 0 })
@@ -51,6 +52,29 @@ export default function FacultySustainabilityPage() {
 
     calculateImpact()
   }, [])
+
+  function handleDownload() {
+    const headers = ["METRIC", "VALUE", "UNIT"]
+    const rows = [
+      ["Paper Saved", impact.paperSaved.toString(), "Sheets"],
+      ["Carbon Offset", impact.co2Reduced, "Kg CO2"],
+      ["Tree Equivalent", impact.treesEquivalent, "Trees"]
+    ]
+
+    exportTablePDF(
+      headers,
+      rows,
+      `eco_audit_${new Date().toISOString().split('T')[0]}`,
+      {
+        title: "ECOLOGICAL IMPACT AUDIT",
+        subtitle: "FACULTY SUSTAINABILITY PROTOCOL",
+        stats: [
+          { label: "RANK", value: "#04" },
+          { label: "STATUS", value: "OPTIMAL" }
+        ]
+      }
+    )
+  }
 
   return (
     <FacultyLayout>
@@ -149,7 +173,7 @@ export default function FacultySustainabilityPage() {
                  </div>
                  <p className="text-xs lg:text-sm text-gray-500 font-medium leading-relaxed text-center lg:text-left italic">Your digital-first approach in the Computer Science department has saved more paper than 85% of other faculty terminals this month.</p>
               </div>
-              <button className="w-full py-4 lg:py-6 bg-white/5 border border-white/10 rounded-xl lg:rounded-3xl text-[9px] lg:text-[10px] font-black uppercase tracking-widest text-white hover:bg-white/10 transition-all mt-8 lg:mt-12 shadow-inner">Download Eco-Audit</button>
+              <button onClick={handleDownload} className="w-full py-4 lg:py-6 bg-white/5 border border-white/10 rounded-xl lg:rounded-3xl text-[9px] lg:text-[10px] font-black uppercase tracking-widest text-white hover:bg-white/10 transition-all mt-8 lg:mt-12 shadow-inner">Download Eco-Audit</button>
            </div>
         </div>
       </div>

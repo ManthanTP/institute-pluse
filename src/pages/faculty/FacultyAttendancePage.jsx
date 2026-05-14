@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { QRCodeSVG } from 'qrcode.react'
 import toast from 'react-hot-toast'
 import { useAuthStore } from '../../store/index'
+import { exportTablePDF } from '../../lib/pdfExport'
+import { ChevronDown } from 'lucide-react'
 
 export default function FacultyAttendancePage() {
   const { profile } = useAuthStore()
@@ -271,6 +273,14 @@ export default function FacultyAttendancePage() {
     }
   }
 
+  async function endAndStartNew() {
+    if (!activeSession) return
+    await lockSession(activeSession.id)
+    setActiveSession(null)
+    setParticipants([])
+    toast.success('Ready for new protocol')
+  }
+
   async function deleteSession(sessionId) {
     if (!window.confirm('DANGER: Permanently delete this attendance protocol and all associated records?')) return
     
@@ -328,16 +338,19 @@ export default function FacultyAttendancePage() {
         p.verified_by ? 'Faculty' : 'System'
       ])
 
-      const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n")
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-      const link = document.createElement("a")
-      const url = URL.createObjectURL(blob)
-      link.setAttribute("href", url)
-      link.setAttribute("download", `Attendance_Ledger_${activeSession?.subject || 'Export'}.csv`)
-      link.style.visibility = 'hidden'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
+      exportTablePDF({
+        title: `Attendance Ledger: ${activeSession?.subject || 'Export'}`,
+        subtitle: `Terminal: ${rooms.find(r => r.id === activeSession?.classroom_id)?.name || 'Manual'} • ${new Date().toLocaleDateString()}`,
+        headers,
+        rows,
+        filename: `Attendance_${activeSession?.subject || 'Report'}_${new Date().toISOString().split('T')[0]}`,
+        summaryCards: [
+          { label: 'Session ID', value: activeSession?.id.split('-')[0] },
+          { label: 'Total Present', value: participants.filter(p => p.verification_status === 'verified').length },
+          { label: 'Protocol Code', value: activeSession?.session_code || 'N/A' }
+        ]
+      })
+
       toast.success('Ledger Exported Successfully')
     } catch (err) {
       toast.error('Export Interface Failed')
@@ -394,39 +407,66 @@ export default function FacultyAttendancePage() {
                             </div>
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-8">
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-8">
+                           {/* Custom Dropdowns for Metadata */}
                            <div className="space-y-2 lg:space-y-3">
                               <label className="text-[8px] lg:text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 italic">Academic Semester</label>
-                              <select value={extraSem} onChange={e => {setExtraSem(e.target.value); setExtraSubject(''); setExtraDiv(''); setExtraBatch('');}} className="w-full bg-white/5 border border-white/10 rounded-xl lg:rounded-2xl p-4 lg:p-5 text-[10px] lg:text-xs font-black text-white outline-none focus:border-blue-500/50 appearance-none cursor-pointer hover:bg-white/10 transition-all uppercase tracking-widest shadow-inner">
-                                 <option value="" className="bg-[#0f172a]">Select Semester</option>
-                                 {semesters.map(s => <option key={s.id} value={s.id} className="bg-[#0f172a]">{s.name}</option>)}
-                              </select>
+                              <div className="relative group/sel">
+                                <div className="w-full bg-white/5 border border-white/10 rounded-xl lg:rounded-2xl p-4 lg:p-5 text-[10px] lg:text-xs font-black text-white cursor-pointer flex justify-between items-center group-hover/sel:border-blue-500/50 transition-all shadow-inner">
+                                  <span>{semesters.find(s => s.id === extraSem)?.name || 'Select Semester'}</span>
+                                  <ChevronDown size={14} className="text-gray-500" />
+                                </div>
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-[#0f172a] border border-white/10 rounded-xl overflow-hidden opacity-0 invisible group-hover/sel:opacity-100 group-hover/sel:visible transition-all z-50 shadow-xl max-h-48 overflow-y-auto no-scrollbar">
+                                   {semesters.map(s => (
+                                      <div key={s.id} onClick={() => {setExtraSem(s.id); setExtraSubject(''); setExtraDiv(''); setExtraBatch('');}} className="px-5 py-3 text-[10px] font-black uppercase tracking-widest cursor-pointer hover:bg-white/5 transition-colors text-white">Semester {s.name}</div>
+                                   ))}
+                                </div>
+                              </div>
                            </div>
 
                            <div className="space-y-2 lg:space-y-3">
                               <label className="text-[8px] lg:text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 italic">Division Target</label>
-                              <select value={extraDiv} onChange={e => {setExtraDiv(e.target.value); setExtraBatch('');}} disabled={!extraSem} className="w-full bg-white/5 border border-white/10 rounded-xl lg:rounded-2xl p-4 lg:p-5 text-[10px] lg:text-xs font-black text-white outline-none focus:border-blue-500/50 appearance-none disabled:opacity-20 cursor-pointer hover:bg-white/10 transition-all uppercase tracking-widest shadow-inner">
-                                 <option value="" className="bg-[#0f172a]">Select Division</option>
-                                 {divisions.filter(d => d.semester_id === extraSem).map(div => (
-                                    <option key={div.id} value={div.id} className="bg-[#0f172a]">Division {div.name}</option>
-                                 ))}
-                              </select>
+                              <div className={`relative group/sel ${!extraSem ? 'opacity-20 pointer-events-none' : ''}`}>
+                                <div className="w-full bg-white/5 border border-white/10 rounded-xl lg:rounded-2xl p-4 lg:p-5 text-[10px] lg:text-xs font-black text-white cursor-pointer flex justify-between items-center group-hover/sel:border-blue-500/50 transition-all shadow-inner">
+                                  <span>{divisions.find(d => d.id === extraDiv)?.name ? `Division ${divisions.find(d => d.id === extraDiv)?.name}` : 'Select Division'}</span>
+                                  <ChevronDown size={14} className="text-gray-500" />
+                                </div>
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-[#0f172a] border border-white/10 rounded-xl overflow-hidden opacity-0 invisible group-hover/sel:opacity-100 group-hover/sel:visible transition-all z-50 shadow-xl max-h-48 overflow-y-auto no-scrollbar">
+                                   {divisions.filter(d => d.semester_id === extraSem).map(div => (
+                                      <div key={div.id} onClick={() => {setExtraDiv(div.id); setExtraBatch('');}} className="px-5 py-3 text-[10px] font-black uppercase tracking-widest cursor-pointer hover:bg-white/5 transition-colors text-white">Division {div.name}</div>
+                                   ))}
+                                </div>
+                              </div>
                            </div>
 
                            <div className="space-y-2 lg:space-y-3">
                               <label className="text-[8px] lg:text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 italic">Subject Manifest</label>
-                              <select value={extraSubject} onChange={e => setExtraSubject(e.target.value)} disabled={!extraSem} className="w-full bg-white/5 border border-white/10 rounded-xl lg:rounded-2xl p-4 lg:p-5 text-[10px] lg:text-xs font-black text-white outline-none focus:border-blue-500/50 appearance-none disabled:opacity-20 cursor-pointer hover:bg-white/10 transition-all uppercase tracking-widest shadow-inner">
-                                 <option value="" className="bg-[#0f172a]">Select Subject</option>
-                                 {subjects.filter(s => s.semester_id === extraSem).map(s => <option key={s.id} value={s.id} className="bg-[#0f172a]">{s.name} ({s.code})</option>)}
-                              </select>
+                              <div className={`relative group/sel ${!extraSem ? 'opacity-20 pointer-events-none' : ''}`}>
+                                <div className="w-full bg-white/5 border border-white/10 rounded-xl lg:rounded-2xl p-4 lg:p-5 text-[10px] lg:text-xs font-black text-white cursor-pointer flex justify-between items-center group-hover/sel:border-blue-500/50 transition-all shadow-inner">
+                                  <span>{subjects.find(s => s.id === extraSubject)?.name || 'Select Subject'}</span>
+                                  <ChevronDown size={14} className="text-gray-500" />
+                                </div>
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-[#0f172a] border border-white/10 rounded-xl overflow-hidden opacity-0 invisible group-hover/sel:opacity-100 group-hover/sel:visible transition-all z-50 shadow-xl max-h-48 overflow-y-auto no-scrollbar">
+                                   {subjects.filter(s => s.semester_id === extraSem).map(s => (
+                                      <div key={s.id} onClick={() => setExtraSubject(s.id)} className="px-5 py-3 text-[10px] font-black uppercase tracking-widest cursor-pointer hover:bg-white/5 transition-colors text-white">{s.name} ({s.code})</div>
+                                   ))}
+                                </div>
+                              </div>
                            </div>
 
                            <div className="space-y-2 lg:space-y-3">
                               <label className="text-[8px] lg:text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 italic">Room / Terminal</label>
-                              <select value={extraRoom} onChange={e => setExtraRoom(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl lg:rounded-2xl p-4 lg:p-5 text-[10px] lg:text-xs font-black text-white outline-none focus:border-blue-500/50 appearance-none cursor-pointer hover:bg-white/10 transition-all uppercase tracking-widest shadow-inner">
-                                 <option value="" className="bg-[#0f172a]">Select Room</option>
-                                 {rooms.map(r => <option key={r.id} value={r.id} className="bg-[#0f172a]">{r.name}</option>)}
-                              </select>
+                              <div className="relative group/sel">
+                                <div className="w-full bg-white/5 border border-white/10 rounded-xl lg:rounded-2xl p-4 lg:p-5 text-[10px] lg:text-xs font-black text-white cursor-pointer flex justify-between items-center group-hover/sel:border-blue-500/50 transition-all shadow-inner">
+                                  <span>{rooms.find(r => r.id === extraRoom)?.name || 'Select Room'}</span>
+                                  <ChevronDown size={14} className="text-gray-500" />
+                                </div>
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-[#0f172a] border border-white/10 rounded-xl overflow-hidden opacity-0 invisible group-hover/sel:opacity-100 group-hover/sel:visible transition-all z-50 shadow-xl max-h-48 overflow-y-auto no-scrollbar">
+                                   {rooms.map(r => (
+                                      <div key={r.id} onClick={() => setExtraRoom(r.id)} className="px-5 py-3 text-[10px] font-black uppercase tracking-widest cursor-pointer hover:bg-white/5 transition-colors text-white">{r.name}</div>
+                                   ))}
+                                </div>
+                              </div>
                            </div>
 
                            <div className="space-y-2 lg:space-y-3">
@@ -440,10 +480,18 @@ export default function FacultyAttendancePage() {
 
                            <div className="space-y-2 lg:space-y-3">
                               <label className="text-[8px] lg:text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 italic">Lab Batch (Optional)</label>
-                              <select value={extraBatch} onChange={e => setExtraBatch(e.target.value)} disabled={sessionType !== 'lab' || !extraDiv} className="w-full bg-white/5 border border-white/10 rounded-xl lg:rounded-2xl p-4 lg:p-5 text-[10px] lg:text-xs font-black text-white outline-none focus:border-blue-500/50 appearance-none disabled:opacity-20 cursor-pointer hover:bg-white/10 transition-all uppercase tracking-widest shadow-inner">
-                                 <option value="" className="bg-[#0f172a]">All Batches</option>
-                                 {batches.filter(b => b.division_id === extraDiv).map(b => <option key={b.id} value={b.id} className="bg-[#0f172a]">Batch {b.name}</option>)}
-                              </select>
+                              <div className={`relative group/sel ${sessionType !== 'lab' || !extraDiv ? 'opacity-20 pointer-events-none' : ''}`}>
+                                <div className="w-full bg-white/5 border border-white/10 rounded-xl lg:rounded-2xl p-4 lg:p-5 text-[10px] lg:text-xs font-black text-white cursor-pointer flex justify-between items-center group-hover/sel:border-blue-500/50 transition-all shadow-inner">
+                                  <span>{batches.find(b => b.id === extraBatch)?.name ? `Batch ${batches.find(b => b.id === extraBatch)?.name}` : 'All Batches'}</span>
+                                  <ChevronDown size={14} className="text-gray-500" />
+                                </div>
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-[#0f172a] border border-white/10 rounded-xl overflow-hidden opacity-0 invisible group-hover/sel:opacity-100 group-hover/sel:visible transition-all z-50 shadow-xl max-h-48 overflow-y-auto no-scrollbar">
+                                   <div onClick={() => setExtraBatch('')} className="px-5 py-3 text-[10px] font-black uppercase tracking-widest cursor-pointer hover:bg-white/5 transition-colors text-white">All Batches</div>
+                                   {batches.filter(b => b.division_id === extraDiv).map(b => (
+                                      <div key={b.id} onClick={() => setExtraBatch(b.id)} className="px-5 py-3 text-[10px] font-black uppercase tracking-widest cursor-pointer hover:bg-white/5 transition-colors text-white">Batch {b.name}</div>
+                                   ))}
+                                </div>
+                              </div>
                            </div>
                         </div>
 
@@ -489,8 +537,8 @@ export default function FacultyAttendancePage() {
                              <>
                              <button onClick={() => extendSession(5)} className="flex-1 sm:flex-none px-6 lg:px-8 py-3.5 lg:py-5 bg-white/10 border border-white/20 rounded-xl lg:rounded-2xl text-[8px] lg:text-[9px] font-black uppercase text-white tracking-widest hover:bg-white/20 transition-all shadow-xl">+5m</button>
                              <button onClick={() => extendSession(10)} className="flex-1 sm:flex-none px-6 lg:px-8 py-3.5 lg:py-5 bg-white/10 border border-white/20 rounded-xl lg:rounded-2xl text-[8px] lg:text-[9px] font-black uppercase text-white tracking-widest hover:bg-white/20 transition-all shadow-xl">+10m</button>
-                             <button onClick={() => lockSession(activeSession.id)} className="w-full sm:w-auto px-8 lg:px-10 py-3.5 lg:py-5 bg-white text-blue-600 rounded-xl lg:rounded-2xl text-[8px] lg:text-[9px] font-black uppercase tracking-widest shadow-2xl hover:bg-gray-50 active:scale-95 transition-all">Terminate</button>
-                             <button onClick={() => {setActiveSession(null); setParticipants([])}} className="w-full sm:w-auto px-8 lg:px-10 py-3.5 lg:py-5 bg-green-500 text-white rounded-xl lg:rounded-2xl text-[8px] lg:text-[9px] font-black uppercase tracking-widest shadow-2xl hover:bg-green-400 active:scale-95 transition-all">New Session</button>
+                             <button onClick={() => lockSession(activeSession.id)} className="w-full sm:w-auto px-8 lg:px-10 py-3.5 lg:py-5 bg-white text-blue-600 rounded-xl lg:rounded-2xl text-[8px] lg:text-[9px] font-black uppercase tracking-widest shadow-2xl hover:bg-gray-50 active:scale-95 transition-all font-black">Terminate</button>
+                             <button onClick={endAndStartNew} className="w-full sm:w-auto px-8 lg:px-10 py-3.5 lg:py-5 bg-green-500 text-white rounded-xl lg:rounded-2xl text-[8px] lg:text-[9px] font-black uppercase tracking-widest shadow-2xl hover:bg-green-400 active:scale-95 transition-all font-black">End & Start New</button>
                              </>
                           ) : (
                             <button onClick={() => {setActiveSession(null); setParticipants([])}} className="w-full sm:w-auto px-10 py-5 bg-blue-600 text-white rounded-xl lg:rounded-2xl text-[9px] lg:text-[10px] font-black uppercase tracking-widest shadow-2xl hover:bg-blue-500 active:scale-95 transition-all font-black">Create New Session</button>

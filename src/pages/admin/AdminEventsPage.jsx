@@ -5,6 +5,7 @@ import AdminLayout from './AdminLayout'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createPortal } from 'react-dom'
 import toast from 'react-hot-toast'
+import { exportTablePDF } from '../../lib/pdfExport'
 
 const CATEGORIES = ['Workshop', 'Seminar', 'Sustainability', 'Cultural', 'Sports', 'Other']
 
@@ -96,27 +97,26 @@ export default function AdminEventsPage() {
     }
 
     const headers = ['Name', 'Email', 'Department', 'Registered At'];
-    const csvContent = [
-      headers.join(','),
-      ...participants.map(p => {
-        const name = `"${p.profiles?.full_name || ''}"`;
-        const email = `"${p.profiles?.email || ''}"`;
-        const dept = `"${p.profiles?.department || ''}"`;
-        const date = `"${new Date(p.registered_at).toLocaleString()}"`;
-        return [name, email, dept, date].join(',');
-      })
-    ].join('\n');
+    const rows = participants.map(p => [
+      p.profiles?.full_name || '',
+      p.profiles?.email || '',
+      p.profiles?.department || '',
+      new Date(p.registered_at).toLocaleString()
+    ]);
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `${selectedEvent?.title?.replace(/\s+/g, '_') || 'event'}_manifest.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success('Manifest Exported');
+    exportTablePDF({
+      title: `Event Participant Manifest`,
+      subtitle: selectedEvent?.title || 'Event',
+      headers,
+      rows,
+      filename: `${selectedEvent?.title?.replace(/\s+/g, '_') || 'event'}_manifest`,
+      summaryCards: [
+        { label: 'Total Participants', value: participants.length },
+        { label: 'Event Date', value: selectedEvent?.event_date ? new Date(selectedEvent.event_date).toLocaleDateString() : 'N/A' },
+        { label: 'Eco Points', value: `${selectedEvent?.eco_points || 0} XP` }
+      ]
+    });
+    toast.success('Manifest Exported as PDF');
   }
 
   const filtered = events.filter(e => e.title.toLowerCase().includes(search.toLowerCase()))
@@ -383,7 +383,7 @@ export default function AdminEventsPage() {
                       onClick={handleDownloadCSV}
                       className="px-4 py-2 bg-blue-500/10 text-blue-500 border border-blue-500/20 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-500/20 transition-all flex items-center gap-2"
                     >
-                      <Download size={14} /> Export CSV
+                      <Download size={14} /> Export PDF
                     </button>
                     <button onClick={() => setIsParticipantsModalOpen(false)} className="p-3 lg:p-4 rounded-xl lg:rounded-2xl bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-colors"><X size={20} /></button>
                   </div>

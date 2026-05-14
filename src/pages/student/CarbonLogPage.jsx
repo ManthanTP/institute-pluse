@@ -7,7 +7,6 @@ import {
   calcTransportKg, calcFoodKg, calcElectricityKg, calcWaterKg, calcWasteKg,
   calcTotalKg, calcEcoScore, calcEcoPoints, getScoreGrade
 } from '../../lib/carbonCalc'
-import { getEcoRecommendations } from '../../lib/gemini'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore, useCarbonStore } from '../../store/index'
 import EcoScoreRing from '../../components/EcoScoreRing'
@@ -162,13 +161,8 @@ export default function CarbonLogPage() {
         last_log_date: today,
         logging_streak: (profile.logging_streak || 0) + 1,
       }).eq('id', profile.id)
-      const aiTips = await getEcoRecommendations({
-        transport_kg: transportKg, electricity_kg: electricityKg,
-        food_kg: foodKg, water_kg: waterKg, waste_kg: wasteKg,
-        total_kg: totalKg, eco_score: ecoScore
-      })
       setTodayLog(data)
-      setSuccess({ ecoScore, ecoPoints, aiTips })
+      setSuccess({ ecoScore, ecoPoints })
     } catch (err) {
       console.error('Submit error:', err)
       toast.error(err.message || 'Failed to save log. Please try again.')
@@ -486,27 +480,7 @@ function SuccessOverlay({ ecoScore, ecoPoints, aiTips, onDone, onHistory }) {
           </div>
         </div>
 
-        {aiTips && (
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 }}
-            className="bg-slate-900 border border-white/5 rounded-[40px] p-8 text-left mb-12 relative overflow-hidden"
-          >
-            <div className="absolute top-0 right-0 p-4 opacity-5">
-              <Sparkles size={60} className="text-green-500" />
-            </div>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-2xl bg-green-500/10 flex items-center justify-center border border-green-500/20">
-                <Sparkles size={20} className="text-green-400" />
-              </div>
-              <p className="text-[10px] font-black text-green-400 uppercase tracking-[0.2em]">Neural Recommendation</p>
-            </div>
-            <p className="text-sm text-gray-400 leading-relaxed font-medium">
-              {aiTips}
-            </p>
-          </motion.div>
-        )}
+
 
         <div className="space-y-4">
           <motion.button

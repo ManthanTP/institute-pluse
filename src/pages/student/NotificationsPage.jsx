@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Bell, BellOff, Filter, CheckCircle2, Info, ShoppingBag, GraduationCap, AlertCircle, Trophy, Leaf } from 'lucide-react'
 import { format, isToday, isYesterday } from 'date-fns'
+import { supabase } from '../../lib/supabase'
 import { useNotifStore, useAuthStore } from '../../store/index'
 import BottomTabBar from '../../components/BottomTabBar'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -33,7 +34,11 @@ export default function NotificationsPage() {
   const [filterTab, setFilterTab] = useState(0)
 
   useEffect(() => {
-    if (profile?.id) fetchNotifications(profile.id)
+    if (profile?.id) {
+      fetchNotifications(profile.id)
+      const sub = useNotifStore.getState().subscribeToNotifications(profile.id)
+      return () => { supabase.removeChannel(sub) }
+    }
   }, [profile?.id])
 
   const filtered = filterTab === 0

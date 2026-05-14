@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { CalendarDays, Users, BarChart3, Leaf, Target, MessageSquare, GraduationCap, TrendingUp, Clock, ChevronRight, Plus, Zap } from 'lucide-react'
+import { CalendarDays, Users, BarChart3, Leaf, Target, MessageSquare, GraduationCap, TrendingUp, Clock, ChevronRight, Plus, Zap, HelpCircle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import FacultyLayout from './FacultyLayout'
 import { motion } from 'framer-motion'
@@ -163,6 +163,7 @@ export default function FacultyDashboard() {
               { label: 'Announcements', icon: Zap, path: '/faculty/announcements', color: '#8b5cf6' },
               { label: 'Notifications', icon: Clock, path: '/faculty/notifications', color: '#6366f1' },
               { label: 'Security Profile', icon: Users, path: '/faculty/profile', color: '#94a3b8' },
+              { label: 'Help Center', icon: HelpCircle, path: '/faculty/help', color: '#6366f1' },
             ].map((action, i) => (
               <motion.div key={action.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 + i * 0.05 }}>
                 <Link to={action.path} className="glass-card p-5 lg:p-6 flex flex-col items-center gap-4 group hover:border-blue-500/20 transition-all text-center">

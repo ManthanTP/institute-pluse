@@ -12,21 +12,49 @@ export default function AdminLostFoundPage() {
 
   useEffect(() => {
     fetchItems()
+
+    const channel = supabase
+      .channel('admin_lost_found')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'lost_found_items' }, () => fetchItems())
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
   }, [])
 
   async function fetchItems() {
     try {
       setLoading(true)
-      // Mock Data
-      setItems([
-        { id: 1, name: 'iPhone 13 Pro', category: 'Electronics', location: 'Cafeteria Area', date: '2026-05-12', status: 'pending', finder: 'Siddharth R.' },
-        { id: 2, name: 'Leather Wallet (Brown)', category: 'Personal', location: 'Library Floor 2', date: '2026-05-11', status: 'verified', finder: 'Anjali V.' },
-        { id: 3, name: 'Scientific Calculator', category: 'Academic', location: 'Lab 402', date: '2026-05-10', status: 'pending', finder: 'Prof. Gupta' },
-      ])
+      const { data, error } = await supabase
+        .from('lost_found_items')
+        .select('*, reporter:profiles!reported_by(full_name, email)')
+        .order('created_at', { ascending: false })
+      
+      if (error) throw error
+      if (data) setItems(data)
     } catch (err) {
       toast.error('Inventory Sync Failed')
+      console.error(err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function updateStatus(id, status) {
+    const { error } = await supabase.from('lost_found_items').update({ status }).eq('id', id)
+    if (!error) {
+      toast.success(`Protocol Updated: ${status.toUpperCase()}`)
+      fetchItems()
+    } else {
+      toast.error('Failed to update status')
+    }
+  }
+
+  async function deleteItem(id) {
+    if (!confirm('Permanently remove this record?')) return
+    const { error } = await supabase.from('lost_found_items').delete().eq('id', id)
+    if (!error) {
+      toast.success('Record Erased')
+      fetchItems()
     }
   }
 
@@ -45,7 +73,7 @@ export default function AdminLostFoundPage() {
 
           <div className="flex items-center gap-4">
              <div className="flex gap-2 p-2 bg-[#0f172a]/60 border border-white/10 rounded-2xl">
-                {['pending', 'verified', 'archived'].map((type) => (
+                {['open', 'claimed', 'archived'].map((type) => (
                    <button
                      key={type}
                      onClick={() => setFilter(type)}
@@ -81,26 +109,38 @@ export default function AdminLostFoundPage() {
                  >
                     <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity"><ShieldAlert size={80} /></div>
                     
-                    <div className="w-full aspect-square bg-white/5 rounded-[32px] mb-8 flex items-center justify-center text-gray-700 border border-white/5 group-hover:border-blue-500/20 transition-all overflow-hidden relative">
+                    <div className="w-full aspect-video bg-white/5 rounded-[32px] mb-8 flex items-center justify-center text-gray-700 border border-white/5 group-hover:border-blue-500/20 transition-all overflow-hidden relative">
                        <Camera size={40} className="group-hover:scale-110 transition-transform" />
-                       <div className="absolute bottom-6 left-6 px-4 py-2 bg-black/60 backdrop-blur-md rounded-xl text-[8px] font-black text-blue-500 uppercase tracking-widest border border-white/10">ID: RECOVER-00{item.id}</div>
+                       <div className="absolute bottom-6 left-6 px-4 py-2 bg-black/60 backdrop-blur-md rounded-xl text-[8px] font-black text-blue-500 uppercase tracking-widest border border-white/10">ID: {item.id.slice(0, 8)}</div>
                     </div>
 
                     <div className="space-y-4">
                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">{item.category}</span>
-                          <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">{item.date}</span>
+                          <span className={`text-[10px] font-black uppercase tracking-widest ${item.type === 'found' ? 'text-green-500' : 'text-orange-500'}`}>{item.type}</span>
+                          <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">{new Date(item.created_at).toLocaleDateString()}</span>
                        </div>
-                       <h4 className="text-2xl font-black text-white uppercase tracking-tighter italic">{item.name}</h4>
+                       <h4 className="text-2xl font-black text-white uppercase tracking-tighter italic line-clamp-1">{item.item_name}</h4>
+                       <p className="text-[10px] text-gray-500 font-medium leading-relaxed line-clamp-2">{item.description}</p>
                        
-                       <div className="flex items-center gap-2 text-gray-500">
+                       <div className="flex items-center gap-2 text-gray-500 pt-2">
                           <MapPin size={14} className="text-blue-500" />
-                          <span className="text-[10px] font-black uppercase tracking-widest">{item.location}</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest truncate">{item.location_found || 'General Campus'}</span>
                        </div>
 
-                       <div className="pt-6 border-t border-white/5 mt-6 flex gap-3">
-                          <button className="flex-1 py-4 bg-blue-600 text-white rounded-2xl text-[9px] font-black uppercase tracking-widest shadow-xl shadow-blue-600/20 hover:scale-105 transition-all">Verify Claim</button>
-                          <button className="p-4 bg-white/5 border border-white/10 rounded-2xl text-gray-500 hover:text-white transition-all"><ArrowRight size={18} /></button>
+                       <div className="pt-6 border-t border-white/5 mt-6 flex flex-col gap-3">
+                          <div className="flex justify-between items-center mb-2">
+                             <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Reporter</span>
+                             <span className="text-[10px] font-black text-white uppercase tracking-widest truncate">{item.reporter?.full_name || 'Unknown'}</span>
+                          </div>
+                          <div className="flex gap-2">
+                             {item.status === 'open' && (
+                                <button onClick={() => updateStatus(item.id, 'claimed')} className="flex-1 py-4 bg-blue-600 text-white rounded-2xl text-[9px] font-black uppercase tracking-widest shadow-xl shadow-blue-600/20 hover:scale-105 transition-all">Mark Claimed</button>
+                             )}
+                             {item.status === 'claimed' && (
+                                <button onClick={() => updateStatus(item.id, 'archived')} className="flex-1 py-4 bg-white/5 border border-white/10 text-gray-500 rounded-2xl text-[9px] font-black uppercase tracking-widest hover:text-white transition-all">Archive</button>
+                             )}
+                             <button onClick={() => deleteItem(item.id)} className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 hover:bg-red-500 hover:text-white transition-all"><Trash2 size={18} /></button>
+                          </div>
                        </div>
                     </div>
                  </motion.div>

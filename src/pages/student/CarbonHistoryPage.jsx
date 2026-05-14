@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { TrendingDown, TrendingUp, Calendar, Leaf, Wind, Droplets, Zap, ChevronRight, Share2, Download, Info, Bus, UtensilsCrossed, ArrowLeft } from 'lucide-react'
+import { exportTablePDF } from '../../lib/pdfExport'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store/index'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -83,13 +84,21 @@ export default function CarbonHistoryPage() {
   }
 
   const handleDownload = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(history, null, 2))
-    const downloadAnchorNode = document.createElement('a')
-    downloadAnchorNode.setAttribute("href", dataStr)
-    downloadAnchorNode.setAttribute("download", "carbon_history.json")
-    document.body.appendChild(downloadAnchorNode)
-    downloadAnchorNode.click()
-    downloadAnchorNode.remove()
+    exportTablePDF({
+      title: 'Carbon Manifest',
+      subtitle: `OPERATOR: ${profile?.full_name || 'ANONYMOUS'}`,
+      headers: ['Date', 'Protocol Source', 'CO2 Impact'],
+      rows: history.map(item => [
+        item._date.toLocaleDateString().toUpperCase(),
+        item._type === 'order' ? 'CAFETERIA NODE' : 'DAILY MANIFEST',
+        `${(item.total_kg || item.total_carbon_kg || 0).toFixed(2)} KG`
+      ]),
+      filename: `carbon_manifest_${profile?.id?.slice(0, 8)}`,
+      summaryCards: [
+        { label: 'Total Saved', value: `${totalSaved.toFixed(2)} KG` },
+        { label: 'Avg Impact', value: `${averageImpact.toFixed(2)} KG` }
+      ]
+    })
   }
 
   return (

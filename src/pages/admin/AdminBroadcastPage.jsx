@@ -16,6 +16,15 @@ export default function AdminBroadcastPage() {
 
   useEffect(() => {
     fetchBroadcasts()
+
+    const channel = supabase
+      .channel('admin_broadcasts_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => {
+        fetchBroadcasts()
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
   }, [])
 
   async function fetchBroadcasts() {
@@ -23,7 +32,7 @@ export default function AdminBroadcastPage() {
       setLoading(true)
       const { data, error } = await supabase
         .from('announcements')
-        .select('*, author:created_by(full_name)')
+        .select('*, author:profiles!created_by(full_name)')
         .order('created_at', { ascending: false })
       
       if (error) throw error
@@ -123,19 +132,31 @@ export default function AdminBroadcastPage() {
 
                     <div className="space-y-2">
                        <label className="text-[8px] font-black text-gray-500 uppercase tracking-widest ml-1">Target Sector</label>
-                       <div className="relative">
-                         <select 
-                           value={target}
-                           onChange={(e) => setTarget(e.target.value)}
-                           className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 px-4 text-sm text-white focus:outline-none focus:border-orange-500/50 transition-all appearance-none cursor-pointer"
-                           style={{ colorScheme: 'dark' }}
-                         >
-                            <option value="all" style={{ background: '#161b22' }}>Full Campus</option>
-                            <option value="students" style={{ background: '#161b22' }}>Students Only</option>
-                            <option value="faculty" style={{ background: '#161b22' }}>Faculty Only</option>
-                            <option value="staff" style={{ background: '#161b22' }}>Staff Only</option>
-                         </select>
-                         <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                       <div className="relative group">
+                         <div className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 px-4 text-sm text-white cursor-pointer flex justify-between items-center group-hover:border-orange-500/50 transition-all">
+                           <span>
+                             {target === 'all' ? 'Full Campus' : 
+                              target === 'students' ? 'Students Only' : 
+                              target === 'faculty' ? 'Faculty Only' : 'Staff Only'}
+                           </span>
+                           <ChevronDown size={14} className="text-gray-500" />
+                         </div>
+                         <div className="absolute top-full left-0 right-0 mt-2 bg-[#0f172a] border border-white/10 rounded-xl overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-xl">
+                            {[
+                              { val: 'all', label: 'Full Campus' },
+                              { val: 'students', label: 'Students Only' },
+                              { val: 'faculty', label: 'Faculty Only' },
+                              { val: 'staff', label: 'Staff Only' }
+                            ].map(opt => (
+                              <div
+                                key={opt.val}
+                                onClick={() => setTarget(opt.val)}
+                                className={`px-4 py-3 text-sm cursor-pointer hover:bg-white/5 transition-colors ${target === opt.val ? 'text-orange-500 font-bold bg-orange-500/5' : 'text-gray-300'}`}
+                              >
+                                {opt.label}
+                              </div>
+                            ))}
+                         </div>
                        </div>
                     </div>
 

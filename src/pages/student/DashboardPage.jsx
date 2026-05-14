@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, Flame, Leaf, TrendingUp, Star, Award, Zap, Compass, Search, MessageSquare, Info, ShieldAlert, ArrowRight, ChevronRight, Sparkles, LayoutGrid, Target, Waves, Wind, User } from 'lucide-react'
+import { Bell, Flame, Leaf, TrendingUp, Star, Award, Zap, Compass, Search, MessageSquare, Info, ShieldAlert, ArrowRight, ChevronRight, Sparkles, LayoutGrid, Target, Waves, Wind, User, Megaphone, HelpCircle } from 'lucide-react'
 import { useAuthStore, useCarbonStore, useNotifStore } from '../../store/index'
 import { supabase } from '../../lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -13,27 +13,18 @@ const MODULE_TILES = [
   { path: '/cafeteria', icon: Zap, label: 'Cafeteria', color: '#f97316' },
   { path: '/attendance', icon: Star, label: 'Attendance', color: '#14b8a6' },
   { path: '/events', icon: Award, label: 'Events', color: '#a855f7' },
-  { path: '/study-planner', icon: LayoutGrid, label: 'Study AI', color: '#8b5cf6' },
-  { path: '/lab-assistant', icon: Wind, label: 'Lab AI', color: '#ef4444' },
+  { path: '/announcements', icon: Megaphone, label: 'Broadcasts', color: '#f97316' },
+  { path: '/study-planner', icon: LayoutGrid, label: 'Objectives', color: '#8b5cf6' },
   { path: '/navigation', icon: Compass, label: 'Campus Map', color: '#0ea5e9' },
   { path: '/lost-found', icon: Search, label: 'Lost & Found', color: '#64748b' },
   { path: '/complaints', icon: ShieldAlert, label: 'Support', color: '#dc2626' },
-  { path: '/chatbot', icon: MessageSquare, label: 'AI Chat', color: '#0ea5e9' },
-]
-
-const ECO_TIPS = [
-  '🚌 Sustainable transport saves 0.36kg CO2 per 5km.',
-  '🥗 Plant-based meals reduce your footprint by 1kg/day.',
-  '💡 Idle AC consumes 1.23kg CO2 hourly. Power down.',
-  '🚿 Bucket baths optimize water usage by 85%.',
-  '♻️ Systematic recycling reduces waste CO2 by 80%.',
+  { path: '/help', icon: HelpCircle, label: 'Help', color: '#6366f1' },
 ]
 
 export default function DashboardPage() {
   const navigate = useNavigate()
   const { profile } = useAuthStore()
   const { todayLog, fetchTodayLog } = useCarbonStore()
-  const [tipIndex] = useState(() => Math.floor(Math.random() * ECO_TIPS.length))
   const [activeSession, setActiveSession] = useState(null)
 
   useEffect(() => {
@@ -262,28 +253,7 @@ export default function DashboardPage() {
            </div>
         </section>
 
-        {/* NEURAL TIP */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-blue-600/10 border border-blue-500/20 rounded-[32px] p-8 relative overflow-hidden"
-        >
-           <div className="absolute top-0 right-0 p-8 opacity-10">
-              <Sparkles size={48} className="text-blue-500" />
-           </div>
-           <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-4">
-                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                 <span className="text-[8px] font-black text-blue-500 uppercase tracking-[0.4em]">InstitutePulseAI Insight Active</span>
-              </div>
-              <p className="text-[12px] font-medium text-white/80 leading-relaxed italic mb-6">
-                 "{ECO_TIPS[tipIndex]}"
-              </p>
-              <button className="text-[9px] font-black text-blue-400 uppercase tracking-widest flex items-center gap-2 hover:text-blue-300 transition-colors">
-                 Synchronize Efficiency Protocol <ChevronRight size={12} />
-              </button>
-           </div>
-        </motion.div>
+
       </div>
     </div>
   )

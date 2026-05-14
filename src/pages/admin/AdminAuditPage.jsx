@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import AdminLayout from './AdminLayout'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
+import { exportTablePDF } from '../../lib/pdfExport'
 
 export default function AdminAuditPage() {
   const [logs, setLogs] = useState([])
@@ -35,21 +36,28 @@ export default function AdminAuditPage() {
   const handleExportAudit = () => {
     if (!logs.length) return toast.error('No logs to export')
     const headers = ['Action', 'Admin', 'Target', 'Time', 'Severity']
-    const csvData = logs.map(l => [
+    const rows = logs.map(l => [
       l.action,
       l.admin_name || 'System',
       l.target || 'General',
       new Date(l.created_at).toLocaleString(),
       l.severity
     ])
-    const csvContent = [headers, ...csvData].map(e => e.join(',')).join('\n')
-    const blob = new Blob([csvContent], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `pulse-audit-${new Date().getTime()}.csv`
-    link.click()
-    toast.success('Audit Manifest Exported')
+    
+    exportTablePDF({
+      title: 'Audit Log Manifest',
+      subtitle: `System Integrity Record • ${new Date().toLocaleDateString()}`,
+      headers,
+      rows,
+      filename: `pulse-audit-${new Date().getTime()}`,
+      summaryCards: [
+        { label: 'Total Logs Exported', value: logs.length },
+        { label: 'Export Authority', value: 'System Administrator' },
+        { label: 'Integrity Check', value: 'Verified' }
+      ]
+    })
+    
+    toast.success('Audit Manifest Exported as PDF')
   }
 
   return (

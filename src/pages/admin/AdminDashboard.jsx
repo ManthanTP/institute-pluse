@@ -6,6 +6,8 @@ import { supabase } from '../../lib/supabase'
 import AdminLayout from './AdminLayout'
 import { motion } from 'framer-motion'
 import { useAuthStore } from '../../store/index'
+import toast from 'react-hot-toast'
+import { exportReportPDF } from '../../lib/pdfExport'
 
 const MOCK_TREND = [
   { day: 'Mon', co2: 3.2, logs: 820 },
@@ -127,20 +129,24 @@ export default function AdminDashboard() {
   }, [])
 
   const handleDiagnosticExport = () => {
-    const diagnosticData = {
-      timestamp: new Date().toISOString(),
-      metrics: stats,
-      chartData: chartData,
-      status: 'Normal',
-      version: '2.4.0'
-    }
-    const blob = new Blob([JSON.stringify(diagnosticData, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `pulse-diagnostic-${new Date().getTime()}.json`
-    link.click()
-    toast.success('Diagnostic Report Exported')
+    exportReportPDF({
+      title: 'Campus Core Diagnostic Report',
+      subtitle: `System Version 2.4.0 • ${new Date().toLocaleDateString()}`,
+      data: {
+        system_status: 'Normal',
+        timestamp: new Date().toISOString(),
+        total_users: stats.totalUsers,
+        daily_logs: stats.todayLogs,
+        carbon_aggregation_kg: stats.totalCo2,
+        offset_protocol_kg: stats.totalSaved,
+        eco_points_issued: stats.totalPoints,
+        open_complaints: stats.openComplaints,
+        efficiency_index: `${stats.avgEcoScore}%`,
+        weekly_trend: chartData,
+      },
+      filename: `pulse-diagnostic-${new Date().getTime()}`
+    })
+    toast.success('Diagnostic Report Exported as PDF')
   }
 
   return (

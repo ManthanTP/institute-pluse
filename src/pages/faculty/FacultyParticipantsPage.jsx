@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import FacultyLayout from './FacultyLayout'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
+import { exportTablePDF } from '../../lib/pdfExport'
 
 export default function FacultyParticipantsPage() {
   const [students, setStudents] = useState([])
@@ -51,6 +52,31 @@ export default function FacultyParticipantsPage() {
     return matchesSearch && matchesDiv
   })
 
+  function handleDownload() {
+    const headers = ["NAME", "EMAIL", "DIVISION", "DEPARTMENT", "JOINED"]
+    const rows = filteredStudents.map(s => [
+      s.full_name,
+      s.email || 'N/A',
+      s.academic_divisions?.name || 'N/A',
+      s.department || 'N/A',
+      new Date(s.created_at).toLocaleDateString()
+    ])
+
+    exportTablePDF(
+      headers,
+      rows,
+      `student_registry_${new Date().toISOString().split('T')[0]}`,
+      {
+        title: "STUDENT REGISTRY REPORT",
+        subtitle: `SYNCHRONIZED DATA • ${filteredStudents.length} PROFILES`,
+        stats: [
+          { label: "TOTAL SYNCED", value: filteredStudents.length.toString() },
+          { label: "ACTIVE HUB", value: "FACULTY" }
+        ]
+      }
+    )
+  }
+
   return (
     <FacultyLayout>
       <div className="space-y-8 lg:space-y-12 pb-20">
@@ -68,8 +94,8 @@ export default function FacultyParticipantsPage() {
           </div>
 
           <div className="flex items-center justify-center md:justify-end gap-3 lg:gap-4">
-             <button onClick={fetchData} className="p-3 lg:p-4 bg-white/5 border border-white/10 rounded-xl lg:rounded-2xl text-gray-500 hover:text-white transition-all shadow-xl">
-                <Download size={18} lg:size={20} />
+             <button onClick={handleDownload} className="p-3 lg:p-4 bg-white/5 border border-white/10 rounded-xl lg:rounded-2xl text-gray-500 hover:text-white transition-all shadow-xl">
+                <Download size={18} />
              </button>
              <button className="flex-1 md:flex-none px-6 lg:px-8 py-3.5 lg:py-4 bg-blue-600 text-white rounded-xl lg:rounded-2xl text-[9px] lg:text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-600/20 hover:scale-105 transition-all">Add Student</button>
           </div>

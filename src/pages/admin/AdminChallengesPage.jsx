@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Target, Trophy, Plus, Search, Trash2, Edit3, Users, Zap, Clock, ShieldCheck, ArrowUpRight, X } from 'lucide-react'
+import { Target, Trophy, Plus, Search, Trash2, Edit3, Users, Zap, Clock, ShieldCheck, ArrowUpRight, X, ChevronDown } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import AdminLayout from './AdminLayout'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -23,6 +23,14 @@ export default function AdminChallengesPage() {
 
   useEffect(() => {
     fetchChallenges()
+
+    const channel = supabase
+      .channel('admin_challenges_sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'green_challenges' }, () => fetchChallenges())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'challenge_participants' }, () => fetchChallenges())
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
   }, [])
 
   async function fetchChallenges() {
@@ -32,7 +40,7 @@ export default function AdminChallengesPage() {
         .from('green_challenges')
         .select(`
           *,
-          creator:created_by(full_name),
+          creator:profiles!created_by(full_name),
           participants:challenge_participants(count)
         `)
         .order('created_at', { ascending: false })
@@ -163,14 +171,17 @@ export default function AdminChallengesPage() {
                      <div className="grid grid-cols-2 gap-4">
                        <div>
                           <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-2 block">Category</label>
-                          <select 
-                            value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white" 
-                          >
-                             <option value="Sustainability">Sustainability</option>
-                             <option value="Academic">Academic</option>
-                             <option value="Social">Social</option>
-                          </select>
+                          <div className="relative group/sel">
+                             <div className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white flex justify-between items-center cursor-pointer group-hover/sel:border-green-500/50 transition-all">
+                                <span className="text-[10px] font-black uppercase tracking-widest">{formData.category}</span>
+                                <ChevronDown size={14} className="text-gray-500" />
+                             </div>
+                             <div className="absolute top-full left-0 right-0 mt-2 bg-[#0f172a] border border-white/10 rounded-xl overflow-hidden opacity-0 invisible group-hover/sel:opacity-100 group-hover/sel:visible transition-all z-50 shadow-xl">
+                                {['Sustainability', 'Academic', 'Social'].map(cat => (
+                                   <div key={cat} onClick={() => setFormData({...formData, category: cat})} className="px-4 py-3 text-[10px] font-black uppercase tracking-widest cursor-pointer hover:bg-white/5 transition-colors text-white">{cat}</div>
+                                ))}
+                             </div>
+                          </div>
                        </div>
                        <div>
                           <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-2 block">Reward (XP)</label>

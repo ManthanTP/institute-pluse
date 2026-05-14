@@ -65,17 +65,7 @@ export default function StudyPlannerPage() {
     }
   }
 
-  function handleAIOptimize() {
-    if (tasks.length === 0) {
-      toast.error('Add objectives to initialize AI optimization')
-      return
-    }
-    
-    const taskList = tasks.map(t => `- ${t.title} (${t.duration_mins}m, ${t.priority} priority)`).join('\n')
-    const prompt = `I have the following study objectives for today:\n${taskList}\n\nPlease help me optimize my study schedule. Suggest an efficient order to tackle these tasks, including short breaks, and give me some productivity tips based on this workload.`
-    
-    navigate('/chatbot', { state: { initialMessage: prompt } })
-  }
+
 
   const completedCount = tasks.filter(t => t.status === 'completed').length
   const progress = tasks.length > 0 ? (completedCount / tasks.length) * 100 : 0
@@ -102,13 +92,7 @@ export default function StudyPlannerPage() {
             <h1 className="text-2xl font-black uppercase tracking-tighter italic">Study Planner</h1>
           </div>
           <div className="flex items-center gap-3">
-            <motion.button 
-              whileTap={{ scale: 0.9 }}
-              onClick={handleAIOptimize}
-              className="w-12 h-12 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center text-indigo-500"
-            >
-               <Sparkles size={24} className="animate-pulse" />
-            </motion.button>
+
             <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-500">
                <Target size={24} />
             </div>
@@ -161,7 +145,7 @@ export default function StudyPlannerPage() {
               <h3 className="text-[11px] font-black text-white uppercase tracking-[0.2em] flex items-center gap-2 mb-1">
                  Objectives
               </h3>
-              <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest italic">InstitutePulseAI Telemetry</p>
+              <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest italic">Personal Objective Registry</p>
            </div>
            <motion.button
              whileTap={{ scale: 0.95 }}

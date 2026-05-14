@@ -24,6 +24,13 @@ export default function LostFoundPage() {
   useEffect(() => {
     fetchItems()
     fetchLocations()
+
+    const channel = supabase
+      .channel('lost_found_sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'lost_found_items' }, () => fetchItems())
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
   }, [])
 
   async function fetchLocations() {

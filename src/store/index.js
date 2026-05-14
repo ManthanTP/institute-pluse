@@ -125,6 +125,26 @@ export const useNotifStore = create((set, get) => ({
     notifications: [notif, ...state.notifications],
     unreadCount: state.unreadCount + (notif.is_read ? 0 : 1)
   })),
+
+  subscribeToNotifications: (userId) => {
+    const channelName = `student_notifs_${userId}`
+    const existing = supabase.getChannels().find(c => c.name === channelName)
+    if (existing) {
+      supabase.removeChannel(existing)
+    }
+
+    return supabase
+      .channel(channelName)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'student_notifications',
+        filter: `student_id=eq.${userId}`
+      }, (payload) => {
+        get().addNotification(payload.new)
+      })
+      .subscribe()
+  }
 }))
 
 export const useCarbonStore = create((set, get) => ({

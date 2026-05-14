@@ -14,34 +14,26 @@ export default function FacultyNotificationsPage() {
   useEffect(() => {
     fetchNotifications()
 
-    // Subscribe to real-time events
     const channels = []
-    
-    const complaintsChannel = supabase
-      .channel('notif_complaints')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'complaints' }, (payload) => {
+    const notificationsChannel = supabase
+      .channel('faculty_notifs')
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'notifications',
+        filter: `user_id=eq.${profile.id}`
+      }, (payload) => {
         addNotification({
-          type: 'complaint',
-          title: 'New Complaint Filed',
-          content: `"${payload.new.title}" - ${payload.new.category} (${payload.new.priority} priority)`,
-          time: new Date(payload.new.created_at)
+          id: payload.new.id,
+          type: payload.new.type || 'system',
+          title: payload.new.title,
+          content: payload.new.message,
+          time: new Date(payload.new.created_at),
+          read: payload.new.is_read
         })
       })
       .subscribe()
-    channels.push(complaintsChannel)
-
-    const announcementsChannel = supabase
-      .channel('notif_announcements')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'announcements' }, (payload) => {
-        addNotification({
-          type: 'announcement',
-          title: 'New Announcement',
-          content: payload.new.content?.substring(0, 100),
-          time: new Date(payload.new.created_at)
-        })
-      })
-      .subscribe()
-    channels.push(announcementsChannel)
+    channels.push(notificationsChannel)
 
     return () => { channels.forEach(c => supabase.removeChannel(c)) }
   }, [])
@@ -59,59 +51,28 @@ export default function FacultyNotificationsPage() {
   async function fetchNotifications() {
     setLoading(true)
     try {
-      // Fetch recent complaints and events as notifications
-      const [complaintsRes, announcementsRes, eventsRes] = await Promise.all([
-        supabase.from('complaints').select('id, title, category, priority, created_at').order('created_at', { ascending: false }).limit(10),
-        supabase.from('announcements').select('id, title, content, created_at').order('created_at', { ascending: false }).limit(10),
-        supabase.from('events').select('id, title, created_at').order('created_at', { ascending: false }).limit(5)
-      ])
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', profile.id)
+        .order('created_at', { ascending: false })
+        .limit(50)
 
-      const allNotifs = []
+      if (error) throw error
 
-      if (complaintsRes.data) {
-        complaintsRes.data.forEach(c => {
-          allNotifs.push({
-            id: `complaint_${c.id}`,
-            type: 'complaint',
-            title: 'Student Complaint',
-            content: `"${c.title}" - ${c.category} priority: ${c.priority}`,
-            time: new Date(c.created_at),
-            read: true
-          })
-        })
+      if (data) {
+        setNotifications(data.map(n => ({
+          id: n.id,
+          type: n.type || 'system',
+          title: n.title,
+          content: n.message,
+          time: new Date(n.created_at),
+          read: n.is_read
+        })))
       }
-
-      if (announcementsRes.data) {
-        announcementsRes.data.forEach(a => {
-          allNotifs.push({
-            id: `ann_${a.id}`,
-            type: 'announcement',
-            title: a.title || 'Announcement',
-            content: a.content?.substring(0, 120),
-            time: new Date(a.created_at),
-            read: true
-          })
-        })
-      }
-
-      if (eventsRes.data) {
-        eventsRes.data.forEach(e => {
-          allNotifs.push({
-            id: `event_${e.id}`,
-            type: 'event',
-            title: 'New Event Created',
-            content: e.title,
-            time: new Date(e.created_at),
-            read: true
-          })
-        })
-      }
-
-      // Sort by time
-      allNotifs.sort((a, b) => b.time - a.time)
-      setNotifications(allNotifs)
     } catch (err) {
       console.error('Notifications error:', err)
+      toast.error('Failed to sync alerts')
     } finally {
       setLoading(false)
     }

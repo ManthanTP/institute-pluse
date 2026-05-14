@@ -28,6 +28,15 @@ export default function FacultyAnnouncementsPage() {
 
   useEffect(() => {
     fetchAnnouncements()
+
+    const channel = supabase
+      .channel('announcements_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => {
+        fetchAnnouncements()
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
   }, [])
 
   async function fetchAnnouncements() {
@@ -35,7 +44,7 @@ export default function FacultyAnnouncementsPage() {
       setLoading(true)
       const { data, error } = await supabase
         .from('announcements')
-        .select('*, author:created_by(full_name)')
+        .select('*, author:profiles!created_by(full_name)')
         .order('created_at', { ascending: false })
       
       if (error) throw error
@@ -137,18 +146,22 @@ export default function FacultyAnnouncementsPage() {
                     {/* Audience - Custom dropdown */}
                     <div className="space-y-2">
                        <label className="text-[8px] font-black text-gray-500 uppercase tracking-widest ml-1">Target Audience</label>
-                       <div className="relative">
-                         <select 
-                           value={audience}
-                           onChange={(e) => setAudience(e.target.value)}
-                           className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 px-4 text-sm text-white focus:outline-none focus:border-blue-500/50 transition-all appearance-none cursor-pointer"
-                           style={{ colorScheme: 'dark' }}
-                         >
+                       <div className="relative group">
+                         <div className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 px-4 text-sm text-white cursor-pointer flex justify-between items-center group-hover:border-blue-500/50 transition-all">
+                           <span>{AUDIENCE_OPTIONS.find(o => o.value === audience)?.label || 'Select Audience'}</span>
+                           <ChevronDown size={14} className="text-gray-500" />
+                         </div>
+                         <div className="absolute top-full left-0 right-0 mt-2 bg-[#0f172a] border border-white/10 rounded-xl overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-xl">
                             {AUDIENCE_OPTIONS.map(opt => (
-                              <option key={opt.value} value={opt.value} style={{ background: '#161b22', color: 'white' }}>{opt.label}</option>
+                              <div
+                                key={opt.value}
+                                onClick={() => setAudience(opt.value)}
+                                className={`px-4 py-3 text-sm cursor-pointer hover:bg-white/5 transition-colors ${audience === opt.value ? 'text-blue-500 font-bold bg-blue-500/5' : 'text-gray-300'}`}
+                              >
+                                {opt.label}
+                              </div>
                             ))}
-                         </select>
-                         <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                         </div>
                        </div>
                     </div>
 

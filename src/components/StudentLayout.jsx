@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
-import { Menu, X, LogOut, Home, Leaf, Bus, UtensilsCrossed, GraduationCap, User, Sparkles, Trophy, MessageSquare, Bell, ChevronLeft, TrendingUp, Target, CalendarDays, Search, MapPin, Beaker, BookOpen, Bot, ShieldAlert } from 'lucide-react'
+import { Menu, X, LogOut, Home, Leaf, Bus, UtensilsCrossed, GraduationCap, User, Sparkles, Trophy, MessageSquare, Bell, ChevronLeft, TrendingUp, Target, CalendarDays, Search, MapPin, Beaker, BookOpen, Bot, ShieldAlert, Megaphone, HelpCircle } from 'lucide-react'
 import { useAuthStore } from '../store/index'
 import { motion, AnimatePresence } from 'framer-motion'
 import BottomTabBar from './BottomTabBar'
@@ -14,14 +14,14 @@ const STUDENT_NAV = [
   { path: '/events', icon: CalendarDays, label: 'Events' },
   { path: '/cafeteria', icon: UtensilsCrossed, label: 'Cafeteria' },
   { path: '/attendance', icon: GraduationCap, label: 'Attendance' },
-  { path: '/chatbot', icon: Bot, label: 'AI Assistant' },
   { path: '/study-planner', icon: BookOpen, label: 'Study Planner' },
-  { path: '/lab-assistant', icon: Beaker, label: 'Lab Assistant' },
   { path: '/navigation', icon: MapPin, label: 'Campus Navigation' },
   { path: '/lost-found', icon: Search, label: 'Lost & Found' },
+  { path: '/announcements', icon: Megaphone, label: 'Announcements' },
   { path: '/complaints', icon: ShieldAlert, label: 'Complaints' },
   { path: '/notifications', icon: Bell, label: 'Notifications' },
   { path: '/profile', icon: User, label: 'Profile Settings' },
+  { path: '/help', icon: HelpCircle, label: 'Help & Support' },
 ]
 
 export default function StudentLayout({ children, title, showBack = false, hideChrome = false }) {

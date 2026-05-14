@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
-import { GraduationCap, Users, Clock, CheckCircle2, Zap, AlertCircle, MapPin, Trash2, Shield, Search, Filter, History, RefreshCw, BarChart3, Activity, Download, Plus, X, Building, BookOpen } from 'lucide-react'
+import { GraduationCap, Users, Clock, CheckCircle2, Zap, AlertCircle, MapPin, Trash2, Shield, Search, Filter, History, RefreshCw, BarChart3, Activity, Download, Plus, X, Building, BookOpen, ChevronDown } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import AdminLayout from './AdminLayout'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createPortal } from 'react-dom'
 import toast from 'react-hot-toast'
-
+import { exportTablePDF } from '../../lib/pdfExport'
 export default function AdminAttendancePage() {
   const [activeTab, setActiveTab] = useState('tracking') // 'tracking', 'metadata'
   const [sessions, setSessions] = useState([])
@@ -153,17 +153,20 @@ export default function AdminAttendancePage() {
         p.verified_by ? 'Faculty' : 'System'
       ])
 
-      const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n")
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-      const link = document.createElement("a")
-      const url = URL.createObjectURL(blob)
-      link.setAttribute("href", url)
-      link.setAttribute("download", `Attendance_${session.subject}_${new Date(session.created_at).toISOString().split('T')[0]}.csv`)
-      link.style.visibility = 'hidden'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      toast.success('Ledger Exported Successfully')
+      exportTablePDF({
+        title: `Protocol Ledger: ${session.subject}`,
+        subtitle: `Terminal Data • ${new Date(session.created_at).toLocaleString()}`,
+        headers,
+        rows,
+        filename: `Attendance_${session.subject.replace(/\s+/g, '_')}_${new Date(session.created_at).toISOString().split('T')[0]}`,
+        summaryCards: [
+          { label: 'Protocol ID', value: session.id.split('-')[0] },
+          { label: 'Faculty Lead', value: session.teacher_name },
+          { label: 'Total Scans', value: participants.length }
+        ]
+      })
+
+      toast.success('Ledger Exported Successfully as PDF')
     } catch (err) {
       toast.error('Export Interface Failed')
     }
@@ -346,16 +349,31 @@ export default function AdminAttendancePage() {
                      <>
                        <div>
                          <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Department</label>
-                         <select required value={newItem.department || 'CSE'} onChange={e => setNewItem({...newItem, department: e.target.value})} className="w-full mt-2 bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-white focus:border-purple-500/50 outline-none">
-                            {['CSE','ECE','ME','Civil','MBA','Other'].map(d => <option key={d} value={d} className="bg-slate-900">{d}</option>)}
-                         </select>
+                         <div className="relative group/sel mt-2">
+                           <div className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-white flex justify-between items-center cursor-pointer group-hover/sel:border-purple-500/50 transition-all">
+                              <span className="font-black uppercase tracking-widest text-[10px]">{newItem.department || 'CSE'}</span>
+                              <ChevronDown size={14} className="text-gray-500" />
+                           </div>
+                           <div className="absolute top-full left-0 right-0 mt-2 bg-[#0f172a] border border-white/10 rounded-xl overflow-hidden opacity-0 invisible group-hover/sel:opacity-100 group-hover/sel:visible transition-all z-50 shadow-xl">
+                              {['CSE','ECE','ME','Civil','MBA','Other'].map(d => (
+                                 <div key={d} onClick={() => setNewItem({...newItem, department: d})} className="px-4 py-3 text-[10px] font-black uppercase tracking-widest cursor-pointer hover:bg-white/5 transition-colors text-white">{d}</div>
+                              ))}
+                           </div>
+                         </div>
                        </div>
                        <div>
                          <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Semester</label>
-                         <select required value={newItem.semester_id || ''} onChange={e => setNewItem({...newItem, semester_id: e.target.value})} className="w-full mt-2 bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-white focus:border-purple-500/50 outline-none">
-                            <option value="" className="bg-slate-900">Select Sem</option>
-                            {semesters.map(s => <option key={s.id} value={s.id} className="bg-slate-900">{s.name}</option>)}
-                         </select>
+                         <div className="relative group/sel mt-2">
+                           <div className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-white flex justify-between items-center cursor-pointer group-hover/sel:border-purple-500/50 transition-all">
+                              <span className="font-black uppercase tracking-widest text-[10px]">{semesters.find(s => s.id === newItem.semester_id)?.name ? `Semester ${semesters.find(s => s.id === newItem.semester_id)?.name}` : 'Select Sem'}</span>
+                              <ChevronDown size={14} className="text-gray-500" />
+                           </div>
+                           <div className="absolute top-full left-0 right-0 mt-2 bg-[#0f172a] border border-white/10 rounded-xl overflow-hidden opacity-0 invisible group-hover/sel:opacity-100 group-hover/sel:visible transition-all z-50 shadow-xl max-h-48 overflow-y-auto no-scrollbar">
+                              {semesters.map(s => (
+                                 <div key={s.id} onClick={() => setNewItem({...newItem, semester_id: s.id})} className="px-4 py-3 text-[10px] font-black uppercase tracking-widest cursor-pointer hover:bg-white/5 transition-colors text-white">Semester {s.name}</div>
+                              ))}
+                           </div>
+                         </div>
                        </div>
                      </>
                    )}

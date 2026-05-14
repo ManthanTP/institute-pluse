@@ -29,7 +29,7 @@ export default function FacultyComplaintsPage() {
       setLoading(true)
       const { data, error } = await supabase
         .from('complaints')
-        .select('*, student:student_id(full_name, email)')
+        .select('*, student:profiles!student_id(full_name, email)')
         .order('created_at', { ascending: false })
       
       if (error) throw error

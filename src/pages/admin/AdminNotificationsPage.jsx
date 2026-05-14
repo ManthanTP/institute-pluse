@@ -79,20 +79,20 @@ export default function AdminNotificationsPage() {
                    initial={{ opacity: 0, y: 10 }}
                    animate={{ opacity: 1, y: 0 }}
                    transition={{ delay: idx * 0.05 }}
-                   className={`p-10 rounded-[40px] border transition-all flex items-start gap-8 relative group overflow-hidden ${notif.read ? 'bg-[#0f172a]/20 border-white/5' : 'bg-[#0f172a]/60 border-blue-500/20 shadow-[0_0_40px_rgba(59,130,246,0.05)]'}`}
+                   className={`p-10 rounded-[40px] border transition-all flex items-start gap-8 relative group overflow-hidden ${notif.is_read ? 'bg-[#0f172a]/20 border-white/5' : 'bg-[#0f172a]/60 border-blue-500/20 shadow-[0_0_40px_rgba(59,130,246,0.05)]'}`}
                  >
-                    {!notif.read && <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]" />}
+                    {!notif.is_read && <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]" />}
                     
-                    <div className={`w-16 h-16 rounded-[24px] flex items-center justify-center shrink-0 border ${notif.read ? 'bg-white/5 border-white/10 text-gray-600' : 'bg-blue-500/10 border-blue-500/20 text-blue-500'}`}>
+                    <div className={`w-16 h-16 rounded-[24px] flex items-center justify-center shrink-0 border ${notif.is_read ? 'bg-white/5 border-white/10 text-gray-600' : 'bg-blue-500/10 border-blue-500/20 text-blue-500'}`}>
                        {notif.type === 'security' ? <ShieldAlert size={26} /> : notif.type === 'resource' ? <Activity size={26} /> : <Zap size={26} />}
                     </div>
 
                     <div className="flex-1 space-y-3">
                        <div className="flex items-center justify-between">
-                          <h4 className={`text-xl font-black uppercase tracking-tight ${notif.read ? 'text-gray-500' : 'text-white'}`}>{notif.title}</h4>
+                          <h4 className={`text-xl font-black uppercase tracking-tight ${notif.is_read ? 'text-gray-500' : 'text-white'}`}>{notif.title}</h4>
                           <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">{notif.time}</span>
                        </div>
-                       <p className={`text-sm font-medium leading-relaxed max-w-3xl ${notif.read ? 'text-gray-600' : 'text-gray-400'}`}>{notif.content}</p>
+                       <p className={`text-sm font-medium leading-relaxed max-w-3xl ${notif.is_read ? 'text-gray-600' : 'text-gray-400'}`}>{notif.content}</p>
                     </div>
 
                     <div className="flex flex-col gap-3 opacity-0 group-hover:opacity-100 transition-opacity">

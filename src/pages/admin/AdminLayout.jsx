@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
-import { Menu, X, LogOut, BarChart3, Users, UtensilsCrossed, GraduationCap, MessageSquare, Search, Bell, Map, LayoutDashboard, Shield, Target, CalendarDays, Megaphone, Settings, FileText, User } from 'lucide-react'
+import { Menu, X, LogOut, BarChart3, Users, UtensilsCrossed, GraduationCap, MessageSquare, Search, Bell, Map, LayoutDashboard, Shield, Target, CalendarDays, Megaphone, Settings, FileText, User, HelpCircle } from 'lucide-react'
 import { useAuthStore } from '../../store/index'
 import { motion, AnimatePresence } from 'framer-motion'
 import logo from '../../assets/logo.png'
@@ -21,6 +21,7 @@ const NAV_ITEMS = [
   { path: '/12345678/admin/audit', icon: FileText, label: 'Audit Logs' },
   { path: '/12345678/admin/navigation', icon: Map, label: 'Campus Locations' },
   { path: '/12345678/admin/profile', icon: User, label: 'Admin Profile' },
+  { path: '/12345678/admin/help', icon: HelpCircle, label: 'Help Editor' },
 ]
 
 export default function AdminLayout({ children }) {

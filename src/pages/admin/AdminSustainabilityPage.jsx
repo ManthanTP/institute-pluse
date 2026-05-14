@@ -4,6 +4,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { supabase } from '../../lib/supabase'
 import AdminLayout from './AdminLayout'
 import { motion, AnimatePresence } from 'framer-motion'
+import toast from 'react-hot-toast'
+import { exportReportPDF, exportTablePDF } from '../../lib/pdfExport'
 
 const COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#a855f7']
 
@@ -56,24 +58,25 @@ export default function AdminSustainabilityPage() {
   }, [])
 
   const handleGenerateReport = () => {
-    const reportData = {
-      timestamp: new Date().toISOString(),
-      summary: stats,
-      department_breakdown: deptData,
-      raw_logs_sample: logs.slice(0, 50).map(l => ({
-        date: l.log_date,
-        student_id: l.student_id,
-        co2_kg: l.total_kg,
-        points: l.eco_points_earned
-      }))
-    }
-    const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `sustainability-report-${new Date().getTime()}.json`
-    link.click()
-    toast.success('Sustainability Report Generated')
+    exportReportPDF({
+      title: 'Sustainability Impact Report',
+      subtitle: `Campus-wide Environmental Analysis • ${new Date().toLocaleDateString()}`,
+      data: {
+        cumulative_co2_flux: `${stats.totalCo2} kg`,
+        offset_protocol: `${stats.totalSaved} kg`,
+        ecosystem_nodes: stats.activeUsers,
+        efficiency_index: `${stats.avgEfficiency}%`,
+        department_breakdown: deptData,
+        recent_logs: logs.slice(0, 30).map(l => ({
+          date: l.log_date,
+          student: l.student_id?.split('-')[0] || 'N/A',
+          co2_kg: (l.total_kg || 0).toFixed(2),
+          eco_points: l.eco_points_earned || 0
+        }))
+      },
+      filename: `sustainability-report-${new Date().getTime()}`
+    })
+    toast.success('Sustainability Report Generated as PDF')
   }
 
   return (
