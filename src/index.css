@@ -149,3 +149,40 @@ body {
     display: none;
   }
 }
+
+/* QR Scanner Global Overrides */
+#qr-reader-global {
+  border: none !important;
+  background: transparent !important;
+  overflow: hidden !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+#qr-reader-global video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: inherit !important;
+}
+
+/* Hide everything else from the library */
+#qr-reader-global canvas,
+#qr-reader-global__scan_region,
+#qr-reader-global__dashboard,
+#qr-reader-global img,
+#qr-reader-global span,
+#qr-reader-global button {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  border: none !important;
+}
+
+/* Specific fix for the 'out of frame' artifact seen in screenshots */
+#qr-reader-global > div {
+    border: none !important;
+    width: 100% !important;
+    height: 100% !important;
+}

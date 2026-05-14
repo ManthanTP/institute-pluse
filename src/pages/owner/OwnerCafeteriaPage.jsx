@@ -4,8 +4,7 @@ import { supabase } from '../../lib/supabase'
 import OwnerLayout from './OwnerLayout'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { Html5QrcodeScanner, Html5Qrcode } from 'html5-qrcode'
-import { createPortal } from 'react-dom'
+import OrderScannerModal from '../../components/OrderScannerModal'
 
 const CATEGORIES = ['All', 'Breakfast', 'Lunch', 'Snacks', 'Beverages', 'Dinner']
 
@@ -19,61 +18,6 @@ export default function OwnerCafeteriaPage() {
   const [selectedItem, setSelectedItem] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isScannerOpen, setIsScannerOpen] = useState(false)
-  const [scannedOrder, setScannedOrder] = useState(null)
-  const scannerRef = useRef(null)
-
-  const startScanner = async () => {
-    setIsScannerOpen(true)
-    setTimeout(() => {
-      const html5QrCode = new Html5Qrcode("qr-reader")
-      scannerRef.current = html5QrCode
-      
-      const config = { fps: 10, qrbox: { width: 250, height: 250 } }
-      
-      html5QrCode.start(
-        { facingMode: "environment" },
-        config,
-        async (decodedText) => {
-          handleScanSuccess(decodedText)
-        },
-        (errorMessage) => {
-          // ignore scan errors
-        }
-      ).catch(err => {
-        console.error(err)
-        toast.error("Camera access denied")
-        setIsScannerOpen(false)
-      })
-    }, 100)
-  }
-
-  const stopScanner = async () => {
-    if (scannerRef.current) {
-      try {
-        await scannerRef.current.stop()
-      } catch (err) {
-        console.error(err)
-      }
-    }
-    setIsScannerOpen(false)
-  }
-
-  const handleScanSuccess = async (orderId) => {
-    await stopScanner()
-    setLoading(true)
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*, profiles(full_name, role)')
-      .eq('id', orderId)
-      .single()
-    
-    if (data) {
-      setScannedOrder(data)
-    } else {
-      toast.error("Invalid Order QR")
-    }
-    setLoading(false)
-  }
 
   useEffect(() => {
     fetchData()
@@ -160,18 +104,41 @@ export default function OwnerCafeteriaPage() {
   return (
     <OwnerLayout>
       <div className="space-y-10">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div>
-            <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Cafeteria Hub</h2>
-            <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mt-3">Active Order Telemetry & Registry</p>
+        <div className="flex flex-col gap-8">
+          <div className="flex items-end justify-between">
+            <div>
+              <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Cafeteria Hub</h2>
+              <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mt-3">Active Order Telemetry & Registry</p>
+            </div>
+            <button 
+              onClick={() => setIsScannerOpen(true)} 
+              className="hidden md:flex items-center gap-2 px-6 py-2.5 rounded-xl bg-orange-600 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-orange-600/20 hover:scale-105 transition-all"
+            >
+              <Scan size={14} /> Scan Order
+            </button>
           </div>
-          <div className="flex items-center gap-3 bg-white/5 border border-white/10 p-1.5 rounded-2xl backdrop-blur-xl">
-             <button onClick={() => startScanner()} className="md:hidden flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-600 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-orange-600/20">
-               <Scan size={14} /> Scan
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+             <div className="flex-1 flex p-1.5 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-xl">
+                <button 
+                  onClick={() => setActiveTab('orders')} 
+                  className={`flex-1 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'orders' ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/20' : 'text-gray-500 hover:text-white'}`}
+                >
+                  Orders
+                </button>
+                <button 
+                  onClick={() => setActiveTab('menu')} 
+                  className={`flex-1 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'menu' ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/20' : 'text-gray-500 hover:text-white'}`}
+                >
+                  Menu Hub
+                </button>
+             </div>
+             <button 
+               onClick={() => setIsScannerOpen(true)} 
+               className="md:hidden flex items-center justify-center gap-3 py-4 rounded-2xl bg-orange-600 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-orange-600/20 active:scale-95 transition-all"
+             >
+                <Scan size={16} /> Quick Scan Order
              </button>
-             <div className="h-6 w-[1px] bg-white/10 md:hidden" />
-             <button onClick={() => setActiveTab('orders')} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'orders' ? 'bg-orange-600 text-white' : 'text-gray-500'}`}>Orders</button>
-             <button onClick={() => setActiveTab('menu')} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'menu' ? 'bg-orange-600 text-white' : 'text-gray-500'}`}>Menu</button>
           </div>
         </div>
 
@@ -290,60 +257,11 @@ export default function OwnerCafeteriaPage() {
           </div>
         )}
 
-        {isScannerOpen && createPortal(
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-950/95 backdrop-blur-xl" />
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative w-full max-w-lg">
-               <div className="flex justify-between items-center mb-8 px-2">
-                  <h3 className="text-xl font-black text-white uppercase tracking-tighter">Order Scanner</h3>
-                  <button onClick={stopScanner} className="p-3 rounded-xl bg-white/5 text-gray-400"><X size={20} /></button>
-               </div>
-               <div id="qr-reader" className="overflow-hidden rounded-[40px] border-4 border-orange-600/20 shadow-2xl shadow-orange-600/10" />
-               <p className="text-center text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] mt-8">Align QR within frame</p>
-            </motion.div>
-          </div>,
-          document.body
-        )}
-
-        {scannedOrder && createPortal(
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-950/90 backdrop-blur-md" onClick={() => setScannedOrder(null)} />
-            <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="relative w-full max-w-lg bg-slate-900 border border-white/10 rounded-[48px] p-10 shadow-2xl">
-               <div className="flex justify-between items-start mb-8">
-                  <div>
-                     <span className="text-2xl font-black text-white block mb-1 uppercase tracking-tighter italic">#{scannedOrder.token_number || scannedOrder.id.slice(0,4).toUpperCase()}</span>
-                     <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest">{scannedOrder.profiles?.full_name}</p>
-                  </div>
-                  <button onClick={() => setScannedOrder(null)} className="p-3 rounded-xl bg-white/5 text-gray-400"><X size={20} /></button>
-               </div>
-
-               <div className="space-y-3 mb-10 max-h-[30vh] overflow-y-auto no-scrollbar pr-2">
-                  {scannedOrder.items?.map((it, idx) => (
-                    <div key={idx} className="flex justify-between p-4 bg-white/5 rounded-2xl border border-white/5 text-[11px] font-black uppercase">
-                       <span className="text-gray-400">{it.quantity}x {it.name}</span>
-                       <span className="text-white">₹{it.price * it.quantity}</span>
-                    </div>
-                  ))}
-               </div>
-
-               <div className="flex gap-4">
-                  <button 
-                    onClick={() => { updateOrderStatus(scannedOrder.id, 'delivered'); setScannedOrder(null); }}
-                    className="flex-1 py-5 rounded-[24px] bg-green-600 text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-green-600/20"
-                  >
-                    Mark Delivered
-                  </button>
-                  <button 
-                    onClick={() => { updateOrderStatus(scannedOrder.id, 'preparing'); setScannedOrder(null); }}
-                    className="flex-1 py-5 rounded-[24px] bg-white/5 border border-white/10 text-white text-[10px] font-black uppercase tracking-widest"
-                  >
-                    Set Preparing
-                  </button>
-               </div>
-            </motion.div>
-          </div>,
-          document.body
-        )}
+        <OrderScannerModal 
+          isOpen={isScannerOpen} 
+          onClose={() => setIsScannerOpen(false)}
+          onOrderProcessed={() => fetchData()}
+        />
       </AnimatePresence>
     </OwnerLayout>
   )

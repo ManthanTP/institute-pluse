@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { ShoppingBag, Utensils, TrendingUp, Clock, AlertCircle } from 'lucide-react'
+import { ShoppingBag, Utensils, TrendingUp, Clock, AlertCircle, Scan } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import OwnerLayout from './OwnerLayout'
+import OrderScannerModal from '../../components/OrderScannerModal'
 import { motion } from 'framer-motion'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
@@ -13,6 +14,7 @@ export default function OwnerDashboard() {
     popularItem: '...'
   })
   const [loading, setLoading] = useState(true)
+  const [isScannerOpen, setIsScannerOpen] = useState(false)
 
   useEffect(() => {
     async function fetchOwnerStats() {
@@ -26,7 +28,7 @@ export default function OwnerDashboard() {
 
       if (orders) {
         const totalSales = orders.reduce((sum, o) => sum + (o.total_price || 0), 0)
-        const pending = orders.filter(o => o.status === 'pending').length
+        const pending = orders.filter(o => o.status === 'pending' || o.status === 'preparing').length
         
         setStats({
           totalOrders: orders.length,
@@ -44,7 +46,7 @@ export default function OwnerDashboard() {
   return (
     <OwnerLayout>
       <div className="space-y-10">
-        <div className="flex items-end justify-between">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
@@ -52,6 +54,12 @@ export default function OwnerDashboard() {
             </div>
             <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Dining Telemetry</h2>
           </div>
+          <button 
+            onClick={() => setIsScannerOpen(true)}
+            className="flex items-center gap-3 px-8 py-4 bg-orange-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-orange-600/20 hover:scale-105 transition-all"
+          >
+            <Scan size={18} /> Quick Scan Order
+          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -70,15 +78,32 @@ export default function OwnerDashboard() {
               <p className="text-xl font-black text-white uppercase tracking-tight leading-relaxed mb-8">
                 Welcome back, Director. Your cafeteria nodes are fully operational. Access the <span className="text-orange-500">Cafeteria Hub</span> to manage active fuel sequences and the nutrient registry.
               </p>
-              <button 
-                onClick={() => window.location.href = '/owner/cafeteria'}
-                className="px-8 py-4 bg-orange-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-orange-600/20 hover:scale-105 transition-all flex items-center gap-3"
-              >
-                 Enter Cafeteria Hub <TrendingUp size={16} />
-              </button>
+              <div className="flex flex-wrap gap-4">
+                <button 
+                  onClick={() => window.location.href = '/owner/cafeteria'}
+                  className="px-8 py-4 bg-white/5 border border-white/10 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center gap-3"
+                >
+                  Enter Cafeteria Hub <TrendingUp size={16} />
+                </button>
+                <button 
+                  onClick={() => setIsScannerOpen(true)}
+                  className="px-8 py-4 bg-orange-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-orange-600/20 hover:scale-105 transition-all flex items-center gap-3"
+                >
+                  Scan Order QR <Scan size={16} />
+                </button>
+              </div>
            </div>
         </div>
       </div>
+
+      <OrderScannerModal 
+        isOpen={isScannerOpen} 
+        onClose={() => setIsScannerOpen(false)}
+        onOrderProcessed={() => {
+          // Refresh stats if needed
+          window.location.reload()
+        }}
+      />
     </OwnerLayout>
   )
 }

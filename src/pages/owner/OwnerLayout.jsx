@@ -4,6 +4,7 @@ import { Menu, X, LogOut, UtensilsCrossed, LayoutDashboard, User } from 'lucide-
 import { useAuthStore } from '../../store/index'
 import { motion, AnimatePresence } from 'framer-motion'
 import logo from '../../assets/logo.png'
+import OwnerBottomNav from '../../components/OwnerBottomNav'
 
 const NAV_ITEMS = [
   { path: '/owner/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -30,7 +31,7 @@ export default function OwnerLayout({ children }) {
         <div className="absolute bottom-0 right-0 w-[40%] h-[40%] rounded-full bg-blue-500/5 blur-[120px]" />
       </div>
 
-      {/* SIDEBAR */}
+      {/* SIDEBAR (Desktop Only) */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-72 transition-all duration-500 transform ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}>
@@ -103,11 +104,18 @@ export default function OwnerLayout({ children }) {
               {NAV_ITEMS.find(n => n.path === location.pathname)?.label || 'Console'}
             </h1>
           </div>
+          <div className="lg:hidden flex items-center gap-3">
+             <div className="w-8 h-8 rounded-lg bg-orange-600/10 border border-orange-500/20 flex items-center justify-center text-orange-500 text-[10px] font-black">
+                {profile?.full_name?.[0] || 'O'}
+             </div>
+          </div>
         </header>
 
-        <div className="p-6 lg:p-10 flex-1 overflow-x-hidden no-scrollbar">
+        <div className="p-6 lg:p-10 flex-1 overflow-x-hidden no-scrollbar pb-32 lg:pb-10">
            {children}
         </div>
+
+        <OwnerBottomNav />
       </main>
     </div>
   )
