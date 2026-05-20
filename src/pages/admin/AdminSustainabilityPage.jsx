@@ -12,12 +12,7 @@ const COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#a855f7']
 export default function AdminSustainabilityPage() {
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
-  const [stats, setStats] = useState({
-    totalCo2: 0,
-    totalSaved: 0,
-    activeUsers: 0,
-    avgEfficiency: 0
-  })
+  const [stats, setStats] = useState({ totalCo2: 0, totalSaved: 0, activeUsers: 0, avgEfficiency: 0 })
   const [deptData, setDeptData] = useState([])
 
   useEffect(() => {
@@ -31,7 +26,7 @@ export default function AdminSustainabilityPage() {
 
       const { count: usersCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true })
       
-      if (logsData) {
+      if (logsData && logsData.length > 0) {
         setLogs(logsData)
         const totalCo2 = logsData.reduce((acc, curr) => acc + (curr.total_kg || 0), 0)
         const totalSaved = (totalCo2 * 0.15) 
@@ -51,6 +46,11 @@ export default function AdminSustainabilityPage() {
           deptMap[dept].value += 1
         })
         setDeptData(Object.values(deptMap))
+      } else {
+        // Use sample data
+        setLogs([])
+        setStats({ totalSaved: 0, participationRate: 0, activeChallenges: 0 })
+        setDeptData([])
       }
       setLoading(false)
     }

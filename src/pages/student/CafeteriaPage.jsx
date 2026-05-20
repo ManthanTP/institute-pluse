@@ -33,7 +33,8 @@ export default function CafeteriaPage() {
   async function fetchMenu() {
     setLoading(true)
     const { data } = await supabase.from('menu_items').select('*').eq('available', true)
-    if (data) setMenu(data)
+    if (data && data.length > 0) setMenu(data)
+    else setMenu([])
     setLoading(false)
   }
 

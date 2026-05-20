@@ -38,10 +38,12 @@ export default function AnnouncementsPage() {
         .order('created_at', { ascending: false })
       
       if (error) throw error
-      // Only show announcements relevant to students (global or student-targeted)
-      if (data) setAnnouncements(data.filter(a => a.audience_type === 'global' || a.audience_type === 'students'))
+      const filtered = (data || []).filter(a => a.audience_type === 'global' || a.audience_type === 'students')
+      if (filtered.length > 0) setAnnouncements(filtered)
+      else setAnnouncements([])
     } catch (err) {
       console.error('Announcement fetch error:', err)
+      setAnnouncements([])
     } finally {
       setLoading(false)
     }

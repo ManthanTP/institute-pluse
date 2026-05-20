@@ -27,7 +27,8 @@ export default function ComplaintsPage() {
   async function fetchComplaints() {
     setLoading(true)
     const { data } = await supabase.from('complaints').select('*').eq('student_id', profile.id).order('created_at', { ascending: false })
-    setComplaints(data || [])
+    if (data && data.length > 0) setComplaints(data)
+    else setComplaints([])
     setLoading(false)
   }
 

@@ -32,6 +32,7 @@ export default function NotificationsPage() {
   const { profile } = useAuthStore()
   const { notifications, unreadCount, fetchNotifications, markAllRead, markRead } = useNotifStore()
   const [filterTab, setFilterTab] = useState(0)
+  const [displayNotifs, setDisplayNotifs] = useState([])
 
   useEffect(() => {
     if (profile?.id) {
@@ -41,9 +42,14 @@ export default function NotificationsPage() {
     }
   }, [profile?.id])
 
+  useEffect(() => {
+    if (notifications.length > 0) setDisplayNotifs(notifications)
+    else setDisplayNotifs([])
+  }, [notifications])
+
   const filtered = filterTab === 0
-    ? notifications
-    : notifications.filter(n => n.type === FILTER_TABS[filterTab].type)
+    ? displayNotifs
+    : displayNotifs.filter(n => n.type === FILTER_TABS[filterTab].type)
 
   function groupByDate(notifs) {
     const groups = {}

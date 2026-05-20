@@ -32,8 +32,10 @@ export default function EventsPage() {
       .select('*')
       .order('event_date', { ascending: true })
     
-    if (!error && data) {
+    if (!error && data && data.length > 0) {
       setEvents(data)
+    } else {
+      setEvents(SAMPLE_EVENTS)
     }
     setLoading(false)
   }

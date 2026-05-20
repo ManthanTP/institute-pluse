@@ -45,7 +45,8 @@ export default function LostFoundPage() {
       .select('*, reporter:reported_by(full_name)')
       .order('created_at', { ascending: false })
     if (error) console.error('Fetch error:', error)
-    if (data) setItems(data)
+    if (data && data.length > 0) setItems(data)
+    else setItems([])
     setLoading(false)
   }
 

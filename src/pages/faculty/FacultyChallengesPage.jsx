@@ -51,7 +51,7 @@ export default function FacultyChallengesPage() {
           }
         }))
         setChallenges(enhancedChallenges)
-      }
+      } else { setChallenges([]) }
     } catch (err) {
       console.error('Challenges Error:', err)
       toast.error('Challenge Pulse Sync Failed')

@@ -41,7 +41,8 @@ export default function LeaderboardPage() {
     }
 
     const { data } = await query
-    if (data) setLeaders(data)
+    if (data && data.length > 0) setLeaders(data)
+    else setLeaders([])
     setLoading(false)
   }
 
