@@ -757,7 +757,7 @@ export function exportTablePDF({ title, subtitle, headers, rows, filename, summa
       }
       // Rounded table container border
       const startY = data.settings.startY
-      const finalY = doc.lastAutoTable.finalY
+      const finalY = doc.lastAutoTable?.finalY || data.cursor?.y || startY + 10
       const tableHeight = finalY - startY
       doc.setDrawColor(...colors.border)
       doc.setLineWidth(0.3)

@@ -67,7 +67,7 @@ export default function CafeteriaPage() {
   }
 
   const filteredMenu = menu.filter(item => {
-    const matchesCategory = activeCategory === 'All' || item.category === activeCategory
+    const matchesCategory = activeCategory === 'All' || item.category?.toLowerCase() === activeCategory.toLowerCase()
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase())
     return matchesCategory && matchesSearch
   })
@@ -213,66 +213,67 @@ export default function CafeteriaPage() {
             </div>
 
             {/* MENU LIST */}
-            <div className="space-y-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {loading ? (
-                <div className="py-20 flex flex-col items-center justify-center gap-4">
+                <div className="col-span-full py-20 flex flex-col items-center justify-center gap-4">
                     <div className="w-10 h-10 border-2 border-green-500/20 border-t-green-500 rounded-full animate-spin" />
                     <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest italic">Syncing Nutrient Core...</p>
                 </div>
               ) : filteredMenu.length === 0 ? (
-                <div className="py-20 text-center bg-white/5 border border-white/10 rounded-2xl md:rounded-[40px] backdrop-blur-xl">
+                <div className="col-span-full py-20 text-center bg-white/5 border border-white/10 rounded-2xl backdrop-blur-xl">
                   <div className="text-4xl mb-4 opacity-40">🍽️</div>
                   <p className="text-xs font-black text-white uppercase tracking-widest italic">No Nutrient Hubs Found</p>
                 </div>
               ) : filteredMenu.map((item, i) => (
                 <motion.div
                   key={item.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
-                  className="bg-[#161b22]/80 border border-white/5 rounded-2xl md:rounded-[40px] p-5 md:p-8 backdrop-blur-2xl relative overflow-hidden group"
+                  className="bg-[#161b22]/80 border border-white/5 rounded-2xl p-5 backdrop-blur-2xl relative overflow-hidden group flex flex-col justify-between min-h-[220px]"
                 >
-                  <div className="flex justify-between items-start mb-6">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="px-3 py-1 rounded-lg bg-green-500/10 border border-green-500/20 text-[8px] font-black text-green-500 uppercase tracking-widest">
-                          {item.category}
-                        </span>
-                        {item.is_vegetarian && (
-                          <span className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
-                        )}
+                  <div>
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2.5 py-0.5 rounded bg-green-500/10 border border-green-500/20 text-[8px] font-black text-green-500 uppercase tracking-widest">
+                            {item.category}
+                          </span>
+                          {item.is_vegetarian && (
+                            <span className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" title="Vegetarian" />
+                          )}
+                        </div>
+                        <h3 className="text-base font-black text-white uppercase tracking-tight leading-snug mt-1">{item.name}</h3>
                       </div>
-                      <h3 className="text-xl font-black text-white uppercase tracking-tight leading-none">{item.name}</h3>
+                      <div className="text-right">
+                        <p className="text-lg font-black text-white tracking-tighter leading-none">₹{item.price}</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-black text-white tracking-tighter leading-none">₹{item.price}</p>
-                      <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mt-1">Currency Nodes</p>
-                    </div>
-                  </div>
 
-                  <p className="text-xs font-medium text-gray-500 leading-relaxed mb-8">{item.description}</p>
+                    <p className="text-xs font-medium text-gray-500 leading-relaxed line-clamp-2 mb-4">{item.description}</p>
+                  </div>
                   
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between pt-4 border-t border-white/5">
                     <div className="flex items-center gap-2 text-green-500">
                       <Leaf size={14} fill="currentColor" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">{item.carbon_kg}kg Carbon</span>
+                      <span className="text-[9px] font-black uppercase tracking-widest">{item.carbon_kg}kg CO₂</span>
                     </div>
                     
-                    <div className="flex items-center bg-white/5 rounded-2xl p-1 border border-white/10">
+                    <div className="flex items-center bg-white/5 rounded-xl p-1 border border-white/10">
                       <motion.button 
                         whileTap={{ scale: 0.9 }}
                         onClick={() => removeItem(item.id)}
-                        className="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-white transition-colors"
+                        className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-white transition-colors"
                       >
-                        <Minus size={18} />
+                        <Minus size={14} />
                       </motion.button>
-                      <span className="w-10 text-center text-sm font-black text-white">{cart.find(i => i.id === item.id)?.quantity || 0}</span>
+                      <span className="w-8 text-center text-xs font-black text-white">{cart.find(i => i.id === item.id)?.quantity || 0}</span>
                       <motion.button 
                         whileTap={{ scale: 0.9 }}
                         onClick={() => addItem(item)}
-                        className="w-10 h-10 flex items-center justify-center text-green-500 hover:text-green-400 transition-colors"
+                        className="w-8 h-8 flex items-center justify-center text-green-500 hover:text-green-400 transition-colors"
                       >
-                        <Plus size={18} />
+                        <Plus size={14} />
                       </motion.button>
                     </div>
                   </div>

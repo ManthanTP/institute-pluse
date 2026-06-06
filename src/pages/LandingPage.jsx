@@ -301,8 +301,9 @@ export default function LandingPage() {
         const { data } = await supabase
           .from('profiles')
           .select('full_name, department, eco_points, role')
+          .eq('role', 'student')
           .order('eco_points', { ascending: false })
-          .limit(4)
+          .limit(3)
 
         if (data) {
           setLeaderboard(data)
@@ -363,6 +364,30 @@ export default function LandingPage() {
     if (profile?.role === 'faculty') return '/faculty/dashboard'
     if (profile?.role === 'owner') return '/owner/dashboard'
     return '/dashboard'
+  }
+
+  const handleFeatureClick = (index) => {
+    if (profile?.role === 'student') {
+      const paths = {
+        0: '/attendance',
+        1: '/carbon/log',
+        2: '/study-planner',
+        3: '/navigation',
+        4: '/events',
+        5: '/cafeteria',
+        6: '/carbon/history',
+        7: '/leaderboard',
+        8: '/complaints',
+        9: '/lost-found',
+        10: '/announcements'
+      }
+      const path = paths[index]
+      if (path) {
+        navigate(path)
+        return
+      }
+    }
+    setFeatureModal(index)
   }
 
   // Redesigned stats bar configurations
@@ -1074,7 +1099,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
             {/* Bento Block 1: Smart Attendance (Spans 2 columns) */}
-            <div onClick={() => setFeatureModal(0)} className="group relative md:col-span-2 rounded-[24px] bg-[#0c1225]/35 border border-white/[0.04] p-5 backdrop-blur-xl hover:border-green-500/20 hover:bg-[#0c1225]/45 transition-all duration-500 flex flex-row items-center gap-5 overflow-hidden min-h-[110px] cursor-pointer">
+            <div onClick={() => handleFeatureClick(0)} className="group relative md:col-span-2 rounded-[24px] bg-[#0c1225]/35 border border-white/[0.04] p-5 backdrop-blur-xl hover:border-green-500/20 hover:bg-[#0c1225]/45 transition-all duration-500 flex flex-row items-center gap-5 overflow-hidden min-h-[110px] cursor-pointer">
               <div className="absolute inset-0 bg-[radial-gradient(300px_circle_at_50%_120%,rgba(34,197,94,0.03),transparent_50%)] pointer-events-none" />
               <div className="w-10 h-10 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 flex items-center justify-center shrink-0">
                 <QrCode size={20} />
@@ -1088,7 +1113,7 @@ export default function LandingPage() {
             </div>
 
             {/* Bento Block 2: Eco Tracker (Spans 1 column) */}
-            <div onClick={() => setFeatureModal(1)} className="group relative rounded-[24px] bg-[#0c1225]/35 border border-white/[0.04] p-5 backdrop-blur-xl hover:border-purple-500/20 hover:bg-[#0c1225]/45 transition-all duration-500 flex flex-col justify-between overflow-hidden min-h-[110px] cursor-pointer">
+            <div onClick={() => handleFeatureClick(1)} className="group relative rounded-[24px] bg-[#0c1225]/35 border border-white/[0.04] p-5 backdrop-blur-xl hover:border-purple-500/20 hover:bg-[#0c1225]/45 transition-all duration-500 flex flex-col justify-between overflow-hidden min-h-[110px] cursor-pointer">
               <div className="absolute inset-0 bg-[radial-gradient(200px_circle_at_50%_120%,rgba(139,92,246,0.03),transparent_50%)] pointer-events-none" />
               <div className="relative z-10 flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
@@ -1102,7 +1127,7 @@ export default function LandingPage() {
             </div>
 
             {/* Bento Block 3: Study Planner (Spans 1 column) */}
-            <div onClick={() => setFeatureModal(2)} className="group relative rounded-[24px] bg-[#0c1225]/35 border border-white/[0.04] p-5 backdrop-blur-xl hover:border-yellow-500/20 hover:bg-[#0c1225]/45 transition-all duration-500 flex flex-col justify-between overflow-hidden min-h-[110px] cursor-pointer">
+            <div onClick={() => handleFeatureClick(2)} className="group relative rounded-[24px] bg-[#0c1225]/35 border border-white/[0.04] p-5 backdrop-blur-xl hover:border-yellow-500/20 hover:bg-[#0c1225]/45 transition-all duration-500 flex flex-col justify-between overflow-hidden min-h-[110px] cursor-pointer">
               <div className="absolute inset-0 bg-[radial-gradient(200px_circle_at_50%_120%,rgba(245,158,11,0.03),transparent_50%)] pointer-events-none" />
               <div className="relative z-10 flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 flex items-center justify-center shrink-0">
@@ -1116,7 +1141,7 @@ export default function LandingPage() {
             </div>
 
             {/* Bento Block 4: Campus Navigation (Spans 1 column) */}
-            <div onClick={() => setFeatureModal(3)} className="group relative rounded-[24px] bg-[#0c1225]/35 border border-white/[0.04] p-5 backdrop-blur-xl hover:border-red-500/20 hover:bg-[#0c1225]/45 transition-all duration-500 flex flex-col justify-between overflow-hidden min-h-[110px] cursor-pointer">
+            <div onClick={() => handleFeatureClick(3)} className="group relative rounded-[24px] bg-[#0c1225]/35 border border-white/[0.04] p-5 backdrop-blur-xl hover:border-red-500/20 hover:bg-[#0c1225]/45 transition-all duration-500 flex flex-col justify-between overflow-hidden min-h-[110px] cursor-pointer">
               <div className="absolute inset-0 bg-[radial-gradient(200px_circle_at_50%_120%,rgba(239,68,68,0.03),transparent_50%)] pointer-events-none" />
               <div className="relative z-10 flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center shrink-0">
@@ -1130,7 +1155,7 @@ export default function LandingPage() {
             </div>
 
             {/* Bento Block 5: Events & Challenges (Spans 1 column) */}
-            <div onClick={() => setFeatureModal(4)} className="group relative rounded-[24px] bg-[#0c1225]/35 border border-white/[0.04] p-5 backdrop-blur-xl hover:border-cyan-500/20 hover:bg-[#0c1225]/45 transition-all duration-500 flex flex-col justify-between overflow-hidden min-h-[110px] cursor-pointer">
+            <div onClick={() => handleFeatureClick(4)} className="group relative rounded-[24px] bg-[#0c1225]/35 border border-white/[0.04] p-5 backdrop-blur-xl hover:border-cyan-500/20 hover:bg-[#0c1225]/45 transition-all duration-500 flex flex-col justify-between overflow-hidden min-h-[110px] cursor-pointer">
               <div className="absolute inset-0 bg-[radial-gradient(200px_circle_at_50%_120%,rgba(6,182,212,0.03),transparent_50%)] pointer-events-none" />
               <div className="relative z-10 flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
@@ -1144,7 +1169,7 @@ export default function LandingPage() {
             </div>
 
             {/* Bento Block 6: Smart Cafeteria (Spans 2 columns) */}
-            <div onClick={() => setFeatureModal(5)} className="group relative md:col-span-2 rounded-[24px] bg-[#0c1225]/35 border border-white/[0.04] p-5 backdrop-blur-xl hover:border-orange-500/20 hover:bg-[#0c1225]/45 transition-all duration-500 flex flex-row items-center gap-5 overflow-hidden min-h-[110px] cursor-pointer">
+            <div onClick={() => handleFeatureClick(5)} className="group relative md:col-span-2 rounded-[24px] bg-[#0c1225]/35 border border-white/[0.04] p-5 backdrop-blur-xl hover:border-orange-500/20 hover:bg-[#0c1225]/45 transition-all duration-500 flex flex-row items-center gap-5 overflow-hidden min-h-[110px] cursor-pointer">
               <div className="absolute inset-0 bg-[radial-gradient(300px_circle_at_50%_120%,rgba(249,115,22,0.03),transparent_50%)] pointer-events-none" />
               <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400 flex items-center justify-center shrink-0">
                 <Utensils size={20} />
@@ -1158,7 +1183,7 @@ export default function LandingPage() {
             </div>
 
             {/* Bento Block 8: Live Leaderboard (Spans 1 column) */}
-            <div onClick={() => setFeatureModal(7)} className="group relative rounded-[24px] bg-[#0c1225]/35 border border-white/[0.04] p-5 backdrop-blur-xl hover:border-yellow-500/20 hover:bg-[#0c1225]/45 transition-all duration-500 flex flex-col justify-between overflow-hidden min-h-[110px] cursor-pointer">
+            <div onClick={() => handleFeatureClick(7)} className="group relative rounded-[24px] bg-[#0c1225]/35 border border-white/[0.04] p-5 backdrop-blur-xl hover:border-yellow-500/20 hover:bg-[#0c1225]/45 transition-all duration-500 flex flex-col justify-between overflow-hidden min-h-[110px] cursor-pointer">
               <div className="absolute inset-0 bg-[radial-gradient(200px_circle_at_50%_120%,rgba(245,158,11,0.03),transparent_50%)] pointer-events-none" />
               <div className="relative z-10 flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 flex items-center justify-center shrink-0">
@@ -1172,7 +1197,7 @@ export default function LandingPage() {
             </div>
 
             {/* Bento Block 7: Carbon Analytics (Spans 2 columns) */}
-            <div onClick={() => setFeatureModal(6)} className="group relative md:col-span-2 rounded-[24px] bg-[#0c1225]/35 border border-white/[0.04] p-5 backdrop-blur-xl hover:border-green-500/20 hover:bg-[#0c1225]/45 transition-all duration-500 flex flex-row items-center gap-5 overflow-hidden min-h-[110px] cursor-pointer">
+            <div onClick={() => handleFeatureClick(6)} className="group relative md:col-span-2 rounded-[24px] bg-[#0c1225]/35 border border-white/[0.04] p-5 backdrop-blur-xl hover:border-green-500/20 hover:bg-[#0c1225]/45 transition-all duration-500 flex flex-row items-center gap-5 overflow-hidden min-h-[110px] cursor-pointer">
               <div className="absolute inset-0 bg-[radial-gradient(300px_circle_at_50%_120%,rgba(34,197,94,0.03),transparent_50%)] pointer-events-none" />
               <div className="w-10 h-10 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 flex items-center justify-center shrink-0">
                 <BarChart3 size={20} />
@@ -1186,7 +1211,7 @@ export default function LandingPage() {
             </div>
 
             {/* Bento Block 9: Grievance Hub (Spans 1 column) */}
-            <div onClick={() => setFeatureModal(8)} className="group relative rounded-[24px] bg-[#0c1225]/35 border border-white/[0.04] p-5 backdrop-blur-xl hover:border-red-500/20 hover:bg-[#0c1225]/45 transition-all duration-500 flex flex-col justify-between overflow-hidden min-h-[110px] cursor-pointer">
+            <div onClick={() => handleFeatureClick(8)} className="group relative rounded-[24px] bg-[#0c1225]/35 border border-white/[0.04] p-5 backdrop-blur-xl hover:border-red-500/20 hover:bg-[#0c1225]/45 transition-all duration-500 flex flex-col justify-between overflow-hidden min-h-[110px] cursor-pointer">
               <div className="absolute inset-0 bg-[radial-gradient(200px_circle_at_50%_120%,rgba(239,68,68,0.03),transparent_50%)] pointer-events-none" />
               <div className="relative z-10 flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center shrink-0">
@@ -1200,7 +1225,7 @@ export default function LandingPage() {
             </div>
 
             {/* Bento Block 10: Lost & Found (Spans 1 column) */}
-            <div onClick={() => setFeatureModal(9)} className="group relative rounded-[24px] bg-[#0c1225]/35 border border-white/[0.04] p-5 backdrop-blur-xl hover:border-cyan-500/20 hover:bg-[#0c1225]/45 transition-all duration-500 flex flex-col justify-between overflow-hidden min-h-[110px] cursor-pointer">
+            <div onClick={() => handleFeatureClick(9)} className="group relative rounded-[24px] bg-[#0c1225]/35 border border-white/[0.04] p-5 backdrop-blur-xl hover:border-cyan-500/20 hover:bg-[#0c1225]/45 transition-all duration-500 flex flex-col justify-between overflow-hidden min-h-[110px] cursor-pointer">
               <div className="absolute inset-0 bg-[radial-gradient(200px_circle_at_50%_120%,rgba(6,182,212,0.03),transparent_50%)] pointer-events-none" />
               <div className="relative z-10 flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
@@ -1214,7 +1239,7 @@ export default function LandingPage() {
             </div>
 
             {/* Bento Block 11: Announcements (Spans 2 columns) */}
-            <div onClick={() => setFeatureModal(10)} className="group relative md:col-span-2 rounded-[24px] bg-[#0c1225]/35 border border-white/[0.04] p-5 backdrop-blur-xl hover:border-purple-500/20 hover:bg-[#0c1225]/45 transition-all duration-500 flex flex-row items-center gap-5 overflow-hidden min-h-[110px] cursor-pointer">
+            <div onClick={() => handleFeatureClick(10)} className="group relative md:col-span-2 rounded-[24px] bg-[#0c1225]/35 border border-white/[0.04] p-5 backdrop-blur-xl hover:border-purple-500/20 hover:bg-[#0c1225]/45 transition-all duration-500 flex flex-row items-center gap-5 overflow-hidden min-h-[110px] cursor-pointer">
               <div className="absolute inset-0 bg-[radial-gradient(300px_circle_at_50%_120%,rgba(139,92,246,0.03),transparent_50%)] pointer-events-none" />
               <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
                 <Bell size={20} />

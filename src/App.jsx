@@ -33,6 +33,7 @@ const HelpPage = lazy(() => import('./pages/shared/HelpPage'))
 const NotFoundPage = lazy(() => import('./pages/shared/NotFoundPage'))
 const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'))
 const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'))
+const ResourceHubPage = lazy(() => import('./pages/student/ResourceHubPage'))
 
 // ─── FACULTY PAGES ──────────────────────────────────────────────
 const FacultyDashboard = lazy(() => import('./pages/faculty/FacultyDashboard'))
@@ -176,6 +177,7 @@ function App() {
           <Route path="/profile" element={<StudentPage component={ProfilePage} title="Profile Settings" showBack hideChrome />} />
           <Route path="/notifications" element={<StudentPage component={NotificationsPage} title="Notifications" showBack hideChrome />} />
           <Route path="/help" element={<StudentPage component={HelpPage} title="Help & Support" showBack hideChrome />} />
+          <Route path="/resources" element={<StudentPage component={ResourceHubPage} title="Resource Hub" showBack hideChrome />} />
 
            {/* ══════════ FACULTY ══════════ */}
            <Route path="/faculty/dashboard" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyDashboard /></Suspense></FacultyRoute>} />

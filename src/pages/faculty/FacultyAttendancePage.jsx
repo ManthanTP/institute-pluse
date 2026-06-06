@@ -32,6 +32,12 @@ export default function FacultyAttendancePage() {
   const [sessionType, setSessionType] = useState('theory')
   const [extraBatch, setExtraBatch] = useState('')
 
+  // Manual Check-in States
+  const [showManualAddModal, setShowManualAddModal] = useState(false)
+  const [divisionStudents, setDivisionStudents] = useState([])
+  const [selectedStudentId, setSelectedStudentId] = useState('')
+  const [submittingManual, setSubmittingManual] = useState(false)
+
   useEffect(() => {
     fetchMetadata()
     fetchHistory()
@@ -58,6 +64,57 @@ export default function FacultyAttendancePage() {
         await supabase.from('attendance_sessions').update({ status: 'locked' }).eq('id', data.id)
         fetchHistory()
       }
+    }
+  }
+
+  async function openManualAddModal() {
+    if (!activeSession) return
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .eq('role', 'student')
+        .eq('division_id', activeSession.division_id)
+        .order('full_name')
+      
+      if (error) throw error
+      setDivisionStudents(data || [])
+      setShowManualAddModal(true)
+    } catch (err) {
+      toast.error('Failed to load division students')
+    }
+  }
+
+  async function submitManualAttendance(e) {
+    e.preventDefault()
+    if (!selectedStudentId) {
+      toast.error('Please select a student')
+      return
+    }
+    try {
+      setSubmittingManual(true)
+      const { error } = await supabase
+        .from('attendance_records')
+        .insert({
+          session_id: activeSession.id,
+          student_id: selectedStudentId,
+          verification_status: 'verified',
+          verified_by: profile.id
+        })
+      if (error) {
+        if (error.code === '23505') {
+          throw new Error('Student is already marked present for this session')
+        }
+        throw error
+      }
+      toast.success('Student marked present successfully')
+      setShowManualAddModal(false)
+      setSelectedStudentId('')
+      fetchParticipants(activeSession.id)
+    } catch (err) {
+      toast.error(err.message || 'Failed to mark student present')
+    } finally {
+      setSubmittingManual(false)
     }
   }
 
@@ -171,6 +228,16 @@ export default function FacultyAttendancePage() {
       setActiveSession(data)
       toast.success('Attendance Protocol Broadcasted')
       fetchHistory()
+
+      // Auto-create classroom announcement for students in the division
+      await supabase.from('announcements').insert({
+        title: `Class Started: ${subjects.find(s => s.id === extraSubject)?.name}`,
+        content: `A manual ${sessionType} session has been initiated for Division ${divisions.find(d => d.id === extraDiv)?.name} in ${rooms.find(r => r.id === extraRoom)?.name || 'venue'}. Use Code: ${generatedCode} to authenticate presence.`,
+        audience_type: 'division',
+        target_id: extraDiv,
+        priority: 'high',
+        created_by: profile.id
+      })
 
       // Notify Students via Campus Broadcast Terminal
       await supabase.rpc('notify_division_students', {
@@ -502,50 +569,51 @@ export default function FacultyAttendancePage() {
                     </div>
                 </motion.div>
               ) : (
-                 <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className={`rounded-3xl lg:rounded-[64px] p-8 lg:p-16 flex flex-col md:flex-row gap-8 lg:gap-16 items-center relative overflow-hidden shadow-2xl border border-white/20 ${activeSession.status === 'active' ? 'bg-blue-600 shadow-blue-900/40' : 'bg-slate-800 shadow-black/40'}`}>
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
-                    
-                    {activeSession.status === 'active' && (
-                       <div className="flex flex-col items-center gap-6 relative z-10 w-full md:w-auto">
-                          <div className="bg-white p-6 lg:p-10 rounded-3xl lg:rounded-[56px] shadow-3xl transform hover:scale-105 transition-transform">
-                             <QRCodeSVG value={activeSession.id} size={window.innerWidth < 640 ? 180 : 280} level="H" />
-                          </div>
-                          <div className="w-full px-6 lg:px-10 py-4 lg:py-5 bg-white/10 border border-white/20 rounded-2xl lg:rounded-[32px] backdrop-blur-xl text-center shadow-xl">
-                             <p className="text-[8px] lg:text-[10px] font-black text-blue-300 uppercase tracking-[0.4em] mb-1 lg:mb-2 italic">Manual Protocol Code</p>
-                             <h4 className="text-2xl lg:text-4xl font-black text-white tracking-[0.2em]">{activeSession.session_code || activeSession.id.slice(0, 6).toUpperCase()}</h4>
-                          </div>
-                       </div>
-                    )}
+                  <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className={`rounded-3xl lg:rounded-[48px] p-6 md:p-10 lg:p-12 flex flex-col md:flex-row gap-6 md:gap-10 items-center justify-between min-h-fit relative overflow-hidden shadow-2xl border border-white/10 ${activeSession.status === 'active' ? 'bg-blue-600 shadow-blue-900/40' : 'bg-slate-800 shadow-black/40'}`}>
+                     <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
+                     
+                     {activeSession.status === 'active' && (
+                        <div className="flex flex-col items-center gap-4 relative z-10 w-full md:w-auto shrink-0">
+                           <div className="bg-white p-4 rounded-2xl md:rounded-[36px] shadow-3xl transform hover:scale-105 transition-transform flex items-center justify-center">
+                              <QRCodeSVG value={activeSession.id} size={220} className="w-full max-w-[160px] md:max-w-[220px] h-auto" level="H" />
+                           </div>
+                           <div className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl md:rounded-2xl backdrop-blur-xl text-center shadow-xl">
+                              <p className="text-[8px] md:text-[9px] font-black text-blue-300 uppercase tracking-[0.4em] mb-1 italic">Manual Protocol Code</p>
+                              <h4 className="text-xl md:text-2xl font-black text-white tracking-[0.2em]">{activeSession.session_code || activeSession.id.slice(0, 6).toUpperCase()}</h4>
+                           </div>
+                        </div>
+                     )}
 
-                    <div className="flex-1 text-center md:text-left z-10 w-full">
-                       <div className="flex items-center justify-center md:justify-start gap-3 lg:gap-4 mb-6 lg:mb-8">
-                          <div className={`px-4 lg:px-6 py-1.5 lg:py-2 rounded-full flex items-center gap-2 text-white text-[8px] lg:text-[10px] font-black uppercase tracking-widest backdrop-blur-md ${activeSession.status === 'active' ? 'bg-white/20' : 'bg-red-500/20 text-red-400'}`}>
-                             {activeSession.status === 'active' ? 'Live Beacon' : 'Finalized Ledger'}
-                          </div>
-                          {activeSession.status === 'active' && (
-                             <div className="px-4 lg:px-6 py-1.5 lg:py-2 bg-red-500/30 border border-red-500/20 rounded-full flex items-center gap-2 text-white text-[8px] lg:text-[10px] font-black uppercase tracking-widest backdrop-blur-md">
-                                <Clock size={12} /> {timeLeft !== null ? `${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}` : '--:--'}
-                             </div>
-                          )}
-                       </div>
-                       <h3 className="text-3xl lg:text-5xl font-black text-white uppercase tracking-tight mb-3 lg:mb-4 italic leading-none truncate max-w-[300px] lg:max-w-none">{activeSession.subject}</h3>
-                       <p className="text-[10px] lg:text-sm text-blue-100 font-medium mb-8 lg:mb-12 uppercase tracking-[0.2em] opacity-80 italic">
-                          {activeSession.status === 'active' ? 'Scanning Sequence Initiated' : 'Protocol Deactivated • Audit Mode'} • {activeSession.session_type}
-                       </p>
-                       <div className="flex flex-wrap gap-3 lg:gap-4 justify-center md:justify-start">
-                          {activeSession.status === 'active' ? (
-                             <>
-                             <button onClick={() => extendSession(5)} className="flex-1 sm:flex-none px-6 lg:px-8 py-3.5 lg:py-5 bg-white/10 border border-white/20 rounded-xl lg:rounded-2xl text-[8px] lg:text-[9px] font-black uppercase text-white tracking-widest hover:bg-white/20 transition-all shadow-xl">+5m</button>
-                             <button onClick={() => extendSession(10)} className="flex-1 sm:flex-none px-6 lg:px-8 py-3.5 lg:py-5 bg-white/10 border border-white/20 rounded-xl lg:rounded-2xl text-[8px] lg:text-[9px] font-black uppercase text-white tracking-widest hover:bg-white/20 transition-all shadow-xl">+10m</button>
-                             <button onClick={() => lockSession(activeSession.id)} className="w-full sm:w-auto px-8 lg:px-10 py-3.5 lg:py-5 bg-white text-blue-600 rounded-xl lg:rounded-2xl text-[8px] lg:text-[9px] font-black uppercase tracking-widest shadow-2xl hover:bg-gray-50 active:scale-95 transition-all font-black">Terminate</button>
-                             <button onClick={endAndStartNew} className="w-full sm:w-auto px-8 lg:px-10 py-3.5 lg:py-5 bg-green-500 text-white rounded-xl lg:rounded-2xl text-[8px] lg:text-[9px] font-black uppercase tracking-widest shadow-2xl hover:bg-green-400 active:scale-95 transition-all font-black">End & Start New</button>
-                             </>
-                          ) : (
-                            <button onClick={() => {setActiveSession(null); setParticipants([])}} className="w-full sm:w-auto px-10 py-5 bg-blue-600 text-white rounded-xl lg:rounded-2xl text-[9px] lg:text-[10px] font-black uppercase tracking-widest shadow-2xl hover:bg-blue-500 active:scale-95 transition-all font-black">Create New Session</button>
-                          )}
-                       </div>
-                    </div>
-                 </motion.div>
+                     <div className="flex-1 text-center md:text-left z-10 w-full">
+                        <div className="flex items-center justify-center md:justify-start gap-3 lg:gap-4 mb-4 md:mb-6">
+                           <div className={`px-4 py-1.5 rounded-full flex items-center gap-2 text-white text-[8px] lg:text-[10px] font-black uppercase tracking-widest backdrop-blur-md ${activeSession.status === 'active' ? 'bg-white/20' : 'bg-red-500/20 text-red-400'}`}>
+                              {activeSession.status === 'active' ? 'Live Beacon' : 'Finalized Ledger'}
+                           </div>
+                           {activeSession.status === 'active' && (
+                              <div className="px-4 py-1.5 bg-red-500/30 border border-red-500/20 rounded-full flex items-center gap-2 text-white text-[8px] lg:text-[10px] font-black uppercase tracking-widest backdrop-blur-md">
+                                 <Clock size={12} /> {timeLeft !== null ? `${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}` : '--:--'}
+                              </div>
+                           )}
+                        </div>
+                        <h3 className="text-2xl md:text-3xl lg:text-4xl font-black text-white uppercase tracking-tight mb-2 md:mb-3 italic leading-none truncate max-w-[300px] lg:max-w-none">{activeSession.subject}</h3>
+                        <p className="text-[10px] lg:text-xs text-blue-100 font-medium mb-6 md:mb-8 uppercase tracking-[0.2em] opacity-80 italic">
+                           {activeSession.status === 'active' ? 'Scanning Sequence Initiated' : 'Protocol Deactivated • Audit Mode'} • {activeSession.session_type}
+                        </p>
+                        <div className="flex flex-wrap gap-2 lg:gap-3 justify-center md:justify-start">
+                           {activeSession.status === 'active' ? (
+                              <>
+                              <button onClick={() => extendSession(5)} className="flex-1 sm:flex-none px-4 md:px-6 py-3 bg-white/10 border border-white/20 rounded-xl text-[8px] md:text-[9px] font-black uppercase text-white tracking-widest hover:bg-white/20 transition-all shadow-xl">+5m</button>
+                              <button onClick={() => extendSession(10)} className="flex-1 sm:flex-none px-4 md:px-6 py-3 bg-white/10 border border-white/20 rounded-xl text-[8px] md:text-[9px] font-black uppercase text-white tracking-widest hover:bg-white/20 transition-all shadow-xl">+10m</button>
+                              <button onClick={() => lockSession(activeSession.id)} className="w-full sm:w-auto px-6 py-3 bg-white text-blue-600 rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-widest shadow-2xl hover:bg-gray-55 active:scale-95 transition-all">Terminate</button>
+                              <button onClick={endAndStartNew} className="w-full sm:w-auto px-6 py-3 bg-green-500 text-white rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-widest shadow-2xl hover:bg-green-400 active:scale-95 transition-all">End & Start New</button>
+                              <button onClick={openManualAddModal} className="w-full sm:w-auto px-6 py-3 bg-yellow-500 text-black rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-widest shadow-2xl hover:bg-yellow-400 active:scale-95 transition-all">Manual Check-in</button>
+                              </>
+                           ) : (
+                             <button onClick={() => {setActiveSession(null); setParticipants([])}} className="w-full sm:w-auto px-8 py-4 bg-blue-600 text-white rounded-xl text-[9px] lg:text-[10px] font-black uppercase tracking-widest shadow-2xl hover:bg-blue-500 active:scale-95 transition-all">Create New Session</button>
+                           )}
+                        </div>
+                     </div>
+                  </motion.div>
               )}
 
               <div className="space-y-6 lg:space-y-8">
@@ -751,6 +819,64 @@ export default function FacultyAttendancePage() {
            </div>
         </div>
       </div>
+      {/* MANUAL ADD STUDENT MODAL */}
+      <AnimatePresence>
+        {showManualAddModal && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+              onClick={() => setShowManualAddModal(false)}
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-md bg-[#161b22] border border-white/10 rounded-[32px] p-8 shadow-2xl z-10 text-left"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-black text-white uppercase tracking-tight">Manual Check-In</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowManualAddModal(false)}
+                  className="p-2 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={submitManualAttendance} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest block">Select Student</label>
+                  <select
+                    value={selectedStudentId}
+                    onChange={e => setSelectedStudentId(e.target.value)}
+                    className="w-full bg-slate-900 border border-white/10 rounded-xl p-4 text-xs font-bold text-white uppercase tracking-widest focus:border-blue-500 outline-none"
+                  >
+                    <option value="">-- Choose Student --</option>
+                    {divisionStudents.map(student => (
+                      <option key={student.id} value={student.id}>
+                        {student.full_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={submittingManual || !selectedStudentId}
+                  className="w-full py-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-20 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl shadow-lg transition-all"
+                >
+                  {submittingManual ? 'Registering Presence...' : 'Mark Present'}
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </FacultyLayout>
   )
 }

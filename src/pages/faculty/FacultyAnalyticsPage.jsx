@@ -40,102 +40,105 @@ export default function FacultyAnalyticsPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      // 1. Fetch total verified attendance records
-      let recordsQuery = supabase
-        .from('attendance_records')
-        .select('*, attendance_sessions!inner(teacher_id, division_id)', { count: 'exact' })
-        .eq('attendance_sessions.teacher_id', user.id)
-        .eq('verification_status', 'verified')
-
-      // 2. Fetch total sessions (classes held)
+      // 1. Fetch total sessions (classes held)
       let sessionsQuery = supabase
         .from('attendance_sessions')
-        .select('*, division:academic_divisions!inner(semester_id, name), subject:academic_subjects(name)', { count: 'exact' })
+        .select('*, division:academic_divisions!inner(semester_id, name)', { count: 'exact' })
         .eq('teacher_id', user.id)
         .order('created_at', { ascending: false })
 
       if (selectedSemester !== 'All') {
-        recordsQuery = recordsQuery.eq('attendance_sessions.division.semester_id', selectedSemester)
         sessionsQuery = sessionsQuery.eq('division.semester_id', selectedSemester)
       }
 
-      const [recordsRes, sessionsRes] = await Promise.all([recordsQuery, sessionsQuery])
-      const totalVerified = recordsRes.count || 0
-      const sessionsData = sessionsRes.data || []
-      const sessionsCount = sessionsRes.count || 0
+      const { data: sessionsData, error: sessionsError } = await sessionsQuery
+      if (sessionsError) throw sessionsError
+
+      const sessionsCount = sessionsData?.length || 0
+      const sessionIds = (sessionsData || []).map(s => s.id)
 
       // Store recent sessions for table display
-      setRecentSessions(sessionsData.slice(0, 5))
+      setRecentSessions((sessionsData || []).slice(0, 5))
 
-      // 3. Fetch Divisions
+      // 2. Fetch all verified attendance records for these sessions
+      let allRecords = []
+      if (sessionIds.length > 0) {
+        const { data: recordsData, error: recordsError } = await supabase
+          .from('attendance_records')
+          .select('session_id')
+          .in('session_id', sessionIds)
+          .eq('verification_status', 'verified')
+        if (recordsError) throw recordsError
+        allRecords = recordsData || []
+      }
+      const totalVerified = allRecords.length
+
+      // Group records by session
+      const recordsBySession = {}
+      allRecords.forEach(r => {
+        recordsBySession[r.session_id] = (recordsBySession[r.session_id] || 0) + 1
+      })
+
+      // 3. Fetch unique division student counts
+      const uniqueDivIds = [...new Set((sessionsData || []).map(s => s.division_id).filter(Boolean))]
+      const divStudentCounts = {}
+      if (uniqueDivIds.length > 0) {
+        await Promise.all(uniqueDivIds.map(async (divId) => {
+          const { count } = await supabase
+            .from('profiles')
+            .select('*', { count: 'exact', head: true })
+            .eq('role', 'student')
+            .eq('division_id', divId)
+          divStudentCounts[divId] = count || 60
+        }))
+      }
+
+      // 4. Fetch Divisions matching the semester filter
       let divQuery = supabase.from('academic_divisions').select('id, name, semester_id')
       if (selectedSemester !== 'All') {
         divQuery = divQuery.eq('semester_id', selectedSemester)
       }
       const { data: divisions } = await divQuery
       
-      if (divisions) {
-        const divStats = await Promise.all(divisions.map(async (div) => {
-          // Count verified check-ins in this division
-          const { count: divAttendance } = await supabase
-            .from('attendance_records')
-            .select('*, attendance_sessions!inner(teacher_id, division_id)', { count: 'exact', head: true })
-            .eq('attendance_sessions.teacher_id', user.id)
-            .eq('attendance_sessions.division_id', div.id)
-            .eq('verification_status', 'verified')
+      if (divisions && sessionsData) {
+        const divStats = divisions.map(div => {
+          const divSessions = sessionsData.filter(s => s.division_id === div.id)
+          const divSessionsCount = divSessions.length
           
-          // Get total sessions held for this division
-          const { count: divSessions } = await supabase
-            .from('attendance_sessions')
-            .select('*', { count: 'exact', head: true })
-            .eq('teacher_id', user.id)
-            .eq('division_id', div.id)
+          let divAttendance = 0
+          divSessions.forEach(s => {
+            divAttendance += (recordsBySession[s.id] || 0)
+          })
 
-          // Performance metric = Average attendance per session in division (scaled out of 10)
-          const performance = divSessions > 0 
-            ? Math.round(((divAttendance || 0) / divSessions) * 10) 
+          const classSize = divStudentCounts[div.id] || 60
+          const performance = divSessionsCount > 0 
+            ? Math.round((divAttendance / (divSessionsCount * classSize)) * 10) 
             : 0
 
           return {
             name: `${div.name}`,
-            attendance: divAttendance || 0,
+            attendance: divAttendance,
             performance: Math.min(performance, 10) // cap at 10
           }
-        }))
+        })
         setDivisionData(divStats)
       }
 
-      // 4. Fetch Attendance Trends (Last 6 active days)
-      let trendQuery = supabase
-        .from('attendance_sessions')
-        .select('id, created_at, division:academic_divisions!inner(semester_id)')
-        .eq('teacher_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(30)
+      // 5. Calculate Attendance Trends (Last 30 active sessions)
+      const recentSessionsTrend = (sessionsData || []).slice(0, 30)
 
-      if (selectedSemester !== 'All') {
-        trendQuery = trendQuery.eq('division.semester_id', selectedSemester)
-      }
-
-      const { data: recentSessionsTrend } = await trendQuery
-
-      if (recentSessionsTrend && recentSessionsTrend.length > 0) {
+      if (recentSessionsTrend.length > 0) {
         const dayMap = { 0: 'Sun', 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat' }
         const trendMap = {}
         
-        for (const session of recentSessionsTrend) {
+        recentSessionsTrend.forEach(session => {
           const day = dayMap[new Date(session.created_at).getDay()]
           if (!trendMap[day]) trendMap[day] = { name: day, value: 0, count: 0 }
           
-          const { count: sessionAttendance } = await supabase
-            .from('attendance_records')
-            .select('*', { count: 'exact', head: true })
-            .eq('session_id', session.id)
-            .eq('verification_status', 'verified')
-          
-          trendMap[day].value += (sessionAttendance || 0)
+          const sessionAttendance = recordsBySession[session.id] || 0
+          trendMap[day].value += sessionAttendance
           trendMap[day].count += 1
-        }
+        })
         
         // Format values to averages
         const formattedTrend = Object.values(trendMap).map(day => ({
@@ -149,8 +152,17 @@ export default function FacultyAnalyticsPage() {
       }
 
       // Calculate Student Attendance Rate (average percentage of students checked-in per class)
-      const avgPresencePerClass = sessionsCount > 0 ? (totalVerified / sessionsCount) : 0
-      const avgAttendanceRate = Math.min(Math.round((avgPresencePerClass / 60) * 100), 100)
+      let totalRatesSum = 0
+      if (sessionsCount > 0 && sessionsData) {
+        sessionsData.forEach(session => {
+          const presentCount = recordsBySession[session.id] || 0
+          const totalClassStudents = divStudentCounts[session.division_id] || 60
+          totalRatesSum += (presentCount / totalClassStudents)
+        })
+      }
+      const avgAttendanceRate = sessionsCount > 0 
+        ? Math.min(Math.round((totalRatesSum / sessionsCount) * 100), 100) 
+        : 0
 
       setStats({
         totalAttendance: totalVerified || 0,

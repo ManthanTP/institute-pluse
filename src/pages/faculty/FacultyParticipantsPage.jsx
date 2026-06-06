@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react'
-import { Users, Search, Mail, Phone, GraduationCap, ShieldCheck, MessageSquare, History, X, Send, Award, Trash2, Plus, Lock, Building, User } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Users, Search, Mail, Phone, GraduationCap, ShieldCheck, MessageSquare, History, X, Send, Award, Trash2, Plus, Lock, Building, User, Megaphone, Calendar, MapPin, Clock } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import FacultyLayout from './FacultyLayout'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
+import { useAuthStore } from '../../store/index'
 
 export default function FacultyParticipantsPage() {
+  const { profile } = useAuthStore()
   const [students, setStudents] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -35,9 +37,153 @@ export default function FacultyParticipantsPage() {
     password: 'ChangeMe123!'
   })
 
+  // Event Rooms State
+  const [events, setEvents] = useState([])
+  const [activeEventRoom, setActiveEventRoom] = useState(null)
+  const [roomMessages, setRoomMessages] = useState([])
+  const [roomParticipants, setRoomParticipants] = useState([])
+  const [newMessage, setNewMessage] = useState('')
+  const [loadingRoom, setLoadingRoom] = useState(false)
+  const [isBroadcast, setIsBroadcast] = useState(false)
+  const messagesEndRef = useRef(null)
+
   useEffect(() => {
     fetchData()
   }, [])
+
+  // Auto-scroll messages
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [roomMessages])
+
+  // Real-time Event Room messaging subscription
+  useEffect(() => {
+    if (!activeEventRoom) return
+
+    fetchRoomData(activeEventRoom.id)
+
+    const channel = supabase
+      .channel(`event_room_${activeEventRoom.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'event_messages',
+          filter: `event_id=eq.${activeEventRoom.id}`
+        },
+        async (payload) => {
+          // Fetch sender's profile for details
+          const { data: pData } = await supabase
+            .from('profiles')
+            .select('full_name, role')
+            .eq('id', payload.new.sender_id)
+            .single()
+
+          const messageWithProfile = {
+            ...payload.new,
+            profiles: pData || { full_name: 'Unknown User', role: 'student' }
+          }
+
+          setRoomMessages((prev) => {
+            if (prev.some((m) => m.id === payload.new.id)) return prev
+            return [...prev, messageWithProfile]
+          })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [activeEventRoom])
+
+  async function fetchFacultyEvents() {
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .select('*, profiles(full_name), event_participants(id)')
+        .order('event_date', { ascending: true })
+      
+      if (error) throw error
+      setEvents(data || [])
+    } catch (err) {
+      console.error('Error fetching faculty events:', err)
+    }
+  }
+
+  async function fetchRoomData(eventId) {
+    try {
+      setLoadingRoom(true)
+      const { data: parts, error: partsErr } = await supabase
+        .from('event_participants')
+        .select('*, profiles(full_name, email, department, role)')
+        .eq('event_id', eventId)
+
+      if (partsErr) throw partsErr
+      setRoomParticipants(parts || [])
+
+      const { data: msgs, error: msgsErr } = await supabase
+        .from('event_messages')
+        .select('*, profiles(full_name, role)')
+        .eq('event_id', eventId)
+        .order('created_at', { ascending: true })
+
+      if (msgsErr) throw msgsErr
+      setRoomMessages(msgs || [])
+    } catch (err) {
+      console.error('Error fetching room data:', err)
+      toast.error('Failed to load message log')
+    } finally {
+      setLoadingRoom(false)
+    }
+  }
+
+  async function handleSendMessage(e) {
+    e.preventDefault()
+    if (!newMessage.trim() || !activeEventRoom || !profile?.id) return
+
+    const messageText = newMessage.trim()
+    setNewMessage('')
+
+    try {
+      const { error } = await supabase
+        .from('event_messages')
+        .insert({
+          event_id: activeEventRoom.id,
+          sender_id: profile.id,
+          message: messageText
+        })
+
+      if (error) throw error
+
+      if (isBroadcast && roomParticipants.length > 0) {
+        const notifications = roomParticipants.map(p => ({
+          student_id: p.student_id,
+          title: `Broadcast: ${activeEventRoom.title}`,
+          message: messageText,
+          type: 'general',
+          is_read: false
+        }))
+        
+        const { error: notifyErr } = await supabase
+          .from('student_notifications')
+          .insert(notifications)
+
+        if (notifyErr) {
+          console.error('Broadcast failure:', notifyErr)
+          toast.error('Message posted, but announcement broadcast failed')
+        } else {
+          toast.success('Announcement broadcasted successfully!')
+        }
+      }
+    } catch (err) {
+      console.error('Send message error:', err)
+      toast.error('Failed to send message: ' + err.message)
+    }
+  }
 
   async function fetchData() {
     try {
@@ -71,6 +217,9 @@ export default function FacultyParticipantsPage() {
         .order('name')
       
       if (divs) setAllDivisions(divs)
+
+      // 4. Fetch Events for Rooms
+      await fetchFacultyEvents()
 
     } catch (err) {
       console.error('Data Fetch Error:', err)
@@ -304,6 +453,91 @@ export default function FacultyParticipantsPage() {
               </p>
            </div>
         )}
+
+        {/* EVENT ROOMS SECTION */}
+        <div className="border-t border-white/5 pt-12 mt-12 space-y-8 lg:space-y-12">
+          <div>
+            <div className="flex items-center gap-2 mb-2 lg:mb-3">
+              <MessageSquare size={12} className="text-blue-500" />
+              <span className="text-[8px] lg:text-[10px] font-black text-blue-500 uppercase tracking-[0.4em]">Interactive Channels</span>
+            </div>
+            <h2 className="text-3xl lg:text-5xl font-black text-white tracking-tighter uppercase leading-none italic">
+              Event <span className="text-blue-500">Rooms</span>
+            </h2>
+            <p className="text-gray-500 text-[8px] lg:text-[10px] font-black uppercase tracking-[0.2em] mt-3 italic">
+              Collaborate and message participants of your active campaigns
+            </p>
+          </div>
+
+          {events.length === 0 ? (
+            <div className="py-16 text-center bg-[#161b22]/50 border border-white/5 rounded-3xl p-8">
+              <Megaphone size={40} className="text-gray-600 mx-auto mb-4 opacity-20" />
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest italic text-center">
+                No campaigns registered yet.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+              {events.map((event, idx) => {
+                const isCreator = event.created_by === profile?.id;
+                const participantCount = event.event_participants?.length || 0;
+                
+                return (
+                  <motion.div
+                    key={event.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className={`bg-[#161b22]/80 border ${
+                      isCreator ? 'border-blue-500/20' : 'border-white/5'
+                    } rounded-3xl p-6 relative overflow-hidden group hover:border-blue-500/40 transition-all shadow-2xl flex flex-col justify-between`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="px-3 py-1 rounded bg-blue-500/10 border border-blue-500/20 text-[8px] font-black text-blue-500 uppercase tracking-widest">
+                          {event.category}
+                        </span>
+                        {isCreator && (
+                          <span className="px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-[7px] font-black text-indigo-400 uppercase tracking-widest">
+                            Creator
+                          </span>
+                        )}
+                      </div>
+                      
+                      <h3 className="text-base font-black text-white uppercase tracking-tight mb-2 truncate">
+                        {event.title}
+                      </h3>
+                      
+                      <p className="text-xs font-medium text-gray-500 line-clamp-2 mb-6">
+                        {event.description}
+                      </p>
+                    </div>
+
+                    <div className="space-y-4 pt-4 border-t border-white/5">
+                      <div className="flex items-center justify-between text-[8px] lg:text-[10px] font-black uppercase tracking-widest text-gray-500">
+                        <span className="flex items-center gap-1.5">
+                          <Users size={12} />
+                          {participantCount} Registered
+                        </span>
+                        <span className="text-blue-500 flex items-center gap-1">
+                          <Award size={12} />
+                          {event.eco_points} XP
+                        </span>
+                      </div>
+
+                      <button
+                        onClick={() => setActiveEventRoom(event)}
+                        className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-blue-600/10 transition-all flex items-center justify-center gap-2"
+                      >
+                        <MessageSquare size={12} /> Enter Chat Room
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* STUDENT DETAILED PROFILE MODAL */}
@@ -592,6 +826,185 @@ export default function FacultyParticipantsPage() {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* EVENT CHAT ROOM MODAL */}
+      <AnimatePresence>
+        {activeEventRoom && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-5xl h-[85vh] bg-[#0c1225] border border-white/10 rounded-[40px] relative overflow-hidden flex flex-col md:flex-row shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+            >
+              {/* CLOSE BUTTON */}
+              <button 
+                onClick={() => setActiveEventRoom(null)} 
+                className="absolute top-6 right-6 z-30 p-2.5 rounded-xl bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all shadow-inner"
+              >
+                <X size={18} />
+              </button>
+
+              {/* LEFT SIDEBAR: PARTICIPANTS */}
+              <div className="w-full md:w-80 border-r border-white/10 flex flex-col bg-black/20 shrink-0 h-2/5 md:h-full">
+                <div className="p-6 border-b border-white/10 bg-[#161b22]/40">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Users size={14} className="text-blue-500" />
+                    <span className="text-[8px] font-black text-blue-500 uppercase tracking-widest">Enrolled Roster</span>
+                  </div>
+                  <h3 className="text-sm font-black text-white uppercase tracking-tight">
+                    Participants ({roomParticipants.length})
+                  </h3>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4 space-y-2 no-scrollbar">
+                  {roomParticipants.length === 0 ? (
+                    <div className="py-8 text-center text-[10px] font-black text-gray-500 uppercase tracking-widest italic opacity-40">
+                      Roster Empty
+                    </div>
+                  ) : (
+                    roomParticipants.map((part) => (
+                      <div 
+                        key={part.id} 
+                        className="flex items-center gap-3 p-3 bg-white/5 rounded-2xl border border-white/[0.02] hover:bg-white/10 transition-all"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-blue-600/10 border border-blue-500/20 text-blue-500 text-xs font-black flex items-center justify-center uppercase">
+                          {part.profiles?.full_name ? part.profiles.full_name[0] : 'S'}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11px] font-black text-white uppercase tracking-tight truncate">
+                            {part.profiles?.full_name || 'SYNCED STUDENT'}
+                          </p>
+                          <p className="text-[8px] font-bold text-gray-500 uppercase tracking-widest truncate">
+                            {part.profiles?.department || 'CSE'} • {part.profiles?.role || 'student'}
+                          </p>
+                        </div>
+                        {part.attended && (
+                          <span className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" title="Attended" />
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* RIGHT MAIN PANEL: MESSAGE STREAM */}
+              <div className="flex-1 flex flex-col h-3/5 md:h-full relative bg-slate-950/20">
+                {/* ROOM HEADER */}
+                <div className="p-6 border-b border-white/10 bg-[#161b22]/20 flex flex-col justify-center">
+                  <div className="flex items-center gap-3 mb-1">
+                    <span className="px-2.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-[7px] font-black text-blue-400 uppercase tracking-widest">
+                      {activeEventRoom.category}
+                    </span>
+                    <span className="text-[8px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1">
+                      <Calendar size={10} /> {new Date(activeEventRoom.event_date).toLocaleDateString()}
+                    </span>
+                    <span className="text-[8px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1">
+                      <MapPin size={10} /> {activeEventRoom.venue}
+                    </span>
+                  </div>
+                  
+                  <h2 className="text-lg font-black text-white uppercase tracking-tight truncate pr-12">
+                    {activeEventRoom.title}
+                  </h2>
+                </div>
+
+                {/* MESSAGES VIEWPORT */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
+                  {loadingRoom ? (
+                    <div className="h-full flex flex-col items-center justify-center gap-2">
+                      <div className="w-8 h-8 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
+                      <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest italic">Decrypting Feed...</p>
+                    </div>
+                  ) : roomMessages.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center text-gray-600">
+                      <MessageSquare size={36} className="opacity-10 mb-2" />
+                      <p className="text-[9px] font-black uppercase tracking-widest italic text-center px-6">
+                        Secure link established. Send a message/rules to start.
+                      </p>
+                    </div>
+                  ) : (
+                    roomMessages.map((msg) => {
+                      const isMe = msg.sender_id === profile?.id;
+                      const senderRole = msg.profiles?.role || 'student';
+                      const isSenderFaculty = senderRole === 'faculty' || senderRole === 'admin' || senderRole === 'owner';
+                      
+                      return (
+                        <div 
+                          key={msg.id} 
+                          className={`flex flex-col max-w-[80%] ${
+                            isMe ? 'ml-auto items-end' : 'mr-auto items-start'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`text-[8px] font-black uppercase tracking-widest ${
+                              isMe ? 'text-blue-400' : isSenderFaculty ? 'text-purple-400' : 'text-gray-500'
+                            }`}>
+                              {msg.profiles?.full_name || 'Anonymous'} 
+                            </span>
+                            <span className="px-1.5 py-0.5 rounded bg-white/5 text-[6px] font-black text-gray-500 uppercase tracking-widest">
+                              {senderRole}
+                            </span>
+                            <span className="text-[7px] text-gray-600 font-bold uppercase">
+                              {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+
+                          <div className={`p-4 rounded-3xl text-xs font-medium leading-relaxed border ${
+                            isMe 
+                              ? 'bg-blue-600/10 border-blue-500/20 text-white rounded-tr-none' 
+                              : isSenderFaculty
+                                ? 'bg-purple-600/10 border-purple-500/20 text-white rounded-tl-none'
+                                : 'bg-[#161b22] border-white/5 text-gray-300 rounded-tl-none'
+                          }`}>
+                            {msg.message}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* BOTTOM COMPOSER */}
+                <form onSubmit={handleSendMessage} className="p-4 border-t border-white/10 bg-[#161b22]/10 space-y-3">
+                  <div className="flex items-center justify-between px-2">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={isBroadcast}
+                        onChange={(e) => setIsBroadcast(e.target.checked)}
+                        className="rounded border-white/10 bg-white/5 text-blue-600 focus:ring-0 w-3.5 h-3.5"
+                      />
+                      <span className="text-[8px] lg:text-[9px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-1.5 hover:text-white transition-colors">
+                        <Megaphone size={12} className={isBroadcast ? 'text-blue-500' : 'text-gray-500'} />
+                        Broadcast as Announcement Notice to Participants
+                      </span>
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 relative">
+                    <input
+                      type="text"
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      placeholder="TRANSMIT MESSAGE / RULES TO ROOM..."
+                      className="w-full bg-[#161b22] border border-white/10 rounded-2xl py-4 pl-6 pr-16 text-xs font-black uppercase text-white outline-none focus:border-blue-500 transition-colors shadow-inner"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!newMessage.trim()}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl disabled:opacity-20 transition-all shadow-lg shadow-blue-600/25"
+                    >
+                      <Send size={14} />
+                    </button>
+                  </div>
+                </form>
+              </div>
             </motion.div>
           </div>
         )}

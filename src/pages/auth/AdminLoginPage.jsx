@@ -60,7 +60,17 @@ export default function AdminLoginPage() {
 
       const profile = await fetchProfile(data.user.id)
       
-      if (!profile || (profile.role !== 'admin' && profile.role !== 'owner')) {
+      if (!profile) {
+        await supabase.auth.signOut()
+        throw new Error('Access denied. Profile not found.')
+      }
+      
+      if (profile.role === 'student') {
+        await supabase.auth.signOut()
+        throw new Error('Students cannot access the admin portal.')
+      }
+
+      if (profile.role !== 'admin' && profile.role !== 'owner') {
         await supabase.auth.signOut()
         throw new Error('Access denied. Privileged access required.')
       }

@@ -68,7 +68,7 @@ export default function FacultyCafeteriaPage() {
   }
 
   const filteredMenu = menu.filter(item => {
-    const matchesCategory = activeCategory === 'All' || item.category === activeCategory
+    const matchesCategory = activeCategory === 'All' || item.category?.toLowerCase() === activeCategory.toLowerCase()
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase())
     return matchesCategory && matchesSearch
   })

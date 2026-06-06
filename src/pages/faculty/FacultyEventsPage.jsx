@@ -66,8 +66,24 @@ export default function FacultyEventsPage() {
       const res = await supabase.from('events').update(eventData).eq('id', selectedEvent.id)
       error = res.error
     } else {
-      const res = await supabase.from('events').insert(eventData)
-      error = res.error
+      const { data: newEvent, error: insertError } = await supabase
+        .from('events')
+        .insert(eventData)
+        .select()
+        .single()
+      
+      error = insertError
+
+      if (!insertError && newEvent) {
+        // Auto-create campus announcement for the new event
+        await supabase.from('announcements').insert({
+          title: `New Campaign: ${newEvent.title}`,
+          content: `A new ${newEvent.category} event "${newEvent.title}" is scheduled at ${newEvent.venue} on ${new Date(newEvent.event_date).toLocaleDateString()} at ${newEvent.event_time}. Participate to earn ${newEvent.eco_points} XP!`,
+          audience_type: 'all',
+          priority: 'medium',
+          created_by: profile.id
+        })
+      }
     }
 
     if (error) {
