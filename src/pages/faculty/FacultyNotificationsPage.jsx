@@ -36,6 +36,8 @@ export default function FacultyNotificationsPage() {
   const [filterTab, setFilterTab] = useState(0)
 
   useEffect(() => {
+    if (!profile?.id) return
+
     fetchNotifications()
 
     const channel = supabase
@@ -43,11 +45,15 @@ export default function FacultyNotificationsPage() {
       .on('postgres_changes', { 
         event: 'INSERT', 
         schema: 'public', 
-        table: 'notifications',
-        filter: `user_id=eq.${profile?.id}`
+        table: 'notifications'
       }, (payload) => {
-        setNotifications(prev => [payload.new, ...prev])
-        toast('New notification 🔔', { icon: '📡' })
+        if (!payload.new.user_id || payload.new.user_id === profile.id) {
+          setNotifications(prev => {
+            if (prev.some(n => n.id === payload.new.id)) return prev
+            return [payload.new, ...prev]
+          })
+          toast('New notification 🔔', { icon: '📡' })
+        }
       })
       .subscribe()
 
@@ -55,12 +61,13 @@ export default function FacultyNotificationsPage() {
   }, [profile?.id])
 
   async function fetchNotifications() {
+    if (!profile?.id) return
     setLoading(true)
     try {
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
-        .eq('user_id', profile?.id)
+        .or(`user_id.eq.${profile.id},user_id.is.null`)
         .order('created_at', { ascending: false })
         .limit(100)
 

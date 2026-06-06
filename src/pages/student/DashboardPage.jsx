@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, Flame, Leaf, TrendingUp, Star, Award, Zap, Compass, Search, MessageSquare, Info, ShieldAlert, ArrowRight, ChevronRight, Sparkles, LayoutGrid, Target, Waves, Wind, User, Megaphone, HelpCircle } from 'lucide-react'
+import { Bell, Flame, Leaf, TrendingUp, Star, Award, Zap, Compass, Search, MessageSquare, Info, ShieldAlert, ArrowRight, ChevronRight, Sparkles, LayoutGrid, Target, Waves, Wind, User, Megaphone, HelpCircle, BookOpen } from 'lucide-react'
 import { useAuthStore, useCarbonStore, useNotifStore } from '../../store/index'
 import { supabase } from '../../lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -18,6 +18,7 @@ const MODULE_TILES = [
   { path: '/navigation', icon: Compass, label: 'Campus Map', color: '#0ea5e9' },
   { path: '/lost-found', icon: Search, label: 'Lost & Found', color: '#64748b' },
   { path: '/complaints', icon: ShieldAlert, label: 'Support', color: '#dc2626' },
+  { path: '/resources', icon: BookOpen, label: 'Resource Hub', color: '#3b82f6' },
   { path: '/help', icon: HelpCircle, label: 'Help', color: '#6366f1' },
 ]
 

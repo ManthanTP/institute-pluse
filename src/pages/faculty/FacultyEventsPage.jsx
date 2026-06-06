@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { CalendarDays, Plus, Search, Edit3, Trash2, Users, MapPin, Clock, Star, X, CheckCircle2, LayoutGrid, Calendar, ArrowRight } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import FacultyLayout from './FacultyLayout'
@@ -18,6 +18,97 @@ export default function FacultyEventsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false)
   const [participants, setParticipants] = useState([])
+
+  // Event Room Chat States
+  const [activeModalTab, setActiveModalTab] = useState('roster') // 'roster', 'chat'
+  const [roomMessages, setRoomMessages] = useState([])
+  const [newMessage, setNewMessage] = useState('')
+  const messagesEndRef = useRef(null)
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [roomMessages])
+
+  useEffect(() => {
+    if (!selectedEvent || activeModalTab !== 'chat') return
+
+    fetchRoomMessages(selectedEvent.id)
+
+    const channel = supabase
+      .channel(`event_room_faculty_${selectedEvent.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'event_messages',
+          filter: `event_id=eq.${selectedEvent.id}`
+        },
+        async (payload) => {
+          const { data: pData } = await supabase
+            .from('profiles')
+            .select('full_name, role')
+            .eq('id', payload.new.sender_id)
+            .single()
+
+          const messageWithProfile = {
+            ...payload.new,
+            profiles: pData || { full_name: 'Unknown User', role: 'student' }
+          }
+
+          setRoomMessages((prev) => {
+            if (prev.some((m) => m.id === payload.new.id)) return prev
+            return [...prev, messageWithProfile]
+          })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [selectedEvent, activeModalTab])
+
+  async function fetchRoomMessages(eventId) {
+    try {
+      const { data, error } = await supabase
+        .from('event_messages')
+        .select('*, profiles(full_name, role)')
+        .eq('event_id', eventId)
+        .order('created_at', { ascending: true })
+
+      if (!error && data) {
+         setRoomMessages(data)
+      }
+    } catch (err) {
+      console.error('Error fetching room messages:', err)
+    }
+  }
+
+  async function handleSendRoomMessage(e) {
+    e.preventDefault()
+    if (!newMessage.trim() || !selectedEvent || !profile?.id) return
+
+    const messageText = newMessage.trim()
+    setNewMessage('')
+
+    try {
+      const { error } = await supabase
+        .from('event_messages')
+        .insert({
+          event_id: selectedEvent.id,
+          sender_id: profile.id,
+          message: messageText
+        })
+
+      if (error) throw error
+    } catch (err) {
+      console.error('Send message error:', err)
+      toast.error('Failed to send message')
+    }
+  }
 
   useEffect(() => {
     fetchEvents()
@@ -58,7 +149,8 @@ export default function FacultyEventsPage() {
       eco_points: parseInt(formData.get('eco_points')),
       status: 'upcoming',
       banner_color: formData.get('banner_color') || '#3b82f6',
-      created_by: profile.id
+      created_by: profile.id,
+      enable_chat: formData.get('enable_chat') === 'on'
     }
 
     let error
@@ -283,6 +375,18 @@ export default function FacultyEventsPage() {
                       <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Campaign Narrative</label>
                       <textarea name="description" defaultValue={selectedEvent?.description} className="w-full bg-white/5 border border-white/10 rounded-3xl p-6 text-sm text-white outline-none min-h-[120px] shadow-inner" />
                     </div>
+                    <div className="space-y-2 col-span-2 flex items-center gap-3 pt-2">
+                       <input 
+                         type="checkbox" 
+                         id="enableChatToggle"
+                         name="enable_chat"
+                         defaultChecked={selectedEvent ? selectedEvent.enable_chat : true} 
+                         className="w-4 h-4 rounded border-white/10 bg-[#0f172a] text-blue-600 focus:ring-0 outline-none cursor-pointer"
+                       />
+                       <label htmlFor="enableChatToggle" className="text-[10px] lg:text-xs font-black text-white uppercase tracking-widest cursor-pointer select-none">
+                         Enable Live Discussion Chat Room for this Campaign
+                       </label>
+                    </div>
                   </div>
 
                   <button type="submit" className="w-full py-6 rounded-[32px] bg-blue-600 text-white font-black text-[11px] uppercase tracking-[0.3em] shadow-2xl shadow-blue-600/30 hover:bg-blue-500 active:scale-95 transition-all">
@@ -306,7 +410,7 @@ export default function FacultyEventsPage() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="absolute inset-0 bg-slate-950/90 backdrop-blur-md pointer-events-auto"
-                onClick={() => setIsParticipantsModalOpen(false)}
+                onClick={() => { setIsParticipantsModalOpen(false); setActiveModalTab('roster'); }}
               />
               <motion.div 
                 initial={{ scale: 0.95, opacity: 0, y: 20 }}
@@ -315,35 +419,108 @@ export default function FacultyEventsPage() {
                 className="relative w-full max-w-2xl bg-slate-900 border border-white/10 rounded-[48px] p-12 shadow-2xl pointer-events-auto overflow-hidden flex flex-col max-h-[85vh]"
                 style={{ paddingBottom: 'calc(3rem + env(safe-area-inset-bottom))' }}
               >
-                <div className="flex items-center justify-between mb-10 flex-shrink-0">
+                <div className="flex items-center justify-between mb-8 flex-shrink-0">
                   <div>
-                    <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Identity Manifest</h2>
+                    <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Campaign Hub</h2>
                     <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">{selectedEvent?.title}</p>
                   </div>
-                  <button onClick={() => setIsParticipantsModalOpen(false)} className="p-4 rounded-2xl bg-white/5 border border-white/10 text-gray-400"><X size={20} /></button>
+                  <button onClick={() => { setIsParticipantsModalOpen(false); setActiveModalTab('roster'); }} className="p-4 rounded-2xl bg-white/5 border border-white/10 text-gray-400 hover:text-white"><X size={20} /></button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto no-scrollbar space-y-4 pr-2 pb-4">
-                  {participants.length === 0 ? (
-                    <div className="py-20 text-center"><p className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Zero Identities Registered</p></div>
-                  ) : participants.map((p, i) => (
-                    <div key={p.id} className="bg-white/5 border border-white/5 rounded-3xl p-6 flex items-center justify-between hover:bg-white/[0.08] transition-all group">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-[11px] font-black text-blue-500 uppercase group-hover:scale-110 transition-transform">
-                          {p.profiles?.full_name?.[0]}
-                        </div>
-                        <div>
-                          <p className="text-[11px] font-black text-white uppercase tracking-tight">{p.profiles?.full_name}</p>
-                          <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">{p.profiles?.department || 'Student'}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-[9px] font-black text-white uppercase tracking-widest">{new Date(p.registered_at).toLocaleDateString()}</p>
-                        <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mt-1">Uplinked</p>
-                      </div>
-                    </div>
-                  ))}
+                {/* Tab Switcher */}
+                <div className="flex bg-[#161b22] border border-white/10 rounded-2xl p-1 mb-8 flex-shrink-0">
+                  <button 
+                    onClick={() => setActiveModalTab('roster')} 
+                    className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeModalTab === 'roster' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-white'}`}
+                  >
+                    Student Info
+                  </button>
+                  <button 
+                    onClick={() => setActiveModalTab('chat')} 
+                    className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeModalTab === 'chat' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-white'}`}
+                  >
+                    Live Discussion
+                  </button>
                 </div>
+
+                {activeModalTab === 'roster' ? (
+                  <div className="flex-1 overflow-y-auto no-scrollbar space-y-4 pr-2 pb-4">
+                    {participants.length === 0 ? (
+                      <div className="py-20 text-center"><p className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Zero Identities Registered</p></div>
+                    ) : participants.map((p, i) => (
+                      <div key={p.id} className="bg-white/5 border border-white/5 rounded-3xl p-6 flex items-center justify-between hover:bg-white/[0.08] transition-all group">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-[11px] font-black text-blue-500 uppercase group-hover:scale-110 transition-transform">
+                            {p.profiles?.full_name?.[0]}
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-black text-white uppercase tracking-tight">{p.profiles?.full_name}</p>
+                            <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">{p.profiles?.department || 'Student'}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[9px] font-black text-white uppercase tracking-widest">{new Date(p.registered_at).toLocaleDateString()}</p>
+                          <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mt-1">Uplinked</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  selectedEvent?.enable_chat ? (
+                    <div className="flex-1 flex flex-col overflow-hidden">
+                      <div className="flex-1 overflow-y-auto no-scrollbar bg-black/20 rounded-2xl p-4 border border-white/5 flex flex-col gap-3 mb-4">
+                        {roomMessages.length === 0 ? (
+                          <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest text-center my-auto">No messages in this event room yet. Be the first to start the discussion!</p>
+                        ) : (
+                          roomMessages.map((m) => {
+                            const isSelf = m.sender_id === profile?.id
+                            const isFaculty = m.profiles?.role === 'faculty' || m.profiles?.role === 'admin'
+                            return (
+                              <div key={m.id} className={`flex flex-col max-w-[85%] ${isSelf ? 'self-end items-end' : 'self-start items-start'}`}>
+                                {!isSelf && (
+                                  <div className="flex items-center gap-1.5 mb-1 ml-1">
+                                    <span className="text-[8px] font-black text-gray-500 uppercase">{m.profiles?.full_name || 'Anonymous'}</span>
+                                    {isFaculty && (
+                                      <span className="px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-500 text-[6px] font-black uppercase">Faculty</span>
+                                    )}
+                                  </div>
+                                )}
+                                <div className={`px-4 py-2.5 rounded-2xl text-xs font-semibold leading-relaxed ${
+                                  isSelf 
+                                    ? 'bg-blue-600 text-white rounded-tr-none' 
+                                    : 'bg-white/5 border border-white/5 text-gray-300 rounded-tl-none'
+                                }`}>
+                                  {m.message}
+                                </div>
+                              </div>
+                            )
+                          })
+                        )}
+                        <div ref={messagesEndRef} />
+                      </div>
+
+                      <form onSubmit={handleSendRoomMessage} className="flex gap-2 flex-shrink-0">
+                        <input
+                          type="text"
+                          value={newMessage}
+                          onChange={(e) => setNewMessage(e.target.value)}
+                          placeholder="Type a message to event members..."
+                          className="flex-1 bg-[#161b22] border border-white/10 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-blue-500/50 transition-colors"
+                        />
+                        <button
+                          type="submit"
+                          className="px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
+                        >
+                          Send
+                        </button>
+                      </form>
+                    </div>
+                  ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center">
+                      <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest py-10">Event Discussion Room is disabled by host</p>
+                    </div>
+                  )
+                )}
               </motion.div>
             </div>
           )}

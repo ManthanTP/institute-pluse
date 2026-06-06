@@ -30,8 +30,16 @@ export default function AdminNotificationsPage() {
     // Subscribe to real-time notifications
     const channel = supabase
       .channel('admin_notifications_realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => {
-        fetchNotifications()
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          setNotifications(prev => {
+            if (prev.some(n => n.id === payload.new.id)) return prev
+            return [payload.new, ...prev]
+          })
+          toast('New system alert 🔔', { icon: '📡' })
+        } else {
+          fetchNotifications(true)
+        }
       })
       .subscribe()
 
@@ -40,9 +48,9 @@ export default function AdminNotificationsPage() {
     }
   }, [])
 
-  async function fetchNotifications() {
+  async function fetchNotifications(quiet = false) {
     try {
-      setLoading(true)
+      if (!quiet) setLoading(true)
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
@@ -55,7 +63,7 @@ export default function AdminNotificationsPage() {
       console.error(err)
       toast.error('Failed to sync system alerts')
     } finally {
-      setLoading(false)
+      if (!quiet) setLoading(false)
     }
   }
 

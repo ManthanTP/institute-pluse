@@ -175,20 +175,18 @@ export default function AdminDashboard() {
                 Global Refresh
              </button>
           </div>
-        </div>
-
-        {/* STAT GRID */}
+        </div>        {/* STAT GRID */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard icon={Users} label="Identity Nodes" value={stats.totalUsers.toLocaleString()} color="#3b82f6" delay={0.05} />
+          <StatCard icon={Users} label="Identity Nodes" value={stats.totalUsers.toLocaleString()} color="#ef4444" delay={0.05} />
           <StatCard icon={Leaf} label="Daily Flux" value={stats.todayLogs} sub={`Efficiency: ${stats.avgEcoScore}%`} color="#ef4444" delay={0.1} />
-          <StatCard icon={TrendingDown} label="Carbon Aggregation" value={`${stats.totalCo2} kg`} sub="Life-cycle Total" color="#0ea5e9" delay={0.15} />
+          <StatCard icon={TrendingDown} label="Carbon Aggregation" value={`${stats.totalCo2} kg`} sub="Life-cycle Total" color="#dc2626" delay={0.15} />
           <StatCard icon={ShieldCheck} label="Offset Protocol" value={`${stats.totalSaved} kg`} sub="Verified Reduction" color="#991b1b" delay={0.2} />
           <StatCard icon={AlertCircle} label="Distress Signals" value={stats.openComplaints} sub="Action Required" color="#ef4444" delay={0.25} />
-          <StatCard icon={Zap} label="Eco-Points Issued" value={stats.totalPoints.toLocaleString()} color="#f59e0b" delay={0.3} />
+          <StatCard icon={Zap} label="Eco-Points Issued" value={stats.totalPoints.toLocaleString()} color="#ef4444" delay={0.3} />
           <Link to="/12345678/admin/events" className="block h-full">
-            <StatCard icon={Award} label="Active Campaigns" value={stats.activeEvents} color="#a855f7" delay={0.35} />
+            <StatCard icon={Award} label="Active Campaigns" value={stats.activeEvents} color="#b91c1c" delay={0.35} />
           </Link>
-          <StatCard icon={ShieldAlert} label="System Security" value="Normal" color="#10b981" delay={0.4} />
+          <StatCard icon={ShieldAlert} label="System Security" value="Normal" color="#991b1b" delay={0.4} />
         </div>
 
         {/* CHARTS */}
@@ -230,7 +228,7 @@ export default function AdminDashboard() {
           >
             <div className="flex items-center justify-between mb-8">
                <h3 className="text-[8px] lg:text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Intake Volume</h3>
-               <div className="flex items-center gap-1.5"><div className="w-1 h-1 rounded-full bg-blue-500" /> <span className="text-[7px] lg:text-[9px] font-black uppercase text-gray-500">Log Packets</span></div>
+               <div className="flex items-center gap-1.5"><div className="w-1 h-1 rounded-full bg-red-500" /> <span className="text-[7px] lg:text-[9px] font-black uppercase text-gray-500">Log Packets</span></div>
             </div>
             <div className="h-[200px] lg:h-[250px] w-full">
                <ResponsiveContainer width="100%" height="100%">
@@ -242,7 +240,7 @@ export default function AdminDashboard() {
                      cursor={{ fill: 'rgba(255,255,255,0.03)' }}
                      contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '9px' }}
                    />
-                   <Bar dataKey="logs" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={20} />
+                   <Bar dataKey="logs" fill="#dc2626" radius={[4, 4, 0, 0]} barSize={20} />
                  </BarChart>
                </ResponsiveContainer>
             </div>
@@ -258,8 +256,8 @@ export default function AdminDashboard() {
             className="bg-white/5 border border-white/10 rounded-3xl lg:rounded-[40px] p-6 lg:p-8 backdrop-blur-xl relative overflow-hidden"
           >
             <div className="flex items-center justify-between mb-8">
-              <h3 className="text-[8px] lg:text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Distress Signals</h3>
-              <Link to="/12345678/admin/complaints" className="text-[7px] lg:text-[9px] font-black text-red-500 uppercase tracking-widest hover:text-red-400 transition-all">Full Console →</Link>
+               <h3 className="text-[8px] lg:text-[10px] font-black text-gray-550 uppercase tracking-[0.4em]">Distress Signals</h3>
+               <Link to="/12345678/admin/complaints" className="text-[7px] lg:text-[9px] font-black text-red-500 uppercase tracking-widest hover:text-red-400 transition-all">Full Console →</Link>
             </div>
             <div className="space-y-3">
               {recentComplaints.length === 0 ? (
@@ -287,7 +285,7 @@ export default function AdminDashboard() {
             className="bg-white/5 border border-white/10 rounded-3xl lg:rounded-[40px] p-6 lg:p-8 backdrop-blur-xl relative overflow-hidden"
           >
             <div className="flex items-center justify-between mb-8">
-              <h3 className="text-[8px] lg:text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Pulse Core Status</h3>
+               <h3 className="text-[8px] lg:text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Pulse Core Status</h3>
             </div>
             <div className="space-y-6">
                <div className="flex items-center justify-between">
@@ -301,12 +299,12 @@ export default function AdminDashboard() {
                </div>
                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                     <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500 border border-blue-500/20">
+                     <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 border border-red-500/20">
                         <TrendingUp size={18} />
                      </div>
                      <span className="text-[9px] lg:text-[10px] font-black text-white uppercase tracking-widest">Data Latency</span>
                   </div>
-                  <span className="text-[9px] lg:text-[10px] font-black text-blue-500 uppercase tracking-widest">12ms</span>
+                  <span className="text-[9px] lg:text-[10px] font-black text-red-500 uppercase tracking-widest">12ms</span>
                </div>
                <div className="pt-6 border-t border-white/5">
                   <p className="text-[8px] lg:text-[9px] font-black text-gray-600 uppercase tracking-widest leading-relaxed">

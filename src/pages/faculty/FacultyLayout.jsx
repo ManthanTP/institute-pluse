@@ -9,7 +9,7 @@ const FACULTY_NAV = [
   { path: '/faculty/dashboard', icon: Home, label: 'Dashboard' },
   { path: '/faculty/events', icon: CalendarDays, label: 'Manage Events' },
   { path: '/faculty/attendance', icon: GraduationCap, label: 'Attendance' },
-  { path: '/faculty/participants', icon: Users, label: 'Participants' },
+  { path: '/faculty/participants', icon: Users, label: 'Student Info' },
   { path: '/faculty/analytics', icon: BarChart3, label: 'Analytics' },
   { path: '/faculty/sustainability', icon: Leaf, label: 'Sustainability' },
   { path: '/faculty/resources', icon: BookOpen, label: 'Resource Hub' },

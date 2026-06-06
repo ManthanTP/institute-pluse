@@ -32,6 +32,7 @@ export default function FacultyAttendancePage() {
   const [extraRoom, setExtraRoom] = useState('')
   const [sessionType, setSessionType] = useState('theory')
   const [extraBatch, setExtraBatch] = useState('')
+  const [hideCode, setHideCode] = useState(false)
 
   // Manual Check-in States
   const [showManualAddModal, setShowManualAddModal] = useState(false)
@@ -218,7 +219,8 @@ export default function FacultyAttendancePage() {
         batch_id: sessionType === 'lab' ? extraBatch : null,
         expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
         status: 'active',
-        session_code: generatedCode
+        session_code: generatedCode,
+        hide_code: hideCode
       })
       .select().single()
 
@@ -233,7 +235,9 @@ export default function FacultyAttendancePage() {
       // Auto-create classroom announcement for students in the division
       await supabase.from('announcements').insert({
         title: `Class Started: ${subjects.find(s => s.id === extraSubject)?.name}`,
-        content: `A manual ${sessionType} session has been initiated for Division ${divisions.find(d => d.id === extraDiv)?.name} in ${rooms.find(r => r.id === extraRoom)?.name || 'venue'}. Use Code: ${generatedCode} to authenticate presence.`,
+        content: hideCode 
+          ? `A manual ${sessionType} session has been initiated for Division ${divisions.find(d => d.id === extraDiv)?.name} in ${rooms.find(r => r.id === extraRoom)?.name || 'venue'}.`
+          : `A manual ${sessionType} session has been initiated for Division ${divisions.find(d => d.id === extraDiv)?.name} in ${rooms.find(r => r.id === extraRoom)?.name || 'venue'}. Use Code: ${generatedCode} to authenticate presence.`,
         audience_type: 'division',
         target_id: extraDiv,
         priority: 'high',
@@ -244,7 +248,9 @@ export default function FacultyAttendancePage() {
       await supabase.rpc('notify_division_students', {
         p_division_id: extraDiv,
         p_title: 'Manual Class Started',
-        p_message: `Manual ${sessionType} session for ${subjects.find(s => s.id === extraSubject)?.name} has started in ${rooms.find(r => r.id === extraRoom)?.name}. Use Code: ${generatedCode}`,
+        p_message: hideCode
+          ? `Manual ${sessionType} session for ${subjects.find(s => s.id === extraSubject)?.name} has started in ${rooms.find(r => r.id === extraRoom)?.name}.`
+          : `Manual ${sessionType} session for ${subjects.find(s => s.id === extraSubject)?.name} has started in ${rooms.find(r => r.id === extraRoom)?.name}. Use Code: ${generatedCode}`,
         p_type: 'class_update'
       })
     }
@@ -561,6 +567,18 @@ export default function FacultyAttendancePage() {
                                 </div>
                               </div>
                            </div>
+                           <div className="space-y-2 lg:space-y-3 flex items-center gap-3 pt-4 md:col-span-2">
+                               <input 
+                                 type="checkbox" 
+                                 id="hideCodeToggle"
+                                 checked={hideCode} 
+                                 onChange={(e) => setHideCode(e.target.checked)} 
+                                 className="w-4 h-4 rounded border-white/10 bg-[#0f172a] text-blue-600 focus:ring-0 outline-none cursor-pointer"
+                               />
+                               <label htmlFor="hideCodeToggle" className="text-[9px] lg:text-[10px] font-black text-gray-500 uppercase tracking-widest cursor-pointer select-none">
+                                 Hide Code in Student Notification & Broadcasts
+                               </label>
+                            </div>
                         </div>
 
                         <button onClick={startManualSession} className="w-full py-6 lg:py-8 bg-blue-600 rounded-2xl lg:rounded-[32px] text-white text-[9px] lg:text-[10px] font-black uppercase tracking-[0.4em] shadow-3xl shadow-blue-600/30 hover:bg-blue-500 hover:scale-[1.01] active:scale-95 transition-all mt-8 lg:mt-12 flex items-center justify-center gap-4 group">
@@ -621,7 +639,10 @@ export default function FacultyAttendancePage() {
                               <button onClick={openManualAddModal} className="w-full sm:w-auto px-6 py-3 bg-yellow-500 text-black rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-widest shadow-2xl hover:bg-yellow-400 active:scale-95 transition-all">Manual Check-in</button>
                               </>
                            ) : (
+                             <>
                              <button onClick={() => {setActiveSession(null); setParticipants([])}} className="w-full sm:w-auto px-8 py-4 bg-blue-600 text-white rounded-xl text-[9px] lg:text-[10px] font-black uppercase tracking-widest shadow-2xl hover:bg-blue-500 active:scale-95 transition-all">Create New Session</button>
+                             <button onClick={openManualAddModal} className="w-full sm:w-auto px-8 py-4 bg-yellow-500 text-black rounded-xl text-[9px] lg:text-[10px] font-black uppercase tracking-widest shadow-2xl hover:bg-yellow-400 active:scale-95 transition-all">Manual Check-in</button>
+                             </>
                            )}
                         </div>
                      </div>
