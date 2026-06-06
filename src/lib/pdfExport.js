@@ -10,6 +10,7 @@
  */
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import QRCode from 'qrcode'
 
 // ── Existing Color Palette (Default Cyber Intelligence) ──
 export const COLORS = {
@@ -126,6 +127,9 @@ function drawCornerDecorations(doc, colors) {
 
 // Full page background
 function drawPageBackground(doc, colors) {
+  // Explicitly reset graphics state opacity first to prevent leakage across pages
+  doc.setGState(new doc.GState({ opacity: 1.0 }))
+
   const w = doc.internal.pageSize.getWidth()
   const h = doc.internal.pageSize.getHeight()
   doc.setFillColor(...colors.bg)
@@ -487,7 +491,7 @@ function drawHeader(doc, title, docId, studentName, colors) {
 }
 
 // Verification Page
-export function drawVerificationPage(doc, docId, dateStr, studentName, colors) {
+export async function drawVerificationPage(doc, docId, dateStr, studentName, colors) {
   doc.addPage()
   const w = doc.internal.pageSize.getWidth()
   const h = doc.internal.pageSize.getHeight()
@@ -507,48 +511,31 @@ export function drawVerificationPage(doc, docId, dateStr, studentName, colors) {
   doc.setTextColor(...colors.textSecondary)
   doc.text('AUTOMATED PROTOCOL CHECK // CRYPTOGRAPHIC SEAL VALIDATION', midX, 51, { align: 'center' })
 
-  // Pseudo-QR code
+  // Real QR code positioning
   const qrX = midX - 18
   const qrY = 62
   const qrSize = 36
-  doc.setFillColor(...colors.surface)
+
+  // Solid white container for high-contrast scannability
+  doc.setFillColor(255, 255, 255)
   doc.roundedRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8, 2, 2, 'F')
   doc.setDrawColor(...colors.border)
   doc.setLineWidth(0.25)
   doc.roundedRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8, 2, 2, 'D')
 
-  doc.setFillColor(...colors.primary)
-  doc.rect(qrX, qrY, 10, 10, 'F')
-  doc.setFillColor(...colors.surface)
-  doc.rect(qrX + 2, qrY + 2, 6, 6, 'F')
-  doc.setFillColor(...colors.primary)
-  doc.rect(qrX + 3, qrY + 3, 4, 4, 'F')
-
-  doc.rect(qrX + qrSize - 10, qrY, 10, 10, 'F')
-  doc.setFillColor(...colors.surface)
-  doc.rect(qrX + qrSize - 8, qrY + 2, 6, 6, 'F')
-  doc.setFillColor(...colors.primary)
-  doc.rect(qrX + qrSize - 7, qrY + 3, 4, 4, 'F')
-
-  doc.rect(qrX, qrY + qrSize - 10, 10, 10, 'F')
-  doc.setFillColor(...colors.surface)
-  doc.rect(qrX + 2, qrY + qrSize - 8, 6, 6, 'F')
-  doc.setFillColor(...colors.primary)
-  doc.rect(qrX + 3, qrY + qrSize - 7, 4, 4, 'F')
-
-  doc.setFillColor(...colors.textPrimary)
-  const gridCount = 9
-  const cellSize = (qrSize - 2) / gridCount
-  for (let row = 0; row < gridCount; row++) {
-    for (let col = 0; col < gridCount; col++) {
-      if ((row < 3 && col < 3) || (row < 3 && col >= gridCount - 3) || (row >= gridCount - 3 && col < 3)) {
-        continue
+  try {
+    const verificationUrl = `https://institute-pluse.vercel.app/verify/${docId}`
+    const qrDataUrl = await QRCode.toDataURL(verificationUrl, {
+      margin: 1,
+      width: 150,
+      color: {
+        dark: '#000000',
+        light: '#ffffff'
       }
-      const fill = ((row * 7 + col * 13 + docId.charCodeAt(row % docId.length)) % 5) < 3
-      if (fill) {
-        doc.rect(qrX + 1 + col * cellSize, qrY + 1 + row * cellSize, cellSize - 0.2, cellSize - 0.2, 'F')
-      }
-    }
+    })
+    doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize)
+  } catch (err) {
+    console.error('Failed to generate verification QR code:', err)
   }
 
   const checksum = docId.split('').reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) % 1000000007, 0).toString(16).toUpperCase()
@@ -639,7 +626,11 @@ function drawFooter(doc, docId, dateStr, studentName, colors) {
  */
 export function exportTablePDF({ title, subtitle, headers, rows, filename, summaryCards, studentName, theme = 'cyber' }) {
   const colors = getThemeColors(theme)
-  const doc = new jsPDF({ orientation: rows[0]?.length > 5 ? 'landscape' : 'portrait' })
+  const doc = new jsPDF({ 
+    orientation: rows[0]?.length > 5 ? 'landscape' : 'portrait',
+    unit: 'mm',
+    format: 'a4'
+  })
   const docId = generateDossierId()
   const dateStr = new Date().toLocaleString()
 
@@ -690,6 +681,9 @@ export function exportTablePDF({ title, subtitle, headers, rows, filename, summa
     },
     margin: { top: 40, left: 14, right: 14, bottom: 22 },
     willDrawCell: (data) => {
+      // Force 100% opacity for cell background drawing
+      data.doc.setGState(new data.doc.GState({ opacity: 1.0 }))
+
       if (data.row.section === 'head') {
         data.cell.styles.fillColor = colors.surface
         data.cell.styles.textColor = colors.secondary
@@ -702,7 +696,10 @@ export function exportTablePDF({ title, subtitle, headers, rows, filename, summa
       }
     },
     didDrawCell: (data) => {
+      // Force 100% opacity for cell overlays and text drawing
+      data.doc.setGState(new data.doc.GState({ opacity: 1.0 }))
       const val = String(data.cell.raw || '').toLowerCase().trim()
+
       // Status pill overlays
       if (['paid', 'preparing', 'pending', 'ready', 'delivered', 'present', 'absent', 'completed', 'active'].includes(val)) {
         const doc = data.doc
@@ -714,13 +711,13 @@ export function exportTablePDF({ title, subtitle, headers, rows, filename, summa
         
         let pillBg, pillText
         if (['paid', 'present', 'completed', 'active'].includes(val)) {
-          pillBg = colors.isDark ? [34/4, 197/4, 94/4] : [220, 252, 231]
+          pillBg = colors.isDark ? [9, 49, 23] : [220, 252, 231]
           pillText = colors.isDark ? colors.accent : [21, 128, 61]
         } else if (['preparing', 'pending'].includes(val)) {
-          pillBg = colors.isDark ? [249/4, 115/4, 22/4] : [255, 235, 219]
+          pillBg = colors.isDark ? [62, 29, 5] : [255, 235, 219]
           pillText = colors.isDark ? [249, 115, 22] : [194, 65, 12]
         } else {
-          pillBg = colors.isDark ? [239/4, 68/4, 68/4] : [254, 226, 226]
+          pillBg = colors.isDark ? [60, 17, 17] : [254, 226, 226]
           pillText = colors.isDark ? [239, 68, 68] : [185, 28, 28]
         }
         
@@ -752,6 +749,7 @@ export function exportTablePDF({ title, subtitle, headers, rows, filename, summa
       }
     },
     didDrawPage: (data) => {
+      doc.setGState(new doc.GState({ opacity: 1.0 }))
       if (data.pageNumber > 1) {
         drawHeader(doc, title, docId, studentName, colors)
       }
@@ -766,7 +764,7 @@ export function exportTablePDF({ title, subtitle, headers, rows, filename, summa
   })
 
   // Verification Page
-  drawVerificationPage(doc, docId, dateStr, studentName, colors)
+  await drawVerificationPage(doc, docId, dateStr, studentName, colors)
 
   // Draw footers on all pages
   drawFooter(doc, docId, dateStr, studentName, colors)
@@ -776,9 +774,13 @@ export function exportTablePDF({ title, subtitle, headers, rows, filename, summa
 /**
  * Export JSON report data as a premium branded PDF
  */
-export function exportReportPDF({ title, subtitle, data, filename, studentName, theme = 'cyber' }) {
+export async function exportReportPDF({ title, subtitle, data, filename, studentName, theme = 'cyber' }) {
   const colors = getThemeColors(theme)
-  const doc = new jsPDF()
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4'
+  })
   const w = doc.internal.pageSize.getWidth()
   const docId = generateDossierId()
   const dateStr = new Date().toLocaleString()
@@ -864,7 +866,7 @@ export function exportReportPDF({ title, subtitle, data, filename, studentName, 
   renderObject(data)
   
   // Verification Page
-  drawVerificationPage(doc, docId, dateStr, studentName, colors)
+  await drawVerificationPage(doc, docId, dateStr, studentName, colors)
 
   // Footers
   drawFooter(doc, docId, dateStr, studentName, colors)
