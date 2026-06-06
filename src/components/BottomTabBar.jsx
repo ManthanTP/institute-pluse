@@ -15,12 +15,16 @@ export default function BottomTabBar() {
   const location = useLocation()
 
   return (
-    <nav className="fixed bottom-0 left-0 w-full px-6 pb-8 pt-2 z-50 pointer-events-none md:hidden">
-      <div className="max-w-md md:max-w-xl mx-auto h-20 bg-slate-900/80 backdrop-blur-2xl border border-white/10 rounded-[32px] shadow-2xl flex items-center justify-around px-4 pointer-events-auto">
+    <nav className="fixed bottom-0 left-0 w-full px-6 pb-8 pt-2 z-40 pointer-events-none lg:hidden">
+      <div className="max-w-lg mx-auto h-20 bg-slate-950/80 backdrop-blur-3xl border border-white/[0.08] rounded-[32px] shadow-[0_-8px_32px_rgba(0,0,0,0.5)] flex items-center justify-around px-4 pointer-events-auto">
         {tabs.map((tab) => {
           const Icon = tab.icon
-          const isActive = location.pathname === tab.path ||
-            (tab.path === '/carbon/log' && location.pathname.startsWith('/carbon'))
+          const isActive = 
+            (tab.path === '/dashboard' && ['/dashboard', '/navigation', '/study-planner', '/lost-found', '/announcements'].includes(location.pathname)) ||
+            (tab.path === '/carbon/log' && location.pathname.startsWith('/carbon')) ||
+            (tab.path === '/events' && location.pathname === '/events') ||
+            (tab.path === '/cafeteria' && location.pathname === '/cafeteria') ||
+            (tab.path === '/profile' && ['/profile', '/attendance', '/leaderboard', '/complaints', '/notifications', '/help'].includes(location.pathname))
 
           return (
             <button

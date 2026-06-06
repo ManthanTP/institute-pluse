@@ -43,6 +43,8 @@ export default function FacultyChallengesPage() {
           return {
             id: c.id,
             title: c.title,
+            description: c.description,
+            instructions: c.instructions,
             category: c.category || 'Sustainability',
             points: c.points_reward,
             participants: count || 0,
@@ -102,7 +104,19 @@ export default function FacultyChallengesPage() {
                           <span className="text-[8px] lg:text-[10px] font-black text-gray-600 uppercase tracking-widest">{challenge.category}</span>
                        </div>
 
-                       <h3 className="text-2xl lg:text-3xl font-black text-white uppercase tracking-tighter italic mb-4 lg:mb-6 leading-tight">{challenge.title}</h3>
+                        <h3 className="text-2xl lg:text-3xl font-black text-white uppercase tracking-tighter italic mb-2 leading-tight">{challenge.title}</h3>
+                        <p className="text-xs text-gray-400 font-medium mb-4">{challenge.description}</p>
+                        
+                        {challenge.instructions && (
+                          <div className="mb-6 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                            <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-2">Student Instructions</p>
+                            <ul className="list-decimal list-inside space-y-1 text-[11px] text-gray-300 font-medium">
+                              {challenge.instructions.split('\n').filter(Boolean).map((step, idx) => (
+                                <li key={idx} className="leading-relaxed">{step.replace(/^\d+\.\s*/, '')}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                        
                        <div className="grid grid-cols-3 gap-4 py-6 lg:py-8 border-y border-white/5 my-6 lg:my-8">
                           <div className="text-center lg:text-left">
@@ -163,9 +177,10 @@ export default function FacultyChallengesPage() {
                 <form onSubmit={async (e) => {
                   e.preventDefault()
                   const formDataInput = new FormData(e.target)
-                  const payload = {
+                   const payload = {
                     title: formDataInput.get('title'),
                     description: formDataInput.get('description'),
+                    instructions: formDataInput.get('instructions'),
                     category: formData.category,
                     points_reward: Number(formDataInput.get('points')),
                     end_date: new Date(Date.now() + Number(formDataInput.get('duration')) * 86400000).toISOString(),
@@ -188,7 +203,11 @@ export default function FacultyChallengesPage() {
                    </div>
                    <div>
                       <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-2 block">Description</label>
-                      <textarea name="description" required className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white font-medium text-sm outline-none focus:border-orange-500/50" rows="3" />
+                      <textarea name="description" required className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white font-medium text-sm outline-none focus:border-orange-500/50" rows="2" />
+                   </div>
+                   <div>
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-2 block">Student Instructions (Step-by-step)</label>
+                      <textarea name="instructions" required placeholder="e.g.&#10;1. Log your vegetarian lunch&#10;2. Offset at least 1.5kg CO2&#10;3. Earn 100 Eco XP" className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white font-medium text-sm outline-none focus:border-orange-500/50" rows="3" />
                    </div>
                    <div className="grid grid-cols-2 gap-4">
                        <div>

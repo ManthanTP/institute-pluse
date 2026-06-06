@@ -10,6 +10,8 @@ import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
 import AdminLoginPage from './pages/auth/AdminLoginPage'
 import { ProtectedRoute, AdminRoute, FacultyRoute, PublicRoute, OwnerRoute } from './components/RouteGuards'
+import StudentLayout from './components/StudentLayout'
+import AdminLayout from './pages/admin/AdminLayout'
 
 // ─── STUDENT PAGES ──────────────────────────────────────────────
 const DashboardPage = lazy(() => import('./pages/student/DashboardPage'))
@@ -28,6 +30,9 @@ const NavigationPage = lazy(() => import('./pages/student/NavigationPage'))
 const ProfilePage = lazy(() => import('./pages/student/ProfilePage'))
 const NotificationsPage = lazy(() => import('./pages/student/NotificationsPage'))
 const HelpPage = lazy(() => import('./pages/shared/HelpPage'))
+const NotFoundPage = lazy(() => import('./pages/shared/NotFoundPage'))
+const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'))
+const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'))
 
 // ─── FACULTY PAGES ──────────────────────────────────────────────
 const FacultyDashboard = lazy(() => import('./pages/faculty/FacultyDashboard'))
@@ -38,7 +43,7 @@ const FacultyStubPage = lazy(() => import('./pages/faculty/FacultyStubPage'))
 const FacultyParticipantsPage = lazy(() => import('./pages/faculty/FacultyParticipantsPage'))
 const FacultyAnalyticsPage = lazy(() => import('./pages/faculty/FacultyAnalyticsPage'))
 const FacultySustainabilityPage = lazy(() => import('./pages/faculty/FacultySustainabilityPage'))
-const FacultyChallengesPage = lazy(() => import('./pages/faculty/FacultyChallengesPage'))
+const FacultyResourceHubPage = lazy(() => import('./pages/faculty/FacultyResourceHubPage'))
 const FacultyComplaintsPage = lazy(() => import('./pages/faculty/FacultyComplaintsPage'))
 const FacultyAnnouncementsPage = lazy(() => import('./pages/faculty/FacultyAnnouncementsPage'))
 const FacultyNotificationsPage = lazy(() => import('./pages/faculty/FacultyNotificationsPage'))
@@ -64,11 +69,11 @@ const AdminNavigationPage = lazy(() => import('./pages/admin/AdminNavigationPage
 const AdminProfilePage = lazy(() => import('./pages/admin/AdminProfilePage'))
 const AdminHelpPage = lazy(() => import('./pages/admin/AdminHelpPage'))
 const AdminStubPage = lazy(() => import('./pages/admin/AdminStubPage'))
+const AdminLandingPage = lazy(() => import('./pages/admin/AdminLandingPage'))
 
 
 // ─── LAYOUTS ────────────────────────────────────────────────────
-const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
-const StudentLayout = lazy(() => import('./components/StudentLayout'))
+// Eagerly loaded to prevent unmounting during route transitions
 
 function PageLoader() {
   return (
@@ -150,6 +155,8 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+          <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/12345678/admin/login" element={<AdminLoginPage />} />
 
           {/* ══════════ STUDENT ══════════ */}
@@ -176,7 +183,7 @@ function App() {
            <Route path="/faculty/participants" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyParticipantsPage /></Suspense></FacultyRoute>} />
            <Route path="/faculty/analytics" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyAnalyticsPage /></Suspense></FacultyRoute>} />
            <Route path="/faculty/sustainability" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultySustainabilityPage /></Suspense></FacultyRoute>} />
-           <Route path="/faculty/challenges" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyChallengesPage /></Suspense></FacultyRoute>} />
+           <Route path="/faculty/resources" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyResourceHubPage /></Suspense></FacultyRoute>} />
            <Route path="/faculty/cafeteria" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyCafeteriaPage /></Suspense></FacultyRoute>} />
            <Route path="/faculty/attendance" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyAttendancePage /></Suspense></FacultyRoute>} />
            <Route path="/faculty/complaints" element={<FacultyRoute><Suspense fallback={<PageLoader />}><FacultyComplaintsPage /></Suspense></FacultyRoute>} />
@@ -204,16 +211,17 @@ function App() {
            <Route path="/12345678/admin/lost-found" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminLostFoundPage /></Suspense></AdminRoute>} />
            <Route path="/12345678/admin/broadcast" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminBroadcastPage /></Suspense></AdminRoute>} />
            <Route path="/12345678/admin/notifications" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminNotificationsPage /></Suspense></AdminRoute>} />
-           <Route path="/12345678/admin/settings" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminSettingsPage /></Suspense></AdminRoute>} />
+
            <Route path="/12345678/admin/audit" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminAuditPage /></Suspense></AdminRoute>} />
            <Route path="/12345678/admin/navigation" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminNavigationPage /></Suspense></AdminRoute>} />
            <Route path="/12345678/admin/profile" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminProfilePage /></Suspense></AdminRoute>} />
            <Route path="/12345678/admin/help" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminHelpPage /></Suspense></AdminRoute>} />
+           <Route path="/12345678/admin/landing-editor" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminLandingPage /></Suspense></AdminRoute>} />
            <Route path="/12345678/admin" element={<Navigate to="/12345678/admin/dashboard" replace />} />
 
 
-          {/* CATCH ALL */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* CATCH ALL — Themed 404 */}
+          <Route path="*" element={<Suspense fallback={<PageLoader />}><NotFoundPage /></Suspense>} />
         </Routes>
       </Suspense>
     </BrowserRouter>

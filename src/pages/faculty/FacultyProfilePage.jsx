@@ -11,14 +11,9 @@ export default function FacultyProfilePage() {
   const { profile, signOut, fetchProfile } = useAuthStore()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
-  const [changingPw, setChangingPw] = useState(false)
   const [formData, setFormData] = useState({
     full_name: '',
     phone: '',
-  })
-  const [passwordForm, setPasswordForm] = useState({
-    newPassword: '',
-    confirmPassword: ''
   })
 
   useEffect(() => {
@@ -55,28 +50,18 @@ export default function FacultyProfilePage() {
     }
   }
 
-  async function handlePasswordChange() {
-    if (passwordForm.newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters')
-      return
-    }
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast.error('Passwords do not match')
-      return
-    }
 
+
+  async function handleResetPasswordEmail() {
+    if (!profile?.email) return
     try {
-      setChangingPw(true)
-      const { error } = await supabase.auth.updateUser({
-        password: passwordForm.newPassword
+      const { error } = await supabase.auth.resetPasswordForEmail(profile.email, {
+        redirectTo: `${window.location.origin}/reset-password`
       })
       if (error) throw error
-      toast.success('Password Changed Successfully ✓')
-      setPasswordForm({ newPassword: '', confirmPassword: '' })
+      toast.success('Password reset link sent to your email!')
     } catch (err) {
-      toast.error('Failed: ' + err.message)
-    } finally {
-      setChangingPw(false)
+      toast.error(err.message || 'Reset request failed')
     }
   }
 
@@ -161,53 +146,23 @@ export default function FacultyProfilePage() {
                     </div>
                  </div>
 
-                 <button 
-                   onClick={handleUpdate}
-                   disabled={loading}
-                   className="w-full lg:w-auto px-8 py-3.5 bg-blue-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                 >
-                    {loading ? <><div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> Saving...</> : <><Save size={14} /> Update Profile</>}
-                 </button>
-              </div>
-
-              {/* PASSWORD CHANGE */}
-              <div className="bg-[#161b22] border border-white/10 rounded-2xl lg:rounded-3xl p-5 lg:p-8 space-y-6">
-                 <div className="flex items-center gap-3 border-b border-white/5 pb-4">
-                    <Lock size={16} className="text-orange-500" />
-                    <h4 className="text-[9px] lg:text-[10px] font-black text-white uppercase tracking-[0.3em]">Change Password</h4>
-                 </div>
-
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div className="space-y-2">
-                       <label className="text-[8px] font-black text-gray-500 uppercase tracking-widest ml-1">New Password</label>
-                       <input 
-                         type="password" 
-                         value={passwordForm.newPassword}
-                         onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
-                         placeholder="Min 6 characters"
-                         className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 px-4 text-sm text-white focus:outline-none focus:border-orange-500 transition-all placeholder:text-gray-600"
-                       />
-                    </div>
-                    <div className="space-y-2">
-                       <label className="text-[8px] font-black text-gray-500 uppercase tracking-widest ml-1">Confirm Password</label>
-                       <input 
-                         type="password" 
-                         value={passwordForm.confirmPassword}
-                         onChange={(e) => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
-                         placeholder="Repeat password"
-                         className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 px-4 text-sm text-white focus:outline-none focus:border-orange-500 transition-all placeholder:text-gray-600"
-                       />
-                    </div>
-                 </div>
-
-                 <button 
-                   onClick={handlePasswordChange}
-                   disabled={changingPw || !passwordForm.newPassword}
-                   className="w-full lg:w-auto px-8 py-3.5 bg-orange-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-orange-600/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
-                 >
-                    {changingPw ? 'Changing...' : 'Change Password'}
-                 </button>
-              </div>
+                  <div className="flex flex-wrap gap-3">
+                    <button 
+                      onClick={handleUpdate}
+                      disabled={loading}
+                      className="px-8 py-3.5 bg-blue-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                       {loading ? <><div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> Saving...</> : <><Save size={14} /> Update Profile</>}
+                    </button>
+                    <button 
+                     onClick={handleResetPasswordEmail}
+                     type="button"
+                     className="px-8 py-3.5 bg-white/5 border border-white/10 text-gray-400 hover:text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-white/[0.08] transition-all flex items-center justify-center gap-2"
+                   >
+                      <Key size={14} /> Send Password Reset Link
+                   </button>
+                  </div>
+               </div>
            </div>
 
            {/* SIDEBAR */}

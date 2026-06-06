@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { createPortal } from 'react-dom'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
-import BottomTabBar from '../../components/BottomTabBar'
 
 export default function LostFoundPage() {
   const { profile } = useAuthStore()
@@ -96,6 +95,20 @@ export default function LostFoundPage() {
     return matchesFilter && matchesSearch
   })
 
+  if (loading) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center bg-[#020617]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-16 h-16">
+            <div className="absolute inset-0 border-4 border-orange-500/20 rounded-full animate-pulse" />
+            <div className="absolute inset-0 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+          <p className="text-[10px] font-black text-white uppercase tracking-[0.3em] animate-pulse">Syncing Asset Registry...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-[100dvh] bg-[#0a0c10] text-white pb-32 relative overflow-x-hidden">
       {/* Background Glows */}
@@ -111,22 +124,24 @@ export default function LostFoundPage() {
             <motion.button 
               whileTap={{ scale: 0.9 }}
               onClick={() => navigate('/dashboard')}
-              className="w-11 h-11 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-xl"
+              className="hidden lg:flex w-10 h-10 md:w-11 md:h-11 rounded-xl md:rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-xl shrink-0"
             >
-              <ChevronLeft size={22} />
+              <ChevronLeft size={20} className="md:w-6 md:h-6" />
             </motion.button>
             <div>
-              <h1 className="text-xl font-black uppercase tracking-tighter">Lost & Found</h1>
+              <h1 className="text-lg md:text-xl font-black uppercase tracking-tighter">Lost & Found</h1>
               <p className="text-[8px] font-black text-orange-500 uppercase tracking-[0.3em]">Asset Recovery Hub</p>
             </div>
           </div>
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setIsAdding(true)}
-            className="h-11 px-5 rounded-2xl bg-orange-600 text-white flex items-center gap-2 shadow-[0_0_20px_rgba(234,88,12,0.3)] text-[9px] font-black uppercase tracking-widest"
-          >
-             <Plus size={16} /> Report
-          </motion.button>
+          <div className="flex-1 flex justify-end lg:flex-none">
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setIsAdding(true)}
+              className="h-11 px-5 rounded-2xl bg-orange-600 text-white flex items-center gap-2 shadow-[0_0_20px_rgba(234,88,12,0.3)] text-[9px] font-black uppercase tracking-widest"
+            >
+               <Plus size={16} /> Report
+            </motion.button>
+          </div>
         </div>
 
         {/* SEARCH BAR */}
@@ -218,8 +233,6 @@ export default function LostFoundPage() {
           ))}
         </div>
       </div>
-
-      <BottomTabBar />
 
       {/* REPORT MODAL (Portal) */}
       {createPortal(

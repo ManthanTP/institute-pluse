@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
 
 import { useAuthStore } from '../../store/index'
+import { exportTablePDF } from '../../lib/pdfExport'
 
 const CATEGORIES = ['All', 'Breakfast', 'Lunch', 'Snacks', 'Beverages', 'Dinner']
 
@@ -121,6 +122,46 @@ export default function AdminCafeteriaPage() {
     revenue: orders.reduce((sum, o) => sum + (Number(o.total_price) || 0), 0)
   }
 
+  function downloadOrdersPDF() {
+    if (orders.length === 0) {
+      toast.error('No orders to download')
+      return
+    }
+
+    const headers = ['Token', 'Customer', 'Role', 'Items', 'Total Price', 'Carbon Impact', 'Status', 'Payment', 'Date']
+    const rows = orders.map(order => {
+      const customer = order.profiles?.full_name || 'Guest'
+      const role = order.profiles?.role || 'Guest'
+      const itemsStr = order.items?.map(it => `${it.quantity}x ${it.name}`).join(', ')
+      const date = new Date(order.created_at).toLocaleDateString()
+      
+      return [
+        order.token_number || order.id.slice(0, 4).toUpperCase(),
+        customer,
+        role,
+        itemsStr || 'N/A',
+        `₹${order.total_price}`,
+        `${order.total_carbon_kg || 0} kg CO2`,
+        order.status,
+        `${order.payment_status} (${order.payment_method || 'N/A'})`,
+        date
+      ]
+    })
+
+    exportTablePDF({
+      title: "Cafeteria Operations Report",
+      subtitle: `CAMPUS OPERATIONAL OVERVIEW • ${orders.length} LOGGED ORDERS`,
+      headers,
+      rows,
+      filename: `admin_cafeteria_orders_${new Date().getTime()}`,
+      summaryCards: [
+        { label: "TOTAL ORDERS", value: stats.total.toString() },
+        { label: "TOTAL REVENUE", value: `₹${stats.revenue}` }
+      ]
+    })
+    toast.success('Dining Operations PDF generated ✓')
+  }
+
   return (
     <AdminLayout>
       <div className="space-y-10">
@@ -158,19 +199,27 @@ export default function AdminCafeteriaPage() {
             </div>
             <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Dining Control</h2>
           </div>
-          <div className="flex bg-white/5 border border-white/10 p-1.5 rounded-2xl backdrop-blur-xl">
+          <div className="flex items-center gap-3">
              <button 
-               onClick={() => setActiveTab('orders')}
-               className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'orders' ? 'bg-white text-slate-950 shadow-xl' : 'text-gray-500 hover:text-white'}`}
+               onClick={downloadOrdersPDF}
+               className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest transition-colors shadow-lg shadow-emerald-600/10"
              >
-                Order Stream
+                Download PDF
              </button>
-             <button 
-               onClick={() => setActiveTab('menu')}
-               className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'menu' ? 'bg-white text-slate-950 shadow-xl' : 'text-gray-500 hover:text-white'}`}
-             >
-                Menu Registry
-             </button>
+             <div className="flex bg-white/5 border border-white/10 p-1.5 rounded-2xl backdrop-blur-xl">
+                <button 
+                  onClick={() => setActiveTab('orders')}
+                  className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'orders' ? 'bg-white text-slate-950 shadow-xl' : 'text-gray-500 hover:text-white'}`}
+                >
+                   Order Stream
+                </button>
+                <button 
+                  onClick={() => setActiveTab('menu')}
+                  className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'menu' ? 'bg-white text-slate-950 shadow-xl' : 'text-gray-500 hover:text-white'}`}
+                >
+                   Menu Registry
+                </button>
+             </div>
           </div>
         </div>
 

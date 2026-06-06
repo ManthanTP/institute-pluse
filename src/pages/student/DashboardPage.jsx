@@ -26,12 +26,25 @@ export default function DashboardPage() {
   const { profile } = useAuthStore()
   const { todayLog, fetchTodayLog } = useCarbonStore()
   const [activeSession, setActiveSession] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!profile?.id) return
 
-    fetchTodayLog(profile.id)
-    fetchActiveSession()
+    async function loadDashboardData() {
+      try {
+        await Promise.all([
+          fetchTodayLog(profile.id),
+          fetchActiveSession()
+        ])
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadDashboardData()
 
     // Real-time profile updates
     const profileSub = supabase
@@ -80,6 +93,20 @@ export default function DashboardPage() {
   const hasLogged = !!todayLog
   const ecoScore = todayLog?.eco_score || 0
 
+  if (loading || !profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-16 h-16">
+            <div className="absolute inset-0 border-4 border-green-500/20 rounded-full" />
+            <div className="absolute inset-0 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+          <p className="text-[10px] font-black text-white uppercase tracking-[0.3em] animate-pulse">Syncing Pulse Core...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-[100dvh] bg-slate-950 pb-28 relative overflow-hidden">
       {/* Background Mesh */}
@@ -88,7 +115,7 @@ export default function DashboardPage() {
         <div className="absolute bottom-0 left-0 w-[50%] h-[40%] rounded-full bg-blue-500/5 blur-[120px]" />
       </div>
 
-      <div className="relative z-10 px-6 pt-6">
+      <div className="relative z-10 max-w-5xl mx-auto px-6 pt-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
             <div>
@@ -97,7 +124,7 @@ export default function DashboardPage() {
             </div>
            <button 
              onClick={() => navigate('/profile')}
-             className="p-3 rounded-2xl bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-colors"
+             className="p-3 rounded-2xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all active:scale-95"
            >
               <User size={20} />
            </button>
@@ -137,26 +164,55 @@ export default function DashboardPage() {
            )}
         </AnimatePresence>
 
-        {/* HERO STATUS CARD */}
+        {/* STREAK BANNER */}
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative overflow-hidden rounded-[32px] p-6 bg-gradient-to-r from-orange-600/10 to-red-600/10 border border-orange-500/20 shadow-[0_0_20px_rgba(249,115,22,0.08)] flex items-center justify-between mb-6"
+        >
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_120%,rgba(249,115,22,0.15),transparent_60%)]" />
+          <div className="flex items-center gap-4 relative z-10">
+            <motion.div 
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+              className="w-12 h-12 rounded-2xl bg-orange-500/20 border border-orange-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(249,115,22,0.3)]"
+            >
+              <Flame size={24} className="text-orange-500 fill-orange-500" />
+            </motion.div>
+            <div>
+              <h3 className="text-xs font-black text-white uppercase tracking-wider">Active Logging Streak</h3>
+              <p className="text-[9px] text-orange-400 font-bold uppercase tracking-wider mt-0.5">Keep uploading daily to boost Eco XP</p>
+            </div>
+          </div>
+          <div className="text-right relative z-10">
+            <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500 drop-shadow-[0_0_10px_rgba(249,115,22,0.2)]">
+              {profile?.logging_streak || 0} Days
+            </span>
+          </div>
+        </motion.div>
 
+        {/* HERO STATUS CARD */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="relative overflow-hidden rounded-[40px] p-8 mb-10 border border-white/5 shadow-2xl backdrop-blur-3xl"
           style={{
             background: hasLogged
-              ? 'linear-gradient(135deg, rgba(5, 150, 105, 0.4), rgba(6, 78, 59, 0.6))'
-              : 'linear-gradient(135deg, rgba(30, 41, 59, 0.4), rgba(15, 23, 42, 0.6))',
+              ? 'linear-gradient(135deg, rgba(5, 150, 105, 0.2), rgba(6, 78, 59, 0.4))'
+              : 'linear-gradient(135deg, rgba(30, 41, 59, 0.2), rgba(15, 23, 42, 0.4))',
           }}
         >
-          <div className="flex items-center justify-between gap-6 relative z-10">
-            <div className="flex-1">
+          {/* Inner highlights */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.03),transparent_50%)]" />
+          
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6 relative z-10">
+            <div className="flex-1 w-full sm:w-auto">
               <span className={`inline-block px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.2em] mb-4 ${
                 hasLogged ? 'bg-green-500/20 text-green-400' : 'bg-white/10 text-gray-400'
               }`}>
                 {hasLogged ? 'Protocol Active' : 'System Ready'}
               </span>
-              <h2 className="text-4xl font-black text-white mb-2 leading-none tracking-tighter flex items-center gap-4">
+              <h2 className="text-4xl font-black text-white mb-2 leading-none tracking-tighter flex items-center gap-3">
                 {ecoScore}% 
                 <div className="group relative">
                    <Info size={14} className="text-gray-500 hover:text-white cursor-help transition-colors" />
@@ -167,7 +223,6 @@ export default function DashboardPage() {
                       </p>
                    </div>
                 </div>
-                <span className="text-sm font-black text-gray-500 uppercase tracking-widest ml-2">Efficiency</span>
               </h2>
               <p className="text-[10px] mb-8 leading-relaxed font-black text-gray-500 uppercase tracking-[0.1em]">
                 {hasLogged 
@@ -179,7 +234,7 @@ export default function DashboardPage() {
                 onClick={() => navigate(hasLogged ? '/carbon/history' : '/carbon/log')}
                 className={`w-full py-4 rounded-2xl font-black text-[9px] uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 ${
                   hasLogged 
-                    ? 'bg-white text-slate-900 shadow-xl shadow-white/5' 
+                    ? 'bg-white text-slate-900 shadow-xl shadow-white/5 hover:bg-slate-100' 
                     : 'bg-green-600 text-white shadow-xl shadow-green-600/20 hover:bg-green-500'
                 }`}
               >
@@ -187,17 +242,38 @@ export default function DashboardPage() {
               </motion.button>
             </div>
             
-            <div className="relative">
-               <div className="w-24 h-24 rounded-full border-4 border-white/5 flex items-center justify-center relative overflow-hidden">
-                  <div 
-                    className="absolute bottom-0 left-0 right-0 bg-green-500/20 transition-all duration-1000" 
-                    style={{ height: `${ecoScore}%` }} 
-                  />
-                  <Leaf size={24} className={hasLogged ? 'text-green-500' : 'text-gray-700'} />
-               </div>
-               {hasLogged && (
-                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900 animate-pulse" />
-               )}
+            {/* SVG Conic Progress Ring */}
+            <div className="relative flex items-center justify-center w-28 h-28">
+              <svg className="w-full h-full transform -rotate-90">
+                <circle
+                  cx="56"
+                  cy="56"
+                  r="46"
+                  className="stroke-white/5"
+                  strokeWidth="8"
+                  fill="transparent"
+                />
+                <motion.circle
+                  cx="56"
+                  cy="56"
+                  r="46"
+                  stroke={hasLogged ? '#22c55e' : '#475569'}
+                  strokeWidth="8"
+                  fill="transparent"
+                  strokeDasharray={2 * Math.PI * 46}
+                  initial={{ strokeDashoffset: 2 * Math.PI * 46 }}
+                  animate={{ strokeDashoffset: 2 * Math.PI * 46 * (1 - ecoScore / 100) }}
+                  transition={{ duration: 1.2, ease: "easeOut" }}
+                  strokeLinecap="round"
+                  className={hasLogged ? "drop-shadow-[0_0_8px_rgba(34,197,94,0.5)]" : ""}
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <Leaf size={24} className={hasLogged ? 'text-green-400 drop-shadow-[0_0_10px_rgba(34,197,94,0.4)]' : 'text-gray-600'} />
+                {hasLogged && (
+                  <span className="text-[10px] font-black text-green-400 mt-1 uppercase tracking-widest">{ecoScore}%</span>
+                )}
+              </div>
             </div>
           </div>
         </motion.div>
@@ -215,9 +291,9 @@ export default function DashboardPage() {
                initial={{ opacity: 0, y: 10 }}
                animate={{ opacity: 1, y: 0 }}
                transition={{ delay: i * 0.05 }}
-               className="bg-white/5 border border-white/10 rounded-[32px] p-6 backdrop-blur-xl"
+               className="bg-white/5 border border-white/10 rounded-[32px] p-6 backdrop-blur-xl hover:bg-white/[0.08] hover:border-white/20 transition-all duration-300 group"
              >
-                <div className={`w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center ${stat.color} mb-3`}>
+                <div className={`w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center ${stat.color} mb-3 group-hover:scale-110 transition-transform`}>
                    <stat.icon size={14} />
                 </div>
                 <p className="text-lg font-black text-white leading-none mb-1 truncate">{stat.val}</p>
@@ -233,23 +309,51 @@ export default function DashboardPage() {
               <div className="flex-1 h-[1px] bg-white/5" />
            </div>
            
-           <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {MODULE_TILES.map((node, i) => (
-                <motion.button
-                  key={node.path}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => navigate(node.path)}
-                  className="flex flex-col items-center gap-3 p-4 rounded-[28px] bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 transition-all group"
-                >
-                   <div 
-                     className="w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110"
-                     style={{ backgroundColor: `${node.color}15`, color: node.color, border: `1px solid ${node.color}25` }}
-                   >
-                      <node.icon size={20} />
-                   </div>
-                   <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest text-center">{node.label}</span>
-                </motion.button>
-              ))}
+           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {MODULE_TILES.map((node, i) => {
+                const isFeatured = ['Carbon Log', 'Attendance', 'Cafeteria'].includes(node.label);
+                const subLabel = 
+                  node.label === 'Carbon Log' ? 'Track daily offset & footprints' :
+                  node.label === 'Attendance' ? 'Log class presence & logs' :
+                  node.label === 'Cafeteria' ? 'Pre-order food & track status' : '';
+
+                return (
+                  <motion.button
+                    key={node.path}
+                    whileHover={{ y: -4 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => navigate(node.path)}
+                    className={`relative overflow-hidden rounded-[28px] bg-white/[0.03] backdrop-blur-xl border border-white/10 hover:bg-white/[0.08] hover:border-white/20 transition-all duration-300 p-6 flex text-left ${
+                      isFeatured 
+                        ? 'col-span-2 flex-row items-center justify-between gap-4 shadow-[0_4px_20px_rgba(255,255,255,0.02)]' 
+                        : 'col-span-1 flex-col items-start justify-between gap-6 min-h-[140px]'
+                    }`}
+                  >
+                    <div className={`flex ${isFeatured ? 'flex-row items-center gap-4' : 'flex-col gap-4'}`}>
+                      <div 
+                        className="w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]"
+                        style={{ 
+                          backgroundColor: `${node.color}15`, 
+                          color: node.color, 
+                          border: `1px solid ${node.color}25`,
+                          boxShadow: `0 0 15px ${node.color}15`
+                        }}
+                      >
+                         <node.icon size={22} />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-black text-white uppercase tracking-wider block">{node.label}</span>
+                        {isFeatured && (
+                          <span className="text-[8px] text-gray-500 font-bold uppercase tracking-wider block mt-1">{subLabel}</span>
+                        )}
+                      </div>
+                    </div>
+                    {isFeatured && (
+                      <ChevronRight size={18} className="text-gray-500 group-hover:text-white transition-colors" />
+                    )}
+                  </motion.button>
+                );
+              })}
            </div>
         </section>
 

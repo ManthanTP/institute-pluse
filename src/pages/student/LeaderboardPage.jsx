@@ -51,6 +51,20 @@ export default function LeaderboardPage() {
     l.full_name.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  if (loading) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center bg-[#020617]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-16 h-16">
+            <div className="absolute inset-0 border-4 border-yellow-500/20 rounded-full animate-pulse" />
+            <div className="absolute inset-0 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+          <p className="text-[10px] font-black text-white uppercase tracking-[0.3em] animate-pulse">Calculating Hierarchy...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-[100dvh] bg-[#020617] text-white pb-32 relative overflow-x-hidden">
       {/* Background Glows */}
@@ -62,17 +76,17 @@ export default function LeaderboardPage() {
       <div className="relative z-10 px-6 pt-8">
         {/* TOP BAR */}
         <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 lg:gap-6">
             <motion.button 
               whileTap={{ scale: 0.9 }}
               onClick={() => navigate(-1)}
-              className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-xl"
+              className="hidden lg:flex w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-xl"
             >
-              <ChevronLeft size={24} />
+              <ChevronLeft size={20} className="md:w-6 md:h-6" />
             </motion.button>
-            <h1 className="text-2xl font-black uppercase tracking-tighter italic">Ranking</h1>
+            <h1 className="text-xl md:text-2xl font-black uppercase tracking-tighter italic">Ranking</h1>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-yellow-600/10 border border-yellow-500/20 flex items-center justify-center text-yellow-500">
+          <div className="w-12 h-12 rounded-2xl bg-yellow-600/10 border border-yellow-500/20 flex items-center justify-center text-yellow-500 ml-auto lg:ml-0">
              <Trophy size={24} className="animate-pulse" />
           </div>
         </div>
@@ -81,7 +95,7 @@ export default function LeaderboardPage() {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-yellow-600 to-orange-700 rounded-[40px] p-8 mb-10 shadow-[0_20px_40px_rgba(202,138,4,0.2)] relative overflow-hidden group"
+          className="bg-gradient-to-br from-yellow-600 to-orange-700 rounded-2xl md:rounded-[40px] p-5 md:p-8 mb-6 md:mb-10 shadow-[0_20px_40px_rgba(202,138,4,0.2)] relative overflow-hidden group"
         >
            <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12 group-hover:rotate-0 transition-transform duration-700">
               <Award size={120} />
@@ -89,7 +103,7 @@ export default function LeaderboardPage() {
            <div className="relative z-10">
               <p className="text-[10px] font-black uppercase tracking-[0.3em] mb-2 opacity-80">Your Pulse Rank</p>
               <div className="flex items-baseline gap-3 mb-6">
-                 <h2 className="text-5xl font-black tracking-tighter italic">#{userRank || '--'}</h2>
+                 <h2 className="text-4xl md:text-5xl font-black tracking-tighter italic">#{userRank || '--'}</h2>
                  <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Global Position</span>
               </div>
               <div className="flex items-center gap-6 pt-6 border-t border-white/10">
@@ -107,12 +121,12 @@ export default function LeaderboardPage() {
         </motion.div>
 
         {/* TABS */}
-        <div className="flex gap-2 p-1.5 bg-white/5 border border-white/10 rounded-[32px] mb-10">
+        <div className="flex gap-2 p-1 bg-white/5 border border-white/10 rounded-2xl md:rounded-[32px] mb-6 md:mb-10">
           {TABS.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-4 rounded-[24px] flex items-center justify-center gap-2 transition-all ${
+              className={`flex-1 py-3 md:py-4 rounded-xl md:rounded-[24px] flex items-center justify-center gap-2 transition-all ${
                 activeTab === tab.id 
                   ? 'bg-white text-black shadow-xl font-black' 
                   : 'text-gray-500 font-bold hover:text-white'
@@ -137,7 +151,7 @@ export default function LeaderboardPage() {
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.05 }}
-              className={`bg-[#161b22]/80 border border-white/5 rounded-[28px] p-5 backdrop-blur-2xl flex items-center gap-5 group transition-all ${leader.id === profile?.id ? 'ring-2 ring-yellow-500/50 bg-yellow-500/10' : ''}`}
+              className={`bg-[#161b22]/80 border border-white/5 rounded-2xl md:rounded-[28px] p-4 md:p-5 backdrop-blur-2xl flex items-center gap-4 md:gap-5 group transition-all ${leader.id === profile?.id ? 'ring-2 ring-yellow-500/50 bg-yellow-500/10' : ''}`}
             >
               <div className="w-8 flex justify-center">
                  {i < 3 ? (
@@ -152,7 +166,7 @@ export default function LeaderboardPage() {
                     <span className="text-[11px] font-black text-gray-600 group-hover:text-white transition-colors">{i + 1}</span>
                  )}
               </div>
-              <div className="w-11 h-11 rounded-2xl bg-white/5 flex items-center justify-center text-sm font-black text-white border border-white/10 uppercase shadow-inner">
+              <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl md:rounded-2xl bg-white/5 flex items-center justify-center text-sm font-black text-white border border-white/10 uppercase shadow-inner shrink-0">
                  {leader.full_name[0]}
               </div>
               <div className="flex-1 min-w-0">
@@ -170,31 +184,6 @@ export default function LeaderboardPage() {
           ))}
         </div>
       </div>
-
-      {/* BOTTOM NAV BAR */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-[100] md:hidden">
-        <div className="bg-[#161b22]/90 backdrop-blur-3xl border border-white/10 rounded-[32px] p-4 flex items-center justify-between shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-          <NavIcon icon={Home} label="Home" onClick={() => navigate('/dashboard')} />
-          <NavIcon icon={LayoutGrid} label="Log" onClick={() => navigate('/carbon-log')} />
-          <NavIcon icon={CalendarDays} label="Events" onClick={() => navigate('/events')} />
-          <NavIcon icon={Coffee} label="Cafe" onClick={() => navigate('/cafeteria')} />
-          <NavIcon icon={User} label="Me" onClick={() => navigate('/profile')} />
-        </div>
-      </div>
     </div>
-  )
-}
-
-function NavIcon({ icon: Icon, label, active, onClick }) {
-  return (
-    <button 
-      onClick={onClick}
-      className={`flex flex-col items-center gap-1.5 transition-all relative ${active ? 'text-green-500' : 'text-gray-500 hover:text-white'}`}
-    >
-      <div className={`p-2 rounded-xl transition-all ${active ? 'bg-green-500/10 shadow-[0_0_15px_rgba(34,197,94,0.3)]' : ''}`}>
-        <Icon size={20} strokeWidth={active ? 3 : 2} />
-      </div>
-      <span className={`text-[8px] font-black uppercase tracking-[0.2em] ${active ? 'opacity-100' : 'opacity-40'}`}>{label}</span>
-    </button>
   )
 }

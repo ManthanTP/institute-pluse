@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Eye, EyeOff, Mail, Lock, User, Phone, Building, ArrowRight, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, User, Phone, Building, ArrowRight, CheckCircle2, ShieldCheck, Sparkles, ChevronLeft } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import toast from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -138,6 +138,15 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-[100dvh] bg-slate-950 flex flex-col lg:flex-row overflow-hidden relative">
+      {/* Back Button */}
+      <Link 
+        to="/login" 
+        className="absolute top-6 left-6 z-20 flex items-center justify-center w-10 h-10 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all active:scale-95"
+        title="Go back to Login"
+      >
+        <ChevronLeft size={20} />
+      </Link>
+
       {/* Background decoration */}
       <div className="absolute top-0 right-0 w-[60%] h-[40%] rounded-full bg-green-500/10 blur-[120px] z-0" />
       <div className="absolute bottom-0 left-0 w-[60%] h-[40%] rounded-full bg-blue-500/10 blur-[120px] z-0" />

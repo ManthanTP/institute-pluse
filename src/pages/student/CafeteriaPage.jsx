@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ShoppingCart, Plus, Minus, X, Leaf, Info, Search, UtensilsCrossed, ChevronLeft, Home, LayoutGrid, CalendarDays, Coffee, User, Clock, CheckCircle2, Timer } from 'lucide-react'
+import { ShoppingCart, Plus, Minus, X, Leaf, Info, Search, UtensilsCrossed, ChevronLeft, Home, LayoutGrid, CalendarDays, Coffee, User, Clock, CheckCircle2, Timer, CreditCard } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore, useCartStore } from '../../store/index'
 import { QRCodeSVG } from 'qrcode.react'
@@ -27,7 +27,26 @@ export default function CafeteriaPage() {
 
   useEffect(() => {
     fetchMenu()
-    if (profile?.id) fetchOrders()
+    if (profile?.id) {
+      fetchOrders()
+
+      // Realtime subscription for the student's orders
+      const channel = supabase
+        .channel('student_orders_changes')
+        .on('postgres_changes', { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'orders', 
+          filter: `student_id=eq.${profile.id}` 
+        }, (payload) => {
+          setOrders(curr => curr.map(o => o.id === payload.new.id ? payload.new : o))
+          setSelectedOrder(curr => curr?.id === payload.new.id ? payload.new : curr)
+          toast(`Order status updated to ${payload.new.status}!`, { icon: '🍱' })
+        })
+        .subscribe()
+
+      return () => { supabase.removeChannel(channel) }
+    }
   }, [profile?.id])
 
   async function fetchMenu() {
@@ -62,18 +81,46 @@ export default function CafeteriaPage() {
       items: cart,
       total_price: total,
       total_carbon_kg: totalCarbon,
-      status: 'pending'
+      status: 'pending',
+      payment_status: 'Waiting Payment'
     }
 
     const { data, error } = await supabase.from('orders').insert(orderData).select().single()
 
     if (!error) {
       setOrderSuccess(data)
-      setOrders([data, ...orders])
+      setOrders(prev => [data, ...prev])
       setShowCart(false)
       clearCart()
       toast.success('Fuel Sequence Initiated')
+    } else {
+      toast.error('Transaction Failed')
     }
+  }
+
+  // Helper to get status progress percentage
+  const getStatusProgress = (status) => {
+    switch (status) {
+      case 'pending': return 25
+      case 'preparing': return 50
+      case 'ready': return 75
+      case 'delivered': return 100
+      default: return 0
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center bg-[#020617]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-16 h-16">
+            <div className="absolute inset-0 border-4 border-green-500/20 rounded-full animate-pulse" />
+            <div className="absolute inset-0 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+          <p className="text-[10px] font-black text-white uppercase tracking-[0.3em] animate-pulse">Syncing Cafeteria Hub...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -87,35 +134,37 @@ export default function CafeteriaPage() {
       <div className="relative z-10 px-6 pt-8">
         {/* TOP BAR */}
         <div className="flex items-center justify-between mb-12">
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 lg:gap-6">
             <motion.button 
               whileTap={{ scale: 0.9 }}
               onClick={() => navigate(-1)}
-              className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-xl"
+              className="hidden lg:flex w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-xl"
             >
-              <ChevronLeft size={24} />
+              <ChevronLeft size={20} className="md:w-6 md:h-6" />
             </motion.button>
-            <h1 className="text-2xl font-black uppercase tracking-tighter italic">Cafeteria</h1>
+            <h1 className="text-xl md:text-2xl font-black uppercase tracking-tighter italic">Cafeteria</h1>
           </div>
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setShowCart(true)}
-            className="relative w-12 h-12 rounded-2xl bg-green-600 text-white flex items-center justify-center shadow-[0_0_20px_rgba(34,197,94,0.3)]"
-          >
-             <ShoppingCart size={22} />
-             {cart.length > 0 && (
-               <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-white text-black text-[10px] font-black flex items-center justify-center border-2 border-[#0a0c10]">
-                 {cart.length}
-               </span>
-             )}
-          </motion.button>
+          <div className="flex-1 flex justify-end lg:flex-none">
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setShowCart(true)}
+              className="relative w-12 h-12 rounded-2xl bg-green-600 text-white flex items-center justify-center shadow-[0_0_20px_rgba(34,197,94,0.3)]"
+            >
+               <ShoppingCart size={22} />
+               {cart.length > 0 && (
+                 <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-white text-black text-[10px] font-black flex items-center justify-center border-2 border-[#0a0c10]">
+                   {cart.length}
+                 </span>
+               )}
+            </motion.button>
+          </div>
         </div>
 
         {/* VIEW TOGGLE */}
-        <div className="flex gap-2 p-1.5 bg-white/5 border border-white/10 rounded-[32px] mb-10">
+        <div className="flex gap-2 p-1 bg-white/5 border border-white/10 rounded-2xl md:rounded-[32px] mb-6 md:mb-10">
           <button
             onClick={() => setView('menu')}
-            className={`flex-1 py-4 rounded-[24px] text-[10px] font-black uppercase tracking-widest transition-all ${
+            className={`flex-1 py-3 md:py-4 rounded-xl md:rounded-[24px] text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all ${
               view === 'menu' ? 'bg-white text-black shadow-xl' : 'text-gray-500 hover:text-white'
             }`}
           >
@@ -123,7 +172,7 @@ export default function CafeteriaPage() {
           </button>
           <button
             onClick={() => setView('orders')}
-            className={`flex-1 py-4 rounded-[24px] text-[10px] font-black uppercase tracking-widest transition-all ${
+            className={`flex-1 py-3 md:py-4 rounded-xl md:rounded-[24px] text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all ${
               view === 'orders' ? 'bg-white text-black shadow-xl' : 'text-gray-500 hover:text-white'
             }`}
           >
@@ -134,25 +183,25 @@ export default function CafeteriaPage() {
         {view === 'menu' ? (
           <>
             {/* SEARCH BAR */}
-            <div className="relative mb-10">
-              <div className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-600">
-                <Search size={20} />
+            <div className="relative mb-6 md:mb-10">
+              <div className="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 text-gray-600">
+                <Search size={18} />
               </div>
               <input 
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Search Nutrition Nodes..."
-                className="w-full bg-[#161b22] border border-white/5 rounded-3xl py-6 pl-16 pr-6 text-[11px] font-black text-white uppercase tracking-[0.2em] outline-none shadow-inner"
+                className="w-full bg-[#161b22] border border-white/5 rounded-2xl md:rounded-3xl py-4 md:py-6 pl-12 md:pl-16 pr-4 md:pr-6 text-xs md:text-[11px] font-black text-white uppercase tracking-[0.2em] outline-none shadow-inner"
               />
             </div>
 
             {/* CATEGORY TABS */}
-            <div className="flex gap-3 overflow-x-auto no-scrollbar mb-10 pb-2">
+            <div className="flex gap-2 overflow-x-auto no-scrollbar mb-6 md:mb-10 pb-2">
               {CATEGORIES.map(cat => (
                 <button
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
-                  className={`px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${
+                  className={`px-5 md:px-8 py-2 md:py-3 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${
                     activeCategory === cat 
                       ? 'bg-green-600 border-green-600 text-white shadow-[0_0_20px_rgba(34,197,94,0.3)]' 
                       : 'bg-white/5 border-white/10 text-gray-500'
@@ -171,7 +220,7 @@ export default function CafeteriaPage() {
                     <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest italic">Syncing Nutrient Core...</p>
                 </div>
               ) : filteredMenu.length === 0 ? (
-                <div className="py-20 text-center bg-white/5 border border-white/10 rounded-[40px] backdrop-blur-xl">
+                <div className="py-20 text-center bg-white/5 border border-white/10 rounded-2xl md:rounded-[40px] backdrop-blur-xl">
                   <div className="text-4xl mb-4 opacity-40">🍽️</div>
                   <p className="text-xs font-black text-white uppercase tracking-widest italic">No Nutrient Hubs Found</p>
                 </div>
@@ -181,7 +230,7 @@ export default function CafeteriaPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
-                  className="bg-[#161b22]/80 border border-white/5 rounded-[40px] p-8 backdrop-blur-2xl relative overflow-hidden group"
+                  className="bg-[#161b22]/80 border border-white/5 rounded-2xl md:rounded-[40px] p-5 md:p-8 backdrop-blur-2xl relative overflow-hidden group"
                 >
                   <div className="flex justify-between items-start mb-6">
                     <div className="space-y-1">
@@ -228,7 +277,6 @@ export default function CafeteriaPage() {
                     </div>
                   </div>
 
-                  {/* Decorative Element */}
                   <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity">
                     <UtensilsCrossed size={80} />
                   </div>
@@ -240,7 +288,7 @@ export default function CafeteriaPage() {
           /* ORDERS LOG VIEW */
           <div className="space-y-6">
             {orders.length === 0 ? (
-              <div className="py-32 text-center bg-white/5 border border-white/10 rounded-[48px] backdrop-blur-xl">
+              <div className="py-20 text-center bg-white/5 border border-white/10 rounded-2xl md:rounded-[48px] backdrop-blur-xl">
                  <div className="text-5xl mb-6 opacity-20">📜</div>
                  <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">Registry Empty</h3>
                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">No transaction telemetry found</p>
@@ -252,46 +300,40 @@ export default function CafeteriaPage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.05 }}
                 onClick={() => setSelectedOrder(order)}
-                className="bg-[#161b22]/80 border border-white/5 rounded-[40px] p-8 backdrop-blur-2xl flex items-center justify-between group cursor-pointer hover:bg-white/5 transition-all"
+                className="bg-[#161b22]/80 border border-white/5 rounded-2xl md:rounded-[40px] p-4 md:p-8 backdrop-blur-2xl flex items-center justify-between group cursor-pointer hover:bg-white/5 transition-all"
               >
-                <div className="flex items-center gap-8">
-                  <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border ${
+                <div className="flex items-center gap-4 md:gap-8">
+                  <div className={`w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl flex items-center justify-center border shrink-0 ${
                     order.status === 'delivered' ? 'bg-green-500/10 border-green-500/20 text-green-500' : 'bg-blue-500/10 border-blue-500/20 text-blue-500'
                   }`}>
-                    {order.status === 'delivered' ? <CheckCircle2 size={28} /> : <Timer size={28} className="animate-pulse" />}
+                    {order.status === 'delivered' ? <CheckCircle2 size={22} className="md:w-7 md:h-7" /> : <Timer size={22} className="animate-pulse md:w-7 md:h-7" />}
                   </div>
                   <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest italic">
+                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                      <span className="text-[8px] md:text-[9px] font-black text-gray-600 uppercase tracking-widest italic">
                         {new Date(order.created_at).toLocaleDateString()} • {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
-                      <span className={`px-3 py-1 rounded-full text-[7px] font-black uppercase tracking-widest border ${
+                      <span className={`px-2 py-0.5 rounded-md text-[7px] font-black uppercase tracking-widest border ${
                         order.status === 'delivered' ? 'bg-green-500/10 border-green-500/20 text-green-500' : 'bg-blue-500/10 border-blue-500/20 text-blue-500'
                       }`}>
                         {order.status}
                       </span>
+                      <span className={`px-2 py-0.5 rounded-md text-[7px] font-black uppercase tracking-widest border ${
+                        order.payment_status === 'Paid' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-rose-500/10 border-rose-500/20 text-rose-500'
+                      }`}>
+                        {order.payment_status === 'Paid' ? `Paid (${order.payment_method})` : 'Waiting Payment'}
+                      </span>
                     </div>
-                    <h3 className="text-sm font-black text-white uppercase tracking-tight">
+                    <h3 className="text-xs md:text-sm font-black text-white uppercase tracking-tight">
                       {order.items.length} Nutrient Nodes • ₹{order.total_price}
                     </h3>
                   </div>
                 </div>
-                <Clock size={20} className="text-gray-800 group-hover:text-white transition-colors" />
+                <Clock size={18} className="text-gray-800 group-hover:text-white transition-colors" />
               </motion.div>
             ))}
           </div>
         )}
-      </div>
-
-      {/* BOTTOM NAV BAR */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-[100] md:hidden">
-        <div className="bg-[#161b22]/90 backdrop-blur-3xl border border-white/10 rounded-[32px] p-4 flex items-center justify-between shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-          <NavIcon icon={Home} label="Home" onClick={() => navigate('/dashboard')} />
-          <NavIcon icon={LayoutGrid} label="Log" onClick={() => navigate('/carbon-log')} />
-          <NavIcon icon={CalendarDays} label="Events" onClick={() => navigate('/events')} />
-          <NavIcon icon={Coffee} label="Cafe" active onClick={() => {}} />
-          <NavIcon icon={User} label="Me" onClick={() => navigate('/profile')} />
-        </div>
       </div>
 
       {/* CART PORTAL */}
@@ -329,7 +371,7 @@ export default function CafeteriaPage() {
                    {cart.length === 0 ? (
                       <div className="py-12 text-center opacity-40 italic text-xs font-black uppercase tracking-widest">Cart is empty</div>
                    ) : cart.map(item => (
-                      <div key={item.id} className="flex items-center justify-between bg-white/5 rounded-[28px] p-5 border border-white/5">
+                       <div key={item.id} className="flex items-center justify-between bg-white/5 rounded-[28px] p-5 border border-white/5">
                          <div className="flex-1 min-w-0">
                             <h4 className="text-[13px] font-black text-white uppercase tracking-tight truncate">{item.name}</h4>
                             <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mt-1">₹{item.price} × {item.quantity}</p>
@@ -363,7 +405,7 @@ export default function CafeteriaPage() {
         document.body
       )}
 
-      {/* SUCCESS / DETAILS PORTAL */}
+      {/* SUCCESS / DETAILS PORTAL WITH TIMELINE PROGRESS */}
       {createPortal(
         <AnimatePresence>
           {(orderSuccess || selectedOrder) && (
@@ -375,23 +417,55 @@ export default function CafeteriaPage() {
                />
                <motion.div 
                  initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                 className="relative w-full max-w-sm bg-[#161b22] border border-white/10 rounded-[48px] p-10 text-center shadow-2xl overflow-hidden pointer-events-auto"
+                 className="relative w-full max-w-sm bg-[#161b22] border border-white/10 rounded-[48px] p-10 text-center shadow-2xl overflow-y-auto max-h-[90vh] no-scrollbar pointer-events-auto"
                >
-                  <div className="w-20 h-20 bg-green-600/10 border border-green-500/20 rounded-[28px] flex items-center justify-center text-green-500 mx-auto mb-8">
+                  <div className="w-20 h-20 bg-green-600/10 border border-green-500/20 rounded-[28px] flex items-center justify-center text-green-500 mx-auto mb-6">
                      <UtensilsCrossed size={32} />
                   </div>
-                  <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-4 leading-none">
+                  
+                  <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-2 leading-none">
                     {orderSuccess ? 'Uplink Confirmed' : 'Order Protocol'}
                   </h3>
-                  <p className="text-[11px] font-medium text-gray-500 mb-8 italic">
-                    {orderSuccess ? 'Show this code at the nutrition node.' : `Status: ${selectedOrder.status.toUpperCase()}`}
-                  </p>
+
+                  {/* Payment Status Banner */}
+                  <div className="mb-6">
+                    <span className={`px-4 py-1.5 rounded-2xl text-[9px] font-black uppercase tracking-widest border inline-flex items-center gap-1.5 ${
+                      (orderSuccess || selectedOrder).payment_status === 'Paid'
+                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                        : 'bg-rose-500/10 border-rose-500/20 text-rose-400 animate-pulse'
+                    }`}>
+                      <CreditCard size={10} />
+                      {(orderSuccess || selectedOrder).payment_status === 'Paid'
+                        ? `Paid via ${(orderSuccess || selectedOrder).payment_method}`
+                        : 'Waiting for Payment'}
+                    </span>
+                  </div>
+
+                  {/* Status Progress Stepper */}
+                  <div className="mb-8 px-2">
+                    <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-gray-500 mb-3">
+                      <span>Telemetry Progression</span>
+                      <span className="text-green-500">{(orderSuccess || selectedOrder).status.toUpperCase()}</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mb-4 relative">
+                      <div 
+                        className="h-full bg-gradient-to-r from-orange-500 via-blue-500 to-green-500 rounded-full transition-all duration-500" 
+                        style={{ width: `${getStatusProgress((orderSuccess || selectedOrder).status)}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-[7px] font-bold text-gray-600 uppercase">
+                      <span className={(orderSuccess || selectedOrder).status === 'pending' ? 'text-orange-500 font-black' : ''}>Pending</span>
+                      <span className={(orderSuccess || selectedOrder).status === 'preparing' ? 'text-orange-500 font-black' : ''}>Preparing</span>
+                      <span className={(orderSuccess || selectedOrder).status === 'ready' ? 'text-blue-400 font-black animate-pulse' : ''}>Ready</span>
+                      <span className={(orderSuccess || selectedOrder).status === 'delivered' ? 'text-green-400 font-black' : ''}>Delivered</span>
+                    </div>
+                  </div>
                   
-                  <div className="bg-white rounded-[40px] p-8 mb-8 flex justify-center shadow-[0_0_40px_rgba(255,255,255,0.05)]">
+                  <div className="bg-white rounded-[40px] p-8 mb-6 flex justify-center shadow-[0_0_40px_rgba(255,255,255,0.05)]">
                     <QRCodeSVG value={(orderSuccess || selectedOrder).id} size={180} level="H" />
                   </div>
 
-                  <div className="mb-10 text-left space-y-2">
+                  <div className="mb-8 text-left space-y-2">
                      {(orderSuccess || selectedOrder).items.map((it, idx) => (
                        <div key={idx} className="flex justify-between text-[10px] font-black uppercase tracking-widest text-gray-600">
                           <span>{it.name} x{it.quantity}</span>
@@ -427,16 +501,4 @@ export default function CafeteriaPage() {
   )
 }
 
-function NavIcon({ icon: Icon, label, active, onClick }) {
-  return (
-    <button 
-      onClick={onClick}
-      className={`flex flex-col items-center gap-1.5 transition-all relative ${active ? 'text-green-500' : 'text-gray-500 hover:text-white'}`}
-    >
-      <div className={`p-2 rounded-xl transition-all ${active ? 'bg-green-500/10 shadow-[0_0_15px_rgba(34,197,94,0.3)]' : ''}`}>
-        <Icon size={20} strokeWidth={active ? 3 : 2} />
-      </div>
-      <span className={`text-[8px] font-black uppercase tracking-[0.2em] ${active ? 'opacity-100' : 'opacity-40'}`}>{label}</span>
-    </button>
-  )
-}
+

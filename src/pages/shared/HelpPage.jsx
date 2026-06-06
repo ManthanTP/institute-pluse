@@ -35,6 +35,20 @@ export default function HelpPage() {
     setLoading(false)
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center bg-[#020617]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-16 h-16">
+            <div className="absolute inset-0 border-4 border-blue-500/20 rounded-full animate-pulse" />
+            <div className="absolute inset-0 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+          <p className="text-[10px] font-black text-white uppercase tracking-[0.3em] animate-pulse">Syncing Support Database...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-[100dvh] bg-[#020617] text-white pb-20 relative overflow-hidden">
       {/* Background Mesh */}
@@ -46,7 +60,7 @@ export default function HelpPage() {
       <header className="px-6 py-8 border-b border-white/5 relative z-10 backdrop-blur-xl bg-slate-950/40 flex items-center gap-6">
         <button 
           onClick={() => navigate(-1)}
-          className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400"
+          className={`w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 ${profile?.role === 'student' ? 'hidden lg:flex' : 'flex'}`}
         >
           <ChevronLeft size={24} />
         </button>
@@ -57,11 +71,8 @@ export default function HelpPage() {
       </header>
 
       <main className="px-6 pt-10 relative z-10 max-w-2xl mx-auto">
-        {loading ? (
-          <div className="py-20 flex flex-col items-center justify-center gap-4">
-            <div className="w-10 h-10 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
-            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest italic">Synchronizing Knowledge Base...</p>
-          </div>
+        {false ? (
+          <div />
         ) : (
           <>
             <div className="mb-12">

@@ -229,6 +229,20 @@ export default function AttendancePage() {
 
 
 
+  if (loading) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center bg-[#020617]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-16 h-16">
+            <div className="absolute inset-0 border-4 border-blue-500/20 rounded-full animate-pulse" />
+            <div className="absolute inset-0 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+          <p className="text-[10px] font-black text-white uppercase tracking-[0.3em] animate-pulse">Syncing Registry Core...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-[100dvh] bg-[#020617] text-white pb-32 relative overflow-x-hidden">
       {/* Background Glows */}
@@ -240,17 +254,17 @@ export default function AttendancePage() {
       <div className="relative z-10 px-6 pt-8">
         {/* TOP BAR */}
         <div className="flex items-center justify-between mb-10">
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 lg:gap-6">
             <motion.button 
               whileTap={{ scale: 0.9 }}
               onClick={() => navigate(-1)}
-              className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-xl"
+              className="hidden lg:flex w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-xl"
             >
-              <ChevronLeft size={24} />
+              <ChevronLeft size={20} className="md:w-6 md:h-6" />
             </motion.button>
-            <h1 className="text-2xl font-black uppercase tracking-tighter italic">Registry</h1>
+            <h1 className="text-xl md:text-2xl font-black uppercase tracking-tighter italic">Registry</h1>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 ml-auto lg:ml-0">
              <div className="text-right">
                 <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest leading-none mb-1">Status</p>
                 <p className="text-[10px] font-black text-white uppercase tracking-widest">Authenticated</p>
@@ -287,7 +301,7 @@ export default function AttendancePage() {
            {currentClass ? (
               <motion.div 
                 initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-                className="rounded-[40px] p-8 relative overflow-hidden group shadow-2xl transition-all duration-500 bg-gradient-to-br from-blue-600 to-indigo-700"
+                className="rounded-2xl md:rounded-[40px] p-5 md:p-8 relative overflow-hidden group shadow-2xl transition-all duration-500 bg-gradient-to-br from-blue-600 to-indigo-700"
               >
                  <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform duration-700">
                     <Clock size={160} />
@@ -309,7 +323,7 @@ export default function AttendancePage() {
               </motion.div>
            ) : (
 
-             <div className="bg-[#161b22]/50 border border-white/5 rounded-[40px] p-8 text-center">
+             <div className="bg-[#161b22]/50 border border-white/5 rounded-2xl md:rounded-[40px] p-6 md:p-8 text-center">
                 <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest italic">No Ongoing Protocol Detected</p>
              </div>
            )}
@@ -320,7 +334,7 @@ export default function AttendancePage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className={`relative overflow-hidden rounded-[48px] p-10 border transition-all duration-700 ${
+            className={`relative overflow-hidden rounded-2xl md:rounded-[48px] p-6 md:p-10 border transition-all duration-700 ${
               scanSuccess ? 'bg-green-600/20 border-green-500/30' : 'bg-[#161b22]/80 border-white/5 backdrop-blur-2xl'
             }`}
           >
@@ -329,23 +343,23 @@ export default function AttendancePage() {
                 whileTap={{ scale: 0.9 }}
                 onClick={startScanner}
                 disabled={scanning || currentClass?.status === 'cancelled'}
-                className={`w-28 h-28 rounded-[36px] mb-8 flex items-center justify-center transition-all duration-500 ${
+                className={`w-24 h-24 md:w-28 md:h-28 rounded-2xl md:rounded-[36px] mb-8 flex items-center justify-center transition-all duration-500 ${
                   scanSuccess 
                     ? 'bg-green-600 shadow-[0_0_50px_rgba(34,197,94,0.5)]' 
                     : (currentClass?.status === 'cancelled' ? 'bg-red-500/10 opacity-50 cursor-not-allowed' : 'bg-white/5 border border-white/10 hover:bg-white/10')
                 }`}
               >
                 {scanSuccess ? (
-                  <CheckCircle size={48} className="text-white" />
+                  <CheckCircle size={40} className="text-white" />
                 ) : scanning ? (
-                  <Loader2 size={48} className="text-blue-500 animate-spin" />
+                  <Loader2 size={40} className="text-blue-500 animate-spin" />
                 ) : (
-                  <QrCode size={48} className={currentClass?.status === 'cancelled' ? 'text-gray-700' : 'text-blue-500'} />
+                  <QrCode size={40} className={currentClass?.status === 'cancelled' ? 'text-gray-700' : 'text-blue-500'} />
                 )}
               </motion.button>
               
-              <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-tighter italic">
-                {scanSuccess ? 'Sequence Sent' : currentClass?.status === 'cancelled' ? 'Protocol Offline' : scanning ? 'Decrypting...' : 'Scanner Node'}
+              <h2 className="text-xl md:text-2xl font-black text-white mb-2 uppercase tracking-tighter italic">
+                {scanSuccess ? 'Presence Sent' : currentClass?.status === 'cancelled' ? 'Protocol Offline' : scanning ? 'Decrypting...' : 'Scanner Node'}
               </h2>
               <p className="text-[10px] text-gray-500 font-black tracking-[0.3em] uppercase">
                 {scanSuccess ? 'Awaiting Faculty Verification' : currentClass?.status === 'cancelled' ? 'Class Cancelled by Faculty' : 'Initiate Optical Link'}
@@ -356,13 +370,13 @@ export default function AttendancePage() {
           {!scanning && !scanSuccess && (
              <div className="space-y-4">
                 <div className="relative group">
-                   <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
+                   <div className="absolute inset-y-0 left-0 pl-4 md:pl-6 flex items-center pointer-events-none">
                       <ShieldCheck size={18} className="text-gray-500 group-hover:text-blue-500 transition-colors" />
                    </div>
                    <input 
                      type="text" 
                      placeholder="Enter 6-digit manual code..."
-                     className="w-full pl-16 pr-6 py-6 bg-[#161b22]/50 border border-white/5 rounded-[32px] text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 focus:bg-white/10 transition-all font-black uppercase tracking-[0.2em]"
+                     className="w-full pl-12 md:pl-16 pr-4 md:pr-6 py-4 md:py-6 bg-[#161b22]/50 border border-white/5 rounded-2xl md:rounded-[32px] text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 focus:bg-white/10 transition-all font-black uppercase tracking-[0.2em]"
                      maxLength={6}
                      onKeyDown={(e) => {
                        if (e.key === 'Enter' && e.target.value.length === 6) {
@@ -372,7 +386,7 @@ export default function AttendancePage() {
                      }}
                    />
                 </div>
-                <p className="px-6 text-[8px] text-gray-700 font-black uppercase tracking-[0.4em] text-center">Bypass Scanner? Enter the 6-character protocol code</p>
+                <p className="px-4 md:px-6 text-[8px] text-gray-700 font-black uppercase tracking-[0.4em] text-center">Bypass Scanner? Enter the 6-character protocol code</p>
              </div>
           )}
 
@@ -387,21 +401,21 @@ export default function AttendancePage() {
              >
                 <div className="flex items-center justify-between w-full mb-10">
                    <h3 className="text-xl font-black text-white uppercase tracking-tighter italic">Optical Matrix</h3>
-                   <button onClick={() => setScanning(false)} className="p-4 rounded-2xl bg-white/5 text-gray-500"><X size={20} /></button>
+                   <button onClick={() => setScanning(false)} className="p-3 rounded-xl bg-white/5 text-gray-500"><X size={20} /></button>
                 </div>
-                <div id="reader" className="w-full max-w-sm rounded-[40px] overflow-hidden border-2 border-blue-500/30" />
+                <div id="reader" className="w-full max-w-sm rounded-2xl md:rounded-[40px] overflow-hidden border-2 border-blue-500/30" />
                 <p className="mt-10 text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] text-center">Center Beacon in Grid</p>
              </motion.div>
            )}
         </AnimatePresence>
 
         {/* TABS */}
-        <div className="flex gap-2 p-1.5 bg-white/5 border border-white/10 rounded-[32px] mb-12">
+        <div className="flex gap-2 p-1 bg-white/5 border border-white/10 rounded-2xl md:rounded-[32px] mb-6 md:mb-12">
           {['Analytics', 'History'].map(t => (
             <button
               key={t}
               onClick={() => setTab(t.toLowerCase())}
-              className={`flex-1 py-4 rounded-[24px] text-[10px] font-black uppercase tracking-widest transition-all ${
+              className={`flex-1 py-3 md:py-4 rounded-xl md:rounded-[24px] text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all ${
                 tab === t.toLowerCase() 
                   ? 'bg-white text-black shadow-xl' 
                   : 'text-gray-500 hover:text-white'
@@ -418,7 +432,7 @@ export default function AttendancePage() {
             <div className="py-20 text-center"><Loader2 className="w-10 h-10 text-blue-500 animate-spin mx-auto" /></div>
           ) : tab === 'analytics' ? (
             stats.length === 0 ? (
-               <div className="py-20 text-center bg-white/5 border border-white/10 rounded-[40px] font-black uppercase text-[10px] tracking-widest text-gray-600 italic">No Registry Data Detected</div>
+               <div className="py-20 text-center bg-white/5 border border-white/10 rounded-2xl md:rounded-[40px] font-black uppercase text-[10px] tracking-widest text-gray-600 italic">No Registry Data Detected</div>
             ) : stats.map((sub, i) => {
               const pct = Math.round((sub.present / sub.total) * 100)
               const low = pct < 75
@@ -428,7 +442,7 @@ export default function AttendancePage() {
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.05 }}
-                  className={`bg-[#161b22]/80 border border-white/5 rounded-[36px] p-6 backdrop-blur-2xl flex items-center gap-6 group transition-all ${low ? 'border-red-500/20 bg-red-500/5' : ''}`}
+                  className={`bg-[#161b22]/80 border border-white/5 rounded-2xl md:rounded-[36px] p-4 md:p-6 backdrop-blur-2xl flex items-center gap-4 md:gap-6 group transition-all ${low ? 'border-red-500/20 bg-red-500/5' : ''}`}
                 >
                   <div className="relative">
                     <AttendanceRing percentage={pct} size={64} />
@@ -436,11 +450,10 @@ export default function AttendancePage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-black text-white uppercase tracking-tight truncate mb-1">{sub.name}</h3>
-                    <div className="flex items-center gap-3">
-                      <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">{sub.present} / {sub.total} Sessions</span>
-                      {low && !sub.hasPending && <span className="px-3 py-0.5 rounded-full bg-red-500/10 text-red-500 text-[7px] font-black uppercase tracking-widest border border-red-500/20">Low Attendance</span>}
-                      {sub.hasPending && <span className="px-3 py-0.5 rounded-full bg-blue-500/10 text-blue-500 text-[7px] font-black uppercase tracking-widest border border-blue-500/20">Pending Verification</span>}
-
+                    <div className="flex flex-wrap items-center gap-2 md:gap-3">
+                      <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest whitespace-nowrap">{sub.present} / {sub.total} Sessions</span>
+                      {low && !sub.hasPending && <span className="px-3 py-0.5 rounded-full bg-red-500/10 text-red-500 text-[7px] font-black uppercase tracking-widest border border-red-500/20 whitespace-nowrap">Low Attendance</span>}
+                      {sub.hasPending && <span className="px-3 py-0.5 rounded-full bg-blue-500/10 text-blue-500 text-[7px] font-black uppercase tracking-widest border border-blue-500/20 whitespace-nowrap">Pending</span>}
                     </div>
                   </div>
                 </motion.div>
@@ -448,31 +461,31 @@ export default function AttendancePage() {
             })
           ) : (
             history.length === 0 ? (
-              <div className="py-20 text-center bg-white/5 border border-white/10 rounded-[40px] font-black uppercase text-[10px] tracking-widest text-gray-600 italic">No Session History Detected</div>
+              <div className="py-20 text-center bg-white/5 border border-white/10 rounded-2xl md:rounded-[40px] font-black uppercase text-[10px] tracking-widest text-gray-600 italic">No Session History Detected</div>
             ) : history.map((rec, i) => (
               <motion.div
                 key={rec.id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className="bg-[#161b22]/80 border border-white/5 rounded-[32px] p-6 flex items-center justify-between backdrop-blur-2xl"
+                className="bg-[#161b22]/80 border border-white/5 rounded-2xl md:rounded-[32px] p-4 md:p-6 flex items-center justify-between backdrop-blur-2xl animate-fade-in"
               >
-                <div className="flex items-center gap-6">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border transition-colors ${
+                <div className="flex items-center gap-4 md:gap-6">
+                  <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center border transition-colors shrink-0 ${
                     rec.verification_status === 'verified' ? 'bg-green-500/10 border-green-500/20 text-green-500' :
                     rec.verification_status === 'rejected' ? 'bg-red-500/10 border-red-500/20 text-red-500' :
                     'bg-yellow-500/10 border-yellow-500/20 text-yellow-500'
                   }`}>
-                    {rec.verification_status === 'verified' ? <CheckCircle size={22} /> : 
-                     rec.verification_status === 'rejected' ? <X size={22} /> : 
-                     <Clock size={22} />}
+                    {rec.verification_status === 'verified' ? <CheckCircle size={18} /> : 
+                     rec.verification_status === 'rejected' ? <X size={18} /> : 
+                     <Clock size={18} />}
                   </div>
                   <div>
-                    <p className="text-sm font-black text-white uppercase tracking-tight mb-1">{rec.attendance_sessions.subject}</p>
-                    <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">{new Date(rec.marked_at).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                    <p className="text-xs md:text-sm font-black text-white uppercase tracking-tight mb-1">{rec.attendance_sessions.subject}</p>
+                    <p className="text-[8px] md:text-[9px] font-black text-gray-600 uppercase tracking-widest">{new Date(rec.marked_at).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                   </div>
                 </div>
-                <div className={`text-[9px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border ${
+                <div className={`text-[8px] md:text-[9px] font-black uppercase tracking-widest px-3 py-1 md:px-4 md:py-1.5 rounded-full border ${
                    rec.verification_status === 'verified' ? 'bg-green-500/5 border-green-500/10 text-green-500' :
                    rec.verification_status === 'rejected' ? 'bg-red-500/5 border-red-500/10 text-red-500' :
                    'bg-yellow-500/5 border-yellow-500/10 text-yellow-500'
@@ -482,17 +495,6 @@ export default function AttendancePage() {
               </motion.div>
             ))
           )}
-        </div>
-      </div>
-
-      {/* BOTTOM NAV BAR */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-[100] md:hidden">
-        <div className="bg-[#161b22]/90 backdrop-blur-3xl border border-white/10 rounded-[32px] p-4 flex items-center justify-between shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-          <NavIcon icon={Home} label="Home" onClick={() => navigate('/dashboard')} />
-          <NavIcon icon={LayoutGrid} label="Log" onClick={() => navigate('/carbon-log')} />
-          <NavIcon icon={CalendarDays} label="Events" onClick={() => navigate('/events')} />
-          <NavIcon icon={Coffee} label="Cafe" onClick={() => navigate('/cafeteria')} />
-          <NavIcon icon={User} label="Me" onClick={() => navigate('/profile')} />
         </div>
       </div>
     </div>
@@ -519,19 +521,5 @@ function AttendanceRing({ percentage, size = 64 }) {
         <span className="text-[11px] font-black" style={{ color }}>{percentage}%</span>
       </div>
     </div>
-  )
-}
-
-function NavIcon({ icon: Icon, label, active, onClick }) {
-  return (
-    <button 
-      onClick={onClick}
-      className={`flex flex-col items-center gap-1.5 transition-all relative ${active ? 'text-blue-500' : 'text-gray-500 hover:text-white'}`}
-    >
-      <div className={`p-2 rounded-xl transition-all ${active ? 'bg-blue-500/10 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : ''}`}>
-        <Icon size={20} strokeWidth={active ? 3 : 2} />
-      </div>
-      <span className={`text-[8px] font-black uppercase tracking-[0.2em] ${active ? 'opacity-100' : 'opacity-40'}`}>{label}</span>
-    </button>
   )
 }

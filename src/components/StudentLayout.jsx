@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { Menu, X, LogOut, Home, Leaf, Bus, UtensilsCrossed, GraduationCap, User, Sparkles, Trophy, MessageSquare, Bell, ChevronLeft, TrendingUp, Target, CalendarDays, Search, MapPin, Beaker, BookOpen, Bot, ShieldAlert, Megaphone, HelpCircle } from 'lucide-react'
 import { useAuthStore } from '../store/index'
 import { motion, AnimatePresence } from 'framer-motion'
 import BottomTabBar from './BottomTabBar'
 import logo from '../assets/logo.png'
+import toast from 'react-hot-toast'
 
 const STUDENT_NAV = [
   { path: '/dashboard', icon: Home, label: 'Dashboard' },
@@ -48,6 +49,81 @@ export default function StudentLayout({ children, title, showBack = false, hideC
     return () => clearInterval(timer)
   }, [])
 
+  const wakeLockRef = useRef(null)
+
+  useEffect(() => {
+    let intervalId;
+    
+    async function requestWakeLock() {
+      if ('wakeLock' in navigator) {
+        const active = localStorage.getItem('pulse_pomo_active') === 'true'
+        const alwaysOn = localStorage.getItem('pulse_pomo_always_on') === 'true'
+        
+        if (active && alwaysOn && !wakeLockRef.current) {
+          try {
+            wakeLockRef.current = await navigator.wakeLock.request('screen')
+            console.log('🔒 Screen Wake Lock Acquired globally')
+          } catch (err) {
+            console.warn('Wake Lock request failed:', err)
+          }
+        } else if ((!active || !alwaysOn) && wakeLockRef.current) {
+          try {
+            await wakeLockRef.current.release()
+            wakeLockRef.current = null
+            console.log('🔓 Screen Wake Lock Released globally')
+          } catch (err) {
+            console.error('Wake Lock release failed:', err)
+          }
+        }
+      }
+    }
+
+    const checkTimerStatus = () => {
+      const active = localStorage.getItem('pulse_pomo_active') === 'true'
+      if (active) {
+        const endTime = parseInt(localStorage.getItem('pulse_pomo_end_time')) || 0
+        if (Date.now() >= endTime) {
+          localStorage.setItem('pulse_pomo_active', 'false')
+          
+          // Trigger notifications and toasts
+          toast.success('🎉 Pomodoro Session Completed! Take a break.', { id: 'pomo-complete-global', duration: 8000 })
+          try {
+            if ('Notification' in window && Notification.permission === 'granted') {
+              new Notification('🍅 Pomodoro Complete!', { body: 'Time to rest!' })
+            }
+          } catch (e) {}
+          
+          if (wakeLockRef.current) {
+            wakeLockRef.current.release().then(() => {
+              wakeLockRef.current = null
+            }).catch(() => {})
+          }
+        }
+      }
+      requestWakeLock()
+    }
+
+    checkTimerStatus()
+    intervalId = setInterval(checkTimerStatus, 1000)
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        requestWakeLock()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      clearInterval(intervalId)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      if (wakeLockRef.current) {
+        wakeLockRef.current.release().then(() => {
+          wakeLockRef.current = null
+        }).catch(() => {})
+      }
+    }
+  }, [])
+
   async function handleLogout() {
     await signOut()
     navigate('/login')
@@ -60,15 +136,13 @@ export default function StudentLayout({ children, title, showBack = false, hideC
   return (
     <div className="flex min-h-[100dvh] bg-[#020617] text-white overflow-hidden selection:bg-green-500/30 selection:text-white">
       {/* Background Mesh (Global) */}
-      {!hideChrome && (
-        <div className="fixed inset-0 pointer-events-none z-0">
-          <div className="absolute top-0 right-0 w-[50%] h-[50%] rounded-full bg-green-500/5 blur-[120px]" />
-          <div className="absolute bottom-0 left-0 w-[50%] h-[50%] rounded-full bg-blue-500/5 blur-[120px]" />
-        </div>
-      )}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-0 right-0 w-[50%] h-[50%] rounded-full bg-green-500/5 blur-[120px]" />
+        <div className="absolute bottom-0 left-0 w-[50%] h-[50%] rounded-full bg-blue-500/5 blur-[120px]" />
+      </div>
 
       {/* SIDEBAR (Desktop) - Always show on desktop unless extreme hideChrome */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 transition-all duration-500 transform lg:translate-x-0 ${
+      <aside className={`fixed inset-y-0 left-0 z-[70] w-72 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] transform lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       } ${hideChrome ? 'hidden lg:block' : ''}`}>
         <div className="h-full bg-slate-950/40 backdrop-blur-3xl border-r border-white/5 flex flex-col">
@@ -136,38 +210,30 @@ export default function StudentLayout({ children, title, showBack = false, hideC
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 lg:hidden" 
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[60] lg:hidden" 
             onClick={() => setSidebarOpen(false)} 
           />
         )}
       </AnimatePresence>
 
       {/* MAIN CONTENT */}
-      <main className={`flex-1 lg:ml-72 flex flex-col min-h-screen relative ${hideChrome ? 'w-full' : ''}`}>
+      <main className="flex-1 lg:ml-72 flex flex-col min-h-screen relative min-w-0 w-full overflow-x-hidden">
         {/* MOBILE HEADER */}
         {!hideChrome && (
           <header className="lg:hidden sticky top-0 z-30 px-6 py-5 backdrop-blur-xl bg-slate-950/80 border-b border-white/5 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              {showBack ? (
-                <button onClick={() => navigate(-1)} className="p-2 rounded-xl bg-white/5 border border-white/10 text-gray-400">
-                  <ChevronLeft size={20} />
-                </button>
-              ) : (
-                <div className="flex items-center gap-4">
-                  <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-xl bg-white/5 border border-white/10 text-gray-400">
-                    <Menu size={20} />
-                  </button>
-                  <img src={logo} alt="Logo" className="w-8 h-8 object-contain drop-shadow-[0_0_10px_rgba(34,197,94,0.2)]" />
-                </div>
-              )}
+              <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-colors">
+                <Menu size={20} />
+              </button>
+              <img src={logo} alt="Logo" className="w-8 h-8 object-contain drop-shadow-[0_0_10px_rgba(34,197,94,0.2)]" />
               <div>
-                {!showBack && <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest leading-none mb-1">{greeting}</p>}
-                <h1 className="text-sm font-black text-white uppercase tracking-[0.15em]">{showBack ? activeLabel : `${firstName} ✨`}</h1>
+                <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest leading-none mb-1">{greeting}, {firstName} ✨</p>
+                <h1 className="text-sm font-black text-white uppercase tracking-[0.15em]">{activeLabel}</h1>
               </div>
             </div>
             <button onClick={() => navigate('/notifications')} className="relative p-2 rounded-xl bg-white/5 border border-white/10 text-gray-400">
               <Bell size={20} />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full border-2 border-slate-950" />
+              <span className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full border-2 border-slate-950 shadow-[0_0_6px_rgba(34,197,94,0.6)]" />
             </button>
           </header>
         )}
@@ -176,15 +242,9 @@ export default function StudentLayout({ children, title, showBack = false, hideC
         {!hideChrome && (
           <header className="hidden lg:flex sticky top-0 z-30 px-10 py-6 backdrop-blur-xl bg-slate-950/60 border-b border-white/5 items-center justify-between">
             <div className="flex items-center gap-6">
-              {showBack && (
-                <button onClick={() => navigate(-1)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-colors">
-                  <ChevronLeft size={18} />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Back</span>
-                </button>
-              )}
               <div>
-                {!showBack && <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">{greeting}</p>}
-                <h1 className="text-xl font-black text-white uppercase tracking-tighter">{showBack ? activeLabel : `${firstName} ✨`}</h1>
+                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">{greeting}</p>
+                <h1 className="text-xl font-black text-white uppercase tracking-tighter">{firstName} ✨</h1>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -197,16 +257,14 @@ export default function StudentLayout({ children, title, showBack = false, hideC
         )}
 
         {/* PAGE CONTENT */}
-        <div className={`flex-1 overflow-x-hidden no-scrollbar ${hideChrome ? '' : 'pb-32 lg:pb-10'} ${(showBack && !hideChrome) ? 'p-6 lg:p-10' : ''}`}>
+        <div className="flex-1 overflow-x-hidden no-scrollbar pb-32 lg:pb-10">
            {children}
         </div>
 
-        {/* MOBILE BOTTOM NAV */}
-        {!hideChrome && (
-          <div className="lg:hidden">
-            <BottomTabBar />
-          </div>
-        )}
+        {/* MOBILE BOTTOM NAV — always visible, z-40 so sidebar covers it */}
+        <div className="lg:hidden z-40">
+          <BottomTabBar />
+        </div>
       </main>
     </div>
   )

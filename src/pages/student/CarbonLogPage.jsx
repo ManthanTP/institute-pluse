@@ -10,7 +10,6 @@ import {
 import { supabase } from '../../lib/supabase'
 import { useAuthStore, useCarbonStore } from '../../store/index'
 import EcoScoreRing from '../../components/EcoScoreRing'
-import BottomTabBar from '../../components/BottomTabBar'
 import toast from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -204,6 +203,37 @@ export default function CarbonLogPage() {
     }
   }
 
+  const handleCopyYesterday = async () => {
+    if (!profile?.id) return
+    const { data, error } = await supabase
+      .from('carbon_logs')
+      .select('*')
+      .eq('student_id', profile.id)
+      .order('log_date', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (error) {
+      toast.error("Failed to fetch yesterday's log")
+      return
+    }
+
+    if (!data) {
+      toast.error("No previous logs found to copy")
+      return
+    }
+
+    setForm({
+      transport: data.transport_detail || [{ mode: 'motorbike', km: 8 }],
+      meals: data.meals_detail ? Object.fromEntries(data.meals_detail.map(m => [m.slot, m.type])) : { breakfast: 'vegetarian', lunch: 'chicken', dinner: 'vegetarian' },
+      devices: data.devices_detail || [{ device_key: 'laptop', hours: 3 }],
+      shower_type: data.water_detail?.shower_type || 'short_shower',
+      general_water: data.water_detail?.general_level || 'medium',
+      waste: data.waste_detail || [{ type: 'plastic', kg: 0.5 }]
+    })
+    toast.success("Copied previous log successfully!")
+  }
+
   if (success) {
     return <SuccessOverlay {...success} onDone={() => navigate('/dashboard')} onHistory={() => navigate('/carbon/history')} />
   }
@@ -223,7 +253,7 @@ export default function CarbonLogPage() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => currentStep > 0 ? goBack() : navigate('/dashboard')}
-            className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400"
+            className={`w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 ${currentStep === 0 ? 'hidden lg:flex' : 'flex'}`}
           >
             <ArrowLeft size={18} />
           </button>
@@ -267,6 +297,51 @@ export default function CarbonLogPage() {
               {/* STEP 0: TRANSPORT */}
               {currentStep === 0 && (
                 <div>
+                  {/* Presets */}
+                  <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-5 mb-6">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Quick Presets & History</p>
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      <button
+                        onClick={() => {
+                          setForm({
+                            transport: [{ mode: 'walking', km: 1 }],
+                            meals: { breakfast: 'vegetarian', lunch: 'vegetarian', dinner: 'vegetarian' },
+                            devices: [{ device_key: 'laptop', hours: 4 }, { device_key: 'ceiling_fan', hours: 8 }],
+                            shower_type: 'short_shower',
+                            general_water: 'low',
+                            waste: [{ type: 'organic', kg: 0.2 }]
+                          })
+                          toast.success("Loaded Hostel Day Preset!")
+                        }}
+                        className="py-3 px-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-[9px] font-black uppercase tracking-wider text-green-400"
+                      >
+                        🏢 Hostel Day
+                      </button>
+                      <button
+                        onClick={() => {
+                          setForm({
+                            transport: [{ mode: 'college_bus', km: 15 }],
+                            meals: { breakfast: 'vegetarian', lunch: 'vegetarian', dinner: 'vegetarian' },
+                            devices: [{ device_key: 'laptop', hours: 3 }, { device_key: 'mobile_charging', hours: 2 }],
+                            shower_type: 'short_shower',
+                            general_water: 'low',
+                            waste: [{ type: 'general', kg: 0.3 }]
+                          })
+                          toast.success("Loaded Day Scholar Preset!")
+                        }}
+                        className="py-3 px-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-[9px] font-black uppercase tracking-wider text-blue-400"
+                      >
+                        🚌 Day Scholar
+                      </button>
+                    </div>
+                    <button
+                      onClick={handleCopyYesterday}
+                      className="w-full py-3 rounded-2xl bg-green-500/10 border border-green-500/20 hover:bg-green-500/20 hover:border-green-500/30 text-[9px] font-black uppercase tracking-widest text-green-400 transition-all active:scale-98"
+                    >
+                      🔄 Copy Yesterday's Entries
+                    </button>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     {Object.keys(TRANSPORT_FACTORS).map(mode => (
                       <button
@@ -287,11 +362,18 @@ export default function CarbonLogPage() {
                   <div className="bg-white/5 rounded-3xl p-5 border border-white/5">
                     <div className="flex justify-between items-center mb-3">
                       <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Distance Log (KM)</label>
-                      <span className="text-sm font-black text-white">{form.transport[0]?.km} km</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="500"
+                        value={form.transport[0]?.km || 0}
+                        onChange={e => setTransportKm(e.target.value)}
+                        className="w-20 px-3 py-1 text-right bg-slate-900 border border-white/10 rounded-xl text-xs font-black text-white focus:outline-none focus:border-green-500"
+                      />
                     </div>
                     <input
                       type="range" min="0" max="100" step="1"
-                      value={form.transport[0]?.km}
+                      value={form.transport[0]?.km > 100 ? 100 : (form.transport[0]?.km || 0)}
                       onChange={e => setTransportKm(e.target.value)}
                       className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-green-500"
                     />
@@ -359,11 +441,19 @@ export default function CarbonLogPage() {
                         <div key={d.device_key} className="bg-white/5 rounded-3xl p-4 border border-white/5">
                           <div className="flex justify-between items-center mb-2">
                             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{d.device_key.replace('_', ' ')}</span>
-                            <span className="text-sm font-black text-white">{d.hours}h</span>
+                            <input
+                              type="number"
+                              min="0"
+                              max="24"
+                              step="0.5"
+                              value={d.hours}
+                              onChange={e => setDeviceHours(d.device_key, e.target.value)}
+                              className="w-16 px-2 py-0.5 text-right bg-slate-900 border border-white/10 rounded-lg text-xs font-bold text-white focus:outline-none focus:border-yellow-500"
+                            />
                           </div>
                           <input
                             type="range" min="0" max="12" step="0.5"
-                            value={d.hours}
+                            value={d.hours > 12 ? 12 : d.hours}
                             onChange={e => setDeviceHours(d.device_key, e.target.value)}
                             className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-yellow-500"
                           />
@@ -421,24 +511,71 @@ export default function CarbonLogPage() {
 
               {/* STEP 4: WASTE */}
               {currentStep === 4 && (
-                <div className="grid grid-cols-2 gap-4">
-                  {WASTE_TYPES.map(type => {
-                    const isSelected = form.waste.find(w => w.type === type.key)
-                    return (
-                      <button
-                        key={type.key}
-                        onClick={() => toggleWaste(type.key)}
-                        className={`p-5 rounded-[32px] border transition-all text-left flex flex-col gap-3 ${
-                          isSelected
-                            ? 'bg-green-600 border-green-600 text-white shadow-lg'
-                            : 'bg-white/5 border-white/5 text-gray-500'
-                        }`}
-                      >
-                        <span className={isSelected ? 'text-white text-xl' : 'text-gray-600 text-xl'}>{type.emoji}</span>
-                        <span className="text-[10px] font-black uppercase tracking-widest">{type.label}</span>
-                      </button>
-                    )
-                  })}
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    {WASTE_TYPES.map(type => {
+                      const isSelected = form.waste.find(w => w.type === type.key)
+                      return (
+                        <button
+                          key={type.key}
+                          onClick={() => toggleWaste(type.key)}
+                          className={`p-5 rounded-[32px] border transition-all text-left flex flex-col gap-3 group ${
+                            isSelected
+                              ? 'bg-green-600 border-green-600 text-white shadow-lg shadow-green-600/20'
+                              : 'bg-white/5 border-white/5 text-gray-500 hover:border-white/10'
+                          }`}
+                        >
+                          <span className={isSelected ? 'text-white text-xl' : 'text-gray-600 text-xl'}>{type.emoji}</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest">{type.label}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {form.waste.length > 0 && (
+                    <div className="space-y-4">
+                      <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1">Waste Mass (KG)</p>
+                      {form.waste.map(w => {
+                        const typeInfo = WASTE_TYPES.find(wt => wt.key === w.type)
+                        return (
+                          <div key={w.type} className="bg-white/5 rounded-3xl p-4 border border-white/5">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{typeInfo?.emoji} {typeInfo?.label}</span>
+                              <input
+                                type="number"
+                                min="0"
+                                max="10"
+                                step="0.1"
+                                value={w.kg}
+                                onChange={e => {
+                                  const val = parseFloat(e.target.value) || 0
+                                  setForm(f => ({
+                                    ...f,
+                                    waste: f.waste.map(item => item.type === w.type ? { ...item, kg: val } : item)
+                                  }))
+                                }}
+                                className="w-16 px-2 py-0.5 text-right bg-slate-900 border border-white/10 rounded-lg text-xs font-bold text-white focus:outline-none focus:border-green-500"
+                              />
+                            </div>
+                            <input
+                              type="range" min="0" max="5" step="0.1"
+                              value={w.kg > 5 ? 5 : w.kg}
+                              onChange={e => {
+                                const val = parseFloat(e.target.value) || 0
+                                setForm(f => ({
+                                  ...f,
+                                  waste: f.waste.map(item => item.type === w.type ? { ...item, kg: val } : item)
+                                }))
+                              }}
+                              className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-green-500"
+                            />
+                            <div className="flex justify-between text-[8px] font-black text-gray-700 uppercase tracking-widest mt-1">
+                              <span>0 kg</span><span>2.5 kg</span><span>5 kg</span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
               {/* STEP 5: REVIEW */}
@@ -450,7 +587,14 @@ export default function CarbonLogPage() {
                     <div className="flex items-center justify-between gap-6 relative z-10 mb-6">
                       <div className="flex-1">
                         <p className="text-[10px] font-black text-green-500 uppercase tracking-[0.3em] mb-3">Impact Matrix</p>
-                        <h2 className="text-4xl font-black text-white mb-1 leading-none tracking-tighter">{ecoScore}%</h2>
+                        <div className="flex items-center gap-3 mb-1">
+                          <h2 className="text-4xl font-black text-white leading-none tracking-tighter">{ecoScore}%</h2>
+                          {ecoScore === 0 && (
+                            <span className="px-2 py-0.5 rounded bg-red-500/20 text-red-400 text-[8px] font-black uppercase tracking-widest animate-pulse border border-red-500/30">
+                              Budget Exceeded
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">Efficiency Quotient</p>
                         <div className="space-y-3">
                           <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
@@ -549,8 +693,6 @@ export default function CarbonLogPage() {
           Project InstitutePulse • Pulse Node
         </p>
       </main>
-
-      <BottomTabBar />
     </div>
   )
 }

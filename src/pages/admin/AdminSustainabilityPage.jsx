@@ -87,7 +87,7 @@ export default function AdminSustainabilityPage() {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-[10px] font-black text-green-500 uppercase tracking-[0.3em]">Ecological Impact Telemetry</span>
+              <span className="text-[10px] font-black text-green-500 uppercase tracking-[0.3em]">Campus Carbon Offset Index</span>
             </div>
             <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Sustainability Hub</h2>
             <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mt-3">

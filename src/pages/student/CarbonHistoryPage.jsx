@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store/index'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createPortal } from 'react-dom'
+import PDFExportModal from '../../components/PDFExportModal'
 
 const TIME_FRAMES = ['Week', 'Month', 'Year']
 
@@ -16,6 +17,7 @@ export default function CarbonHistoryPage() {
 
   const [selectedItem, setSelectedItem] = useState(null)
   const [selectedType, setSelectedType] = useState(null) // 'log' | 'order'
+  const [isExporting, setIsExporting] = useState(false)
 
   useEffect(() => {
     fetchHistory()
@@ -45,6 +47,11 @@ export default function CarbonHistoryPage() {
     } else if (timeFrame === 1) { // Month
       const date = new Date()
       date.setMonth(date.getMonth() - 1)
+      logQuery = logQuery.gte('log_date', date.toISOString().split('T')[0])
+      orderQuery = orderQuery.gte('created_at', date.toISOString())
+    } else if (timeFrame === 2) { // Year
+      const date = new Date()
+      date.setFullYear(date.getFullYear() - 1)
       logQuery = logQuery.gte('log_date', date.toISOString().split('T')[0])
       orderQuery = orderQuery.gte('created_at', date.toISOString())
     }
@@ -83,22 +90,42 @@ export default function CarbonHistoryPage() {
     }
   }
 
-  const handleDownload = () => {
+  const triggerPDFDownload = () => {
+    const periodLabel = TIME_FRAMES[timeFrame].toUpperCase()
     exportTablePDF({
-      title: 'Carbon Manifest',
-      subtitle: `OPERATOR: ${profile?.full_name || 'ANONYMOUS'}`,
+      title: `${periodLabel} Carbon Manifest`,
+      subtitle: `OPERATOR: ${profile?.full_name || 'ANONYMOUS'} • PERIOD: ${periodLabel}`,
       headers: ['Date', 'Protocol Source', 'CO2 Impact'],
       rows: history.map(item => [
         item._date.toLocaleDateString().toUpperCase(),
         item._type === 'order' ? 'CAFETERIA NODE' : 'DAILY MANIFEST',
         `${(item.total_kg || item.total_carbon_kg || 0).toFixed(2)} KG`
       ]),
-      filename: `carbon_manifest_${profile?.id?.slice(0, 8)}`,
+      filename: `carbon_${TIME_FRAMES[timeFrame].toLowerCase()}_manifest_${profile?.id?.slice(0, 8)}`,
       summaryCards: [
         { label: 'Total Saved', value: `${totalSaved.toFixed(2)} KG` },
         { label: 'Avg Impact', value: `${averageImpact.toFixed(2)} KG` }
-      ]
+      ],
+      studentName: profile?.full_name
     })
+  }
+
+  const handleDownload = () => {
+    setIsExporting(true)
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center bg-[#020617]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-16 h-16">
+            <div className="absolute inset-0 border-4 border-green-500/20 rounded-full animate-pulse" />
+            <div className="absolute inset-0 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+          <p className="text-[10px] font-black text-white uppercase tracking-[0.3em] animate-pulse">Syncing Impact Core...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -111,17 +138,18 @@ export default function CarbonHistoryPage() {
 
       <div className="relative z-10 px-6 pt-6">
         {/* HEADER AREA */}
+        {/* TOP BAR */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <button 
               onClick={() => window.history.back()}
-              className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400"
+              className="hidden lg:flex w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400"
             >
               <ArrowLeft size={18} />
             </button>
             <div className="flex flex-col">
               <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-1">Impact Analytics</span>
-              <h1 className="text-2xl font-black text-white uppercase tracking-tight leading-none mb-1">Carbon History</h1>
+              <h1 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight leading-none mb-1">Carbon History</h1>
               <p className="text-[9px] font-black text-green-500 uppercase tracking-[0.3em] flex items-center gap-1.5">
                  <TrendingDown size={10} /> Emissions Reduction Active
               </p>
@@ -129,7 +157,7 @@ export default function CarbonHistoryPage() {
           </div>
           <button 
             onClick={handleShare}
-            className="p-3 rounded-2xl bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-all"
+            className="p-3 rounded-2xl bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-all ml-auto lg:ml-0"
           >
             <Share2 size={18} />
           </button>
@@ -181,9 +209,15 @@ export default function CarbonHistoryPage() {
         <div className="space-y-4">
            <div className="flex items-center justify-between mb-2 px-2">
               <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Activity Stream</h3>
-              <button onClick={handleDownload}>
-                <Download size={14} className="text-gray-700 hover:text-white transition-colors" />
-              </button>
+              <motion.button 
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleDownload}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-widest text-gray-300 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all shadow-lg"
+              >
+                <Download size={12} />
+                <span>Download Report</span>
+              </motion.button>
            </div>
 
            <AnimatePresence mode="popLayout">
@@ -326,6 +360,12 @@ export default function CarbonHistoryPage() {
            </p>
         </div>
       </div>
+
+      <PDFExportModal 
+        isOpen={isExporting} 
+        onClose={() => setIsExporting(false)} 
+        onTriggerDownload={triggerPDFDownload} 
+      />
     </div>
   )
 }

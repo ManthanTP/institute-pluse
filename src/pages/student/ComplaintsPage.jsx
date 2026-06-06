@@ -51,6 +51,20 @@ export default function ComplaintsPage() {
     setSubmitting(false)
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center bg-[#020617]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-16 h-16">
+            <div className="absolute inset-0 border-4 border-red-500/20 rounded-full animate-pulse" />
+            <div className="absolute inset-0 border-4 border-red-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+          <p className="text-[10px] font-black text-white uppercase tracking-[0.3em] animate-pulse">Syncing Support Console...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-[100dvh] bg-[#0a0c10] text-white pb-32 relative overflow-x-hidden">
       {/* Background Glows */}
@@ -62,23 +76,25 @@ export default function ComplaintsPage() {
       <div className="relative z-10 px-6 pt-8">
         {/* TOP BAR */}
         <div className="flex items-center justify-between mb-12">
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 lg:gap-6">
             <motion.button 
               whileTap={{ scale: 0.9 }}
               onClick={() => navigate(-1)}
-              className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-xl"
+              className="hidden lg:flex w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-xl"
             >
-              <ChevronLeft size={24} />
+              <ChevronLeft size={20} className="md:w-6 md:h-6" />
             </motion.button>
-            <h1 className="text-2xl font-black uppercase tracking-tighter italic">Resolutions</h1>
+            <h1 className="text-xl md:text-2xl font-black uppercase tracking-tighter italic">Resolutions</h1>
           </div>
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setShowForm(true)}
-            className="w-12 h-12 rounded-2xl bg-red-600 text-white flex items-center justify-center shadow-[0_0_20px_rgba(239,68,68,0.3)]"
-          >
-             <Plus size={24} />
-          </motion.button>
+          <div className="flex-1 flex justify-end lg:flex-none">
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setShowForm(true)}
+              className="w-12 h-12 rounded-2xl bg-red-600 text-white flex items-center justify-center shadow-[0_0_20px_rgba(239,68,68,0.3)]"
+            >
+               <Plus size={24} />
+            </motion.button>
+          </div>
         </div>
 
         {/* LIST SECTION */}
@@ -89,7 +105,7 @@ export default function ComplaintsPage() {
                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest italic">Syncing Reports...</p>
              </div>
           ) : complaints.length === 0 ? (
-            <div className="py-20 text-center bg-white/5 border border-white/10 rounded-[40px] backdrop-blur-xl">
+            <div className="py-20 text-center bg-white/5 border border-white/10 rounded-2xl md:rounded-[40px] backdrop-blur-xl">
                <div className="text-4xl mb-4 opacity-40">📬</div>
                <p className="text-xs font-black text-white uppercase tracking-widest italic">Matrix Clean</p>
             </div>
@@ -99,7 +115,7 @@ export default function ComplaintsPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="bg-[#161b22]/80 border border-white/5 rounded-[40px] p-8 backdrop-blur-2xl relative overflow-hidden group"
+              className="bg-[#161b22]/80 border border-white/5 rounded-2xl md:rounded-[40px] p-5 md:p-8 backdrop-blur-2xl relative overflow-hidden group"
             >
               <div className="flex items-center justify-between mb-6">
                 <div className="flex gap-2">
@@ -111,11 +127,11 @@ export default function ComplaintsPage() {
                 </div>
               </div>
 
-              <h4 className="text-2xl font-black text-white uppercase tracking-tight mb-4 leading-none">{c.title}</h4>
-              <p className="text-xs font-medium text-gray-500 leading-relaxed mb-8 line-clamp-2">{c.description}</p>
+              <h4 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight mb-4 leading-none">{c.title}</h4>
+              <p className="text-xs font-medium text-gray-500 leading-relaxed mb-6 line-clamp-2">{c.description}</p>
 
               {c.admin_response && (
-                <div className="p-6 rounded-3xl bg-green-500/5 border border-green-500/10 mb-8 relative">
+                <div className="p-4 md:p-6 rounded-2xl md:rounded-3xl bg-green-500/5 border border-green-500/10 mb-6 relative">
                   <p className="text-[9px] font-black text-green-500 uppercase tracking-widest mb-2 flex items-center gap-2">
                      <Info size={12} /> Resolution Node:
                   </p>
@@ -137,17 +153,6 @@ export default function ComplaintsPage() {
         </div>
       </div>
 
-      {/* BOTTOM NAV BAR */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-[100] md:hidden">
-        <div className="bg-[#161b22]/90 backdrop-blur-3xl border border-white/10 rounded-[32px] p-4 flex items-center justify-between shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-          <NavIcon icon={Home} label="Home" onClick={() => navigate('/dashboard')} />
-          <NavIcon icon={LayoutGrid} label="Log" onClick={() => navigate('/carbon-log')} />
-          <NavIcon icon={CalendarDays} label="Events" onClick={() => navigate('/events')} />
-          <NavIcon icon={Coffee} label="Cafe" onClick={() => navigate('/cafeteria')} />
-          <NavIcon icon={User} label="Me" onClick={() => navigate('/profile')} />
-        </div>
-      </div>
-
       {/* FORM MODAL (Portal) */}
       {createPortal(
         <AnimatePresence>
@@ -161,7 +166,7 @@ export default function ComplaintsPage() {
               <motion.div 
                 initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="relative w-full max-w-2xl bg-[#0a0c10] border-t border-white/10 rounded-t-[50px] p-6 md:p-10 shadow-2xl pointer-events-auto flex flex-col"
+                className="relative w-full max-w-2xl bg-[#0a0c10] border-t border-white/10 rounded-t-3xl md:rounded-t-[50px] p-5 md:p-10 shadow-2xl pointer-events-auto flex flex-col"
                 style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}
               >
                 <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-8" />
@@ -181,7 +186,7 @@ export default function ComplaintsPage() {
                       <select 
                         value={form.category} 
                         onChange={e => setForm(f => ({ ...f, category: e.target.value }))} 
-                        className="w-full bg-[#161b22] border border-white/5 rounded-3xl p-5 text-white text-[11px] font-black uppercase tracking-widest outline-none appearance-none cursor-pointer"
+                        className="w-full bg-[#161b22] border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 text-white text-[11px] font-black uppercase tracking-widest outline-none appearance-none cursor-pointer"
                       >
                         {CATEGORIES.map(c => <option key={c} value={c} className="bg-slate-900">{c}</option>)}
                       </select>
@@ -195,7 +200,7 @@ export default function ComplaintsPage() {
                         value={form.description} 
                         onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                         placeholder="Detailed situational report..."
-                        className="w-full bg-[#161b22] border border-white/5 rounded-3xl p-5 text-white text-[11px] font-black uppercase tracking-widest outline-none resize-none shadow-inner"
+                        className="w-full bg-[#161b22] border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 text-white text-[11px] font-black uppercase tracking-widest outline-none resize-none shadow-inner"
                         rows={4} 
                       />
                     </div>
@@ -207,7 +212,7 @@ export default function ComplaintsPage() {
                           <button 
                             key={p} 
                             onClick={() => setForm(f => ({ ...f, priority: p }))}
-                            className={`flex-1 py-4 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border ${
+                            className={`flex-1 py-3 md:py-4 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border ${
                               form.priority === p ? 'bg-white text-slate-900 border-white' : 'bg-white/5 text-gray-500 border-white/5'
                             }`}
                           >
@@ -222,7 +227,7 @@ export default function ComplaintsPage() {
                     whileTap={{ scale: 0.98 }}
                     onClick={submitComplaint} 
                     disabled={submitting} 
-                    className="w-full py-6 md:py-7 rounded-[28px] md:rounded-[32px] bg-red-600 text-white font-black uppercase tracking-[0.3em] md:tracking-[0.4em] text-[10px] md:text-[11px] shadow-[0_15px_40px_rgba(239,68,68,0.4)] disabled:opacity-50"
+                    className="w-full py-5 md:py-7 rounded-2xl md:rounded-[32px] bg-red-600 text-white font-black uppercase tracking-[0.3em] md:tracking-[0.4em] text-[10px] md:text-[11px] shadow-[0_15px_40px_rgba(239,68,68,0.4)] disabled:opacity-50"
                   >
                     {submitting ? 'Transmitting...' : 'Confirm Upload to Core Matrix'}
                   </motion.button>
@@ -237,20 +242,6 @@ export default function ComplaintsPage() {
   )
 }
 
-function NavIcon({ icon: Icon, label, active, onClick }) {
-  return (
-    <button 
-      onClick={onClick}
-      className={`flex flex-col items-center gap-1.5 transition-all relative ${active ? 'text-green-500' : 'text-gray-500 hover:text-white'}`}
-    >
-      <div className={`p-2 rounded-xl transition-all ${active ? 'bg-green-500/10 shadow-[0_0_15px_rgba(34,197,94,0.3)]' : ''}`}>
-        <Icon size={20} strokeWidth={active ? 3 : 2} />
-      </div>
-      <span className={`text-[8px] font-black uppercase tracking-[0.2em] ${active ? 'opacity-100' : 'opacity-40'}`}>{label}</span>
-    </button>
-  )
-}
-
 function InputField({ label, placeholder, value, onChange }) {
   return (
     <div className="space-y-2">
@@ -259,7 +250,7 @@ function InputField({ label, placeholder, value, onChange }) {
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full bg-[#161b22] border border-white/5 rounded-3xl p-5 text-white text-[11px] font-black uppercase tracking-widest outline-none shadow-inner"
+        className="w-full bg-[#161b22] border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 text-white text-[11px] font-black uppercase tracking-widest outline-none shadow-inner"
       />
     </div>
   )

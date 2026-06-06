@@ -90,6 +90,19 @@ export default function ProfilePage() {
     }
   }
 
+  const handleResetPassword = async () => {
+    if (!profile?.email) return
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(profile.email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      })
+      if (error) throw error
+      toast.success('Password reset link sent to your email!')
+    } catch (err) {
+      toast.error(err.message || 'Reset request failed')
+    }
+  }
+
   return (
     <div className="min-h-[100dvh] bg-slate-950 pb-28 relative overflow-hidden">
       {/* Background Decor */}
@@ -101,11 +114,11 @@ export default function ProfilePage() {
       <div className="relative z-10 px-6 pt-6 max-w-2xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
-           <button onClick={() => navigate(-1)} className="p-3 rounded-2xl bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-colors">
+           <button onClick={() => navigate(-1)} className="hidden lg:flex p-3 rounded-2xl bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-colors">
               <ArrowLeft size={20} />
            </button>
            <h1 className="text-sm font-black text-white uppercase tracking-[0.4em]">InstitutePulse Profile</h1>
-           <div className="w-11" /> {/* Spacer */}
+           <div className="hidden lg:block w-11" /> {/* Spacer */}
         </div>
 
         {/* Profile Avatar Section */}
@@ -114,9 +127,9 @@ export default function ProfilePage() {
               <div className="w-32 h-32 rounded-[40px] bg-gradient-to-br from-blue-500 to-green-500 p-[1px] shadow-2xl shadow-blue-500/20">
                  <div className="w-full h-full rounded-[39px] bg-slate-950 flex items-center justify-center overflow-hidden relative">
                     {profile?.avatar_url ? (
-                      <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                       <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
                     ) : (
-                      <User size={40} className="text-gray-700" />
+                       <User size={40} className="text-gray-700" />
                     )}
                  </div>
               </div>
@@ -173,6 +186,18 @@ export default function ProfilePage() {
                     <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" />
                     <input type="text" value={profile?.email} disabled className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm text-gray-500 outline-none" />
                  </div>
+              </div>
+
+              {/* Password Reset via Email Button */}
+              <div className="space-y-2">
+                 <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Access Settings</label>
+                 <button
+                   type="button"
+                   onClick={handleResetPassword}
+                   className="w-full py-4 bg-white/5 border border-white/10 hover:border-blue-500/50 hover:bg-white/[0.08] text-white rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                 >
+                   Send Password Reset Link
+                 </button>
               </div>
 
               {/* Full Name */}

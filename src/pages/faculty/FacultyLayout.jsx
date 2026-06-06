@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
-import { Menu, X, LogOut, Home, CalendarDays, Users, BarChart3, Leaf, Target, Bus, UtensilsCrossed, GraduationCap, MessageSquare, Megaphone, Bell, User, Shield, Clock } from 'lucide-react'
+import { Menu, X, LogOut, Home, CalendarDays, Users, BarChart3, Leaf, Target, Bus, UtensilsCrossed, GraduationCap, MessageSquare, Megaphone, Bell, User, Shield, Clock, BookOpen } from 'lucide-react'
 import { useAuthStore } from '../../store/index'
 import { motion, AnimatePresence } from 'framer-motion'
+import FacultyBottomNav from '../../components/FacultyBottomNav'
 
 const FACULTY_NAV = [
   { path: '/faculty/dashboard', icon: Home, label: 'Dashboard' },
@@ -11,7 +12,7 @@ const FACULTY_NAV = [
   { path: '/faculty/participants', icon: Users, label: 'Participants' },
   { path: '/faculty/analytics', icon: BarChart3, label: 'Analytics' },
   { path: '/faculty/sustainability', icon: Leaf, label: 'Sustainability' },
-  { path: '/faculty/challenges', icon: Target, label: 'Green Challenges' },
+  { path: '/faculty/resources', icon: BookOpen, label: 'Resource Hub' },
   { path: '/faculty/cafeteria', icon: UtensilsCrossed, label: 'Cafeteria' },
   { path: '/faculty/complaints', icon: MessageSquare, label: 'Complaints' },
   { path: '/faculty/announcements', icon: Megaphone, label: 'Announcements' },
@@ -119,7 +120,7 @@ export default function FacultyLayout({ children }) {
       </AnimatePresence>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 lg:ml-72 flex flex-col min-h-screen relative overflow-y-auto no-scrollbar">
+      <main className="flex-1 lg:ml-72 flex flex-col min-h-screen relative overflow-y-auto no-scrollbar min-w-0 w-full overflow-x-hidden">
         {/* TOP BAR */}
         <header className="sticky top-0 z-30 px-6 py-5 lg:py-6 backdrop-blur-xl bg-[#020617]/80 border-b border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -139,9 +140,12 @@ export default function FacultyLayout({ children }) {
         </header>
 
         {/* PAGE CONTENT */}
-        <div className="p-5 md:p-8 lg:p-12 flex-1 relative z-10">
+        <div className="p-5 md:p-8 lg:p-12 pb-32 lg:pb-12 flex-1 relative z-10">
            {children}
         </div>
+        
+        {/* Mobile Bottom Navigation */}
+        <FacultyBottomNav />
       </main>
     </div>
   )

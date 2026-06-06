@@ -27,7 +27,7 @@ export const STUDENT_HELP = [
     description: "Manage your academic goals and focus sessions.",
     instructions: [
       "Add new study objectives with duration and priority levels.",
-      "Use the 'Focus Protocol' (Pomodoro timer) to stay productive.",
+      "Use the Study Timer (Pomodoro countdown) to stay productive.",
       "Track your completion rate to see your academic efficiency quotient."
     ]
   },

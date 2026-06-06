@@ -94,7 +94,7 @@ export default function OwnerLayout({ children }) {
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 lg:ml-72 flex flex-col min-h-screen relative">
+      <main className="flex-1 lg:ml-72 flex flex-col min-h-screen relative min-w-0 w-full overflow-x-hidden">
         <header className="sticky top-0 z-30 px-6 py-4 backdrop-blur-xl bg-slate-950/80 border-b border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button className="lg:hidden p-2 rounded-xl bg-white/5 border border-white/10" onClick={() => setSidebarOpen(!sidebarOpen)}>

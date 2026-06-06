@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { Megaphone, AlertTriangle, Clock, ChevronLeft, Bell, BellOff, Info, Zap } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
-import BottomTabBar from '../../components/BottomTabBar'
 
 const PRIORITY_CONFIG = {
   urgent: { color: 'text-red-500', bg: 'bg-red-500/10', border: 'border-red-500/20', icon: AlertTriangle },
@@ -34,7 +33,7 @@ export default function AnnouncementsPage() {
       setLoading(true)
       const { data, error } = await supabase
         .from('announcements')
-        .select('*, author:profiles!created_by(full_name)')
+        .select('*, author:profiles!created_by(full_name, role)')
         .order('created_at', { ascending: false })
       
       if (error) throw error
@@ -59,6 +58,20 @@ export default function AnnouncementsPage() {
     return new Date(dateStr).toLocaleDateString()
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center bg-[#020617]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-16 h-16">
+            <div className="absolute inset-0 border-4 border-orange-500/20 rounded-full animate-pulse" />
+            <div className="absolute inset-0 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+          <p className="text-[10px] font-black text-white uppercase tracking-[0.3em] animate-pulse">Scanning Frequencies...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-[100dvh] bg-slate-950 pb-24 relative overflow-hidden">
       {/* Background Mesh */}
@@ -72,7 +85,7 @@ export default function AnnouncementsPage() {
         <div className="flex items-center gap-4">
           <button 
             onClick={() => navigate(-1)}
-            className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400"
+            className="hidden lg:flex w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 shrink-0"
           >
             <ChevronLeft size={20} />
           </button>
@@ -81,7 +94,7 @@ export default function AnnouncementsPage() {
             <h2 className="text-xl font-black text-white uppercase tracking-tight">Public Broadcasts</h2>
           </div>
         </div>
-        <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500">
+        <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500 ml-auto lg:ml-0">
            <Megaphone size={18} />
         </div>
       </div>
@@ -118,7 +131,7 @@ export default function AnnouncementsPage() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: idx * 0.05 }}
-                    className="bg-white/[0.03] border border-white/5 rounded-[32px] p-6 backdrop-blur-3xl group hover:border-white/10 transition-all"
+                    className="bg-white/[0.03] border border-white/5 rounded-2xl md:rounded-[32px] p-4 md:p-6 backdrop-blur-3xl group hover:border-white/10 transition-all"
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
@@ -145,7 +158,22 @@ export default function AnnouncementsPage() {
                     
                     <div className="mt-5 pt-4 border-t border-white/5 flex justify-between items-center">
                        <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Relayed By</span>
-                       <span className="text-[9px] font-black text-white uppercase tracking-widest">{ann.author?.full_name || 'System Admin'}</span>
+                       <div className="flex items-center gap-2">
+                          <span className="text-[9px] font-black text-white uppercase tracking-widest">{ann.author?.full_name || 'System Admin'}</span>
+                          {ann.author?.role === 'admin' ? (
+                            <span className="px-2 py-0.5 rounded-md text-[7px] font-black uppercase tracking-widest bg-red-500/10 text-red-400 border border-red-500/20 shadow-[0_0_10px_rgba(239,68,68,0.2)]">
+                              ADMIN
+                            </span>
+                          ) : ann.author?.role === 'faculty' ? (
+                            <span className="px-2 py-0.5 rounded-md text-[7px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-[0_0_10px_rgba(59,130,246,0.2)]">
+                              FACULTY
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-md text-[7px] font-black uppercase tracking-widest bg-gray-500/10 text-gray-400 border border-gray-500/20">
+                              SYSTEM
+                            </span>
+                          )}
+                       </div>
                     </div>
                   </motion.div>
                 )
@@ -154,8 +182,6 @@ export default function AnnouncementsPage() {
           </div>
         )}
       </main>
-
-      <BottomTabBar />
     </div>
   )
 }

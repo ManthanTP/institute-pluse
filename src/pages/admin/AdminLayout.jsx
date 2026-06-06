@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
-import { Menu, X, LogOut, BarChart3, Users, UtensilsCrossed, GraduationCap, MessageSquare, Search, Bell, Map, LayoutDashboard, Shield, Target, CalendarDays, Megaphone, Settings, FileText, User, HelpCircle } from 'lucide-react'
+import { Menu, X, LogOut, BarChart3, Users, UtensilsCrossed, GraduationCap, MessageSquare, Search, Bell, Map, LayoutDashboard, Shield, Target, CalendarDays, Megaphone, Settings, FileText, User, HelpCircle, Globe } from 'lucide-react'
 import { useAuthStore } from '../../store/index'
 import { motion, AnimatePresence } from 'framer-motion'
 import logo from '../../assets/logo.png'
@@ -17,10 +17,10 @@ const NAV_ITEMS = [
   { path: '/12345678/admin/lost-found', icon: Search, label: 'Lost & Found' },
   { path: '/12345678/admin/broadcast', icon: Megaphone, label: 'Broadcast Center' },
   { path: '/12345678/admin/notifications', icon: Bell, label: 'Notifications' },
-  { path: '/12345678/admin/settings', icon: Settings, label: 'System Settings' },
   { path: '/12345678/admin/audit', icon: FileText, label: 'Audit Logs' },
   { path: '/12345678/admin/navigation', icon: Map, label: 'Campus Locations' },
   { path: '/12345678/admin/profile', icon: User, label: 'Admin Profile' },
+  { path: '/12345678/admin/landing-editor', icon: Globe, label: 'Landing Editor' },
   { path: '/12345678/admin/help', icon: HelpCircle, label: 'Help Editor' },
 ]
 
@@ -99,11 +99,11 @@ export default function AdminLayout({ children }) {
             <div className="flex items-center gap-4 mb-6">
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-blue-600 p-[1.5px]">
                 <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center text-sm font-black text-white uppercase">
-                   {profile?.full_name?.[0] || 'A'}
+                   A
                 </div>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-white text-[11px] font-black uppercase tracking-tight truncate">{profile?.full_name}</p>
+                <p className="text-white text-[11px] font-black uppercase tracking-tight truncate">ADMIN</p>
                 <p className="text-gray-500 text-[9px] font-black uppercase tracking-widest">Administrator</p>
               </div>
             </div>
@@ -129,7 +129,7 @@ export default function AdminLayout({ children }) {
       </AnimatePresence>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 lg:ml-72 flex flex-col min-h-screen relative overflow-y-auto no-scrollbar">
+      <main className="flex-1 lg:ml-72 flex flex-col min-h-screen relative overflow-y-auto no-scrollbar min-w-0 w-full overflow-x-hidden">
         {/* TOP BAR */}
         <header className="sticky top-0 z-30 px-6 py-5 lg:py-6 backdrop-blur-xl bg-[#020617]/80 border-b border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-4">

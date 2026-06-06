@@ -16,6 +16,19 @@ export default function AdminProfilePage() {
     clearance: 'Level 09'
   })
 
+  async function handleResetPassword() {
+    if (!profile?.email) return
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(profile.email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      })
+      if (error) throw error
+      toast.success('Password reset link sent to your email!')
+    } catch (err) {
+      toast.error(err.message || 'Reset request failed')
+    }
+  }
+
   async function handleUpdate() {
     try {
       setLoading(true)
@@ -121,6 +134,23 @@ export default function AdminProfilePage() {
                  </div>
 
                  <div className="space-y-6">
+                    <div className="flex items-center justify-between p-6 bg-white/2 border border-white/5 rounded-3xl group hover:border-orange-500/30 transition-all">
+                       <div className="flex items-center gap-6">
+                          <Key size={24} className="text-blue-500" />
+                          <div>
+                             <span className="block text-[11px] font-black text-white uppercase tracking-widest">Administrative Credentials</span>
+                             <span className="block text-[9px] text-gray-600 font-bold uppercase tracking-[0.2em] mt-1">Request a secure password reset link</span>
+                          </div>
+                       </div>
+                       <button 
+                         onClick={handleResetPassword}
+                         type="button"
+                         className="px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black text-gray-400 uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all"
+                       >
+                         Reset Password
+                       </button>
+                    </div>
+
                     <div className="flex items-center justify-between p-6 bg-white/2 border border-white/5 rounded-3xl group hover:border-orange-500/30 transition-all">
                        <div className="flex items-center gap-6">
                           <Zap size={24} className="text-orange-500" />

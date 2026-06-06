@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Bell, BellOff, Filter, CheckCircle2, Info, ShoppingBag, GraduationCap, AlertCircle, Trophy, Leaf } from 'lucide-react'
+import { ArrowLeft, Bell, BellOff, Filter, CheckCircle2, Info, ShoppingBag, GraduationCap, AlertCircle, Trophy, Leaf, Clock } from 'lucide-react'
 import { format, isToday, isYesterday } from 'date-fns'
 import { supabase } from '../../lib/supabase'
 import { useNotifStore, useAuthStore } from '../../store/index'
@@ -12,6 +12,7 @@ const TYPE_CONFIG = {
   badge: { icon: Trophy, color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
   order: { icon: ShoppingBag, color: 'text-orange-500', bg: 'bg-orange-500/10' },
   attendance: { icon: GraduationCap, color: 'text-teal-500', bg: 'bg-teal-500/10' },
+  class_update: { icon: Clock, color: 'text-teal-400', bg: 'bg-teal-500/10' },
   complaint: { icon: AlertCircle, color: 'text-red-500', bg: 'bg-red-500/10' },
   challenge: { icon: Trophy, color: 'text-purple-500', bg: 'bg-purple-500/10' },
   announcement: { icon: Info, color: 'text-blue-500', bg: 'bg-blue-500/10' },
@@ -33,10 +34,12 @@ export default function NotificationsPage() {
   const { notifications, unreadCount, fetchNotifications, markAllRead, markRead } = useNotifStore()
   const [filterTab, setFilterTab] = useState(0)
   const [displayNotifs, setDisplayNotifs] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (profile?.id) {
-      fetchNotifications(profile.id)
+      setLoading(true)
+      fetchNotifications(profile.id).finally(() => setLoading(false))
       const sub = useNotifStore.getState().subscribeToNotifications(profile.id)
       return () => { supabase.removeChannel(sub) }
     }
@@ -49,7 +52,26 @@ export default function NotificationsPage() {
 
   const filtered = filterTab === 0
     ? displayNotifs
-    : displayNotifs.filter(n => n.type === FILTER_TABS[filterTab].type)
+    : displayNotifs.filter(n => {
+        const targetType = FILTER_TABS[filterTab].type
+        const t = n.type?.toLowerCase()
+        if (targetType === 'attendance') {
+          return t === 'attendance' || t === 'class_update' || t === 'attend'
+        }
+        if (targetType === 'complaint') {
+          return t === 'complaint' || t === 'issue' || t === 'issues'
+        }
+        if (targetType === 'order') {
+          return t === 'order' || t === 'food' || t === 'cafeteria'
+        }
+        if (targetType === 'badge') {
+          return t === 'badge' || t === 'badges' || t === 'eco_badge'
+        }
+        if (targetType === 'eco') {
+          return t === 'eco' || t === 'challenge' || t === 'sustainability'
+        }
+        return t === targetType
+      })
 
   function groupByDate(notifs) {
     const groups = {}
@@ -64,6 +86,20 @@ export default function NotificationsPage() {
 
   const grouped = groupByDate(filtered)
 
+  if (loading) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center bg-[#020617]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-16 h-16">
+            <div className="absolute inset-0 border-4 border-green-500/20 rounded-full" />
+            <div className="absolute inset-0 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+          <p className="text-[10px] font-black text-white uppercase tracking-[0.3em] animate-pulse">Syncing Feed Core...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-[100dvh] bg-slate-950 pb-24 relative overflow-hidden">
       {/* Background Mesh Gradients */}
@@ -77,7 +113,7 @@ export default function NotificationsPage() {
         <div className="flex items-center gap-4">
           <button 
             onClick={() => navigate(-1)}
-            className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400"
+            className="hidden lg:flex w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400"
           >
             <ArrowLeft size={18} />
           </button>
@@ -116,16 +152,17 @@ export default function NotificationsPage() {
         ))}
       </div>
 
-      <main className="px-6 relative z-10 max-w-lg mx-auto">
+      <main className="px-4 md:px-6 relative z-10 max-w-lg mx-auto">
         <AnimatePresence mode="wait">
           {filtered.length === 0 ? (
             <motion.div
+              key="empty-state"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               className="flex flex-col items-center justify-center py-24 text-center"
             >
-              <div className="w-24 h-24 rounded-[32px] bg-white/5 flex items-center justify-center mb-8 border border-white/5">
+              <div className="w-24 h-24 rounded-2xl md:rounded-[32px] bg-white/5 flex items-center justify-center mb-8 border border-white/5">
                 <BellOff size={40} className="text-gray-600" />
               </div>
               <p className="font-black text-white text-xl tracking-tight">System Silent ✨</p>
@@ -134,59 +171,64 @@ export default function NotificationsPage() {
               </p>
             </motion.div>
           ) : (
-            Object.entries(grouped).map(([label, notifs]) => (
-              <div key={label} className="mb-10">
-                <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em] mb-5 ml-1">{label}</p>
-                <div className="flex flex-col gap-4">
-                  {notifs.map((n, idx) => {
-                    const cfg = TYPE_CONFIG[n.type] || TYPE_CONFIG.general
-                    const Icon = cfg.icon
-                    return (
-                      <motion.button
-                        key={n.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: idx * 0.05 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => markRead(n.id)}
-                        className={`w-full text-left rounded-[32px] p-5 flex items-start gap-5 transition-all border relative overflow-hidden group ${
-                          n.is_read 
-                            ? 'bg-white/[0.02] border-white/5 opacity-60' 
-                            : 'bg-white/[0.05] border-white/10 shadow-2xl'
-                        }`}
-                      >
-                        {!n.is_read && (
-                          <div className="absolute top-0 left-0 w-1 h-full bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.5)]" />
-                        )}
-                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all ${
-                          n.is_read ? 'bg-white/5 text-gray-600' : `${cfg.bg} ${cfg.color} shadow-lg shadow-black/20`
-                        }`}>
-                          <Icon size={24} />
-                        </div>
-                        <div className="flex-1 min-w-0 py-1">
-                          <div className="flex justify-between items-start mb-1.5">
-                            <h3 className={`text-sm font-black tracking-tight ${n.is_read ? 'text-gray-400' : 'text-white'}`}>
-                              {n.title}
-                            </h3>
-                            <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest ml-2 whitespace-nowrap">
-                              {format(new Date(n.created_at), 'h:mm a')}
-                            </span>
-                          </div>
-                          <p className={`text-xs leading-relaxed font-medium ${n.is_read ? 'text-gray-500' : 'text-gray-400'}`}>
-                            {n.message}
-                          </p>
-                        </div>
-                      </motion.button>
-                    )
-                  })}
+            <motion.div
+              key="notifications-list"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              {Object.entries(grouped).map(([label, notifs]) => (
+                <div key={label} className="mb-10">
+                  <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em] mb-5 ml-1">{label}</p>
+                  <div className="flex flex-col gap-4">
+                    {notifs.map((n, idx) => {
+                       const cfg = TYPE_CONFIG[n.type] || TYPE_CONFIG.general
+                       const Icon = cfg.icon
+                       return (
+                         <motion.button
+                           key={n.id}
+                           initial={{ opacity: 0, x: -10 }}
+                           animate={{ opacity: 1, x: 0 }}
+                           transition={{ delay: idx * 0.05 }}
+                           whileTap={{ scale: 0.98 }}
+                           onClick={() => markRead(n.id)}
+                           className={`w-full text-left rounded-2xl md:rounded-[32px] p-4 md:p-5 flex items-start gap-4 md:gap-5 transition-all border relative overflow-hidden group ${
+                             n.is_read 
+                               ? 'bg-white/[0.02] border-white/5 opacity-60' 
+                               : 'bg-white/[0.05] border-white/10 shadow-2xl'
+                           }`}
+                         >
+                           {!n.is_read && (
+                             <div className="absolute top-0 left-0 w-1 h-full bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.5)]" />
+                           )}
+                           <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center flex-shrink-0 transition-all ${
+                             n.is_read ? 'bg-white/5 text-gray-600' : `${cfg.bg} ${cfg.color} shadow-lg shadow-black/20`
+                           }`}>
+                             <Icon size={20} className="md:w-6 md:h-6" />
+                           </div>
+                           <div className="flex-1 min-w-0 py-1">
+                             <div className="flex justify-between items-start mb-1.5">
+                               <h3 className={`text-sm font-black tracking-tight ${n.is_read ? 'text-gray-400' : 'text-white'}`}>
+                                 {n.title}
+                               </h3>
+                               <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest ml-2 whitespace-nowrap">
+                                 {format(new Date(n.created_at), 'h:mm a')}
+                               </span>
+                             </div>
+                             <p className={`text-xs leading-relaxed font-medium ${n.is_read ? 'text-gray-500' : 'text-gray-400'}`}>
+                               {n.message}
+                             </p>
+                           </div>
+                         </motion.button>
+                       )
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))
+              ))}
+            </motion.div>
           )}
         </AnimatePresence>
       </main>
-
-      <BottomTabBar />
     </div>
   )
 }
