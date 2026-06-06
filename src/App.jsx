@@ -61,7 +61,7 @@ const AdminComplaintsPage = lazy(() => import('./pages/admin/AdminComplaintsPage
 const AdminCafeteriaPage = lazy(() => import('./pages/admin/AdminCafeteriaPage'))
 const AdminEventsPage = lazy(() => import('./pages/admin/AdminEventsPage'))
 const AdminAttendancePage = lazy(() => import('./pages/admin/AdminAttendancePage'))
-const AdminChallengesPage = lazy(() => import('./pages/admin/AdminChallengesPage'))
+const AdminResourceHubPage = lazy(() => import('./pages/admin/AdminResourceHubPage'))
 const AdminLostFoundPage = lazy(() => import('./pages/admin/AdminLostFoundPage'))
 const AdminBroadcastPage = lazy(() => import('./pages/admin/AdminBroadcastPage'))
 const AdminNotificationsPage = lazy(() => import('./pages/admin/AdminNotificationsPage'))
@@ -210,7 +210,7 @@ function App() {
            <Route path="/12345678/admin/users" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminUsersPage /></Suspense></AdminRoute>} />
            <Route path="/12345678/admin/complaints" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminComplaintsPage /></Suspense></AdminRoute>} />
            <Route path="/12345678/admin/events" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminEventsPage /></Suspense></AdminRoute>} />
-           <Route path="/12345678/admin/challenges" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminChallengesPage /></Suspense></AdminRoute>} />
+           <Route path="/12345678/admin/resources" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminResourceHubPage /></Suspense></AdminRoute>} />
            <Route path="/12345678/admin/cafeteria" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminCafeteriaPage /></Suspense></AdminRoute>} />
            <Route path="/12345678/admin/attendance" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminAttendancePage /></Suspense></AdminRoute>} />
            <Route path="/12345678/admin/lost-found" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminLostFoundPage /></Suspense></AdminRoute>} />

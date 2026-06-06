@@ -81,7 +81,7 @@ export const useNotifStore = create((set, get) => ({
   fetchNotifications: async (userId) => {
     const { data } = await supabase
       .from('student_notifications')
-      .select('*')
+      .select('*, sender:profiles!sender_id(full_name, role)')
       .eq('student_id', userId)
       .order('created_at', { ascending: false })
       .limit(50)
@@ -140,8 +140,19 @@ export const useNotifStore = create((set, get) => ({
         schema: 'public',
         table: 'student_notifications',
         filter: `student_id=eq.${userId}`
-      }, (payload) => {
-        get().addNotification(payload.new)
+      }, async (payload) => {
+        let fullNotif = { ...payload.new }
+        if (payload.new.sender_id) {
+          const { data: senderProfile } = await supabase
+            .from('profiles')
+            .select('full_name, role')
+            .eq('id', payload.new.sender_id)
+            .single()
+          if (senderProfile) {
+            fullNotif.sender = senderProfile
+          }
+        }
+        get().addNotification(fullNotif)
       })
       .subscribe()
   }

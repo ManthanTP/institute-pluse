@@ -371,7 +371,7 @@ export default function AdminLandingPage() {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center py-32">
-          <RefreshCw size={24} className="animate-spin text-green-500" />
+          <RefreshCw size={24} className="animate-spin text-red-500" />
         </div>
       </AdminLayout>
     )
@@ -389,7 +389,7 @@ export default function AdminLandingPage() {
             <div className="flex items-center gap-2 mt-1">
               <p className="text-gray-500 text-xs font-medium">Edit all landing page content from here. Changes appear instantly on the homepage.</p>
               {profile && (
-                <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${profile.role === 'admin' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${profile.role === 'admin' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'}`}>
                   Role: {profile.role}
                 </span>
               )}
@@ -407,7 +407,7 @@ export default function AdminLandingPage() {
             <button
               onClick={saveAll}
               disabled={saving === 'all'}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-green-600 text-white text-[9px] font-black uppercase tracking-widest hover:bg-green-500 transition-all disabled:opacity-50"
+              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-red-600 text-white text-[9px] font-black uppercase tracking-widest hover:bg-red-500 transition-all disabled:opacity-50"
             >
               {saving === 'all' ? <RefreshCw size={12} className="animate-spin" /> : <Save size={12} />}
               Save All
@@ -433,7 +433,7 @@ export default function AdminLandingPage() {
               onClick={() => setActiveSection(s.section_key)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
                 activeSection === s.section_key
-                  ? 'bg-green-600 text-white shadow-lg shadow-green-600/20'
+                  ? 'bg-red-600 text-white shadow-lg shadow-red-600/20'
                   : 'bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10'
               }`}
             >
@@ -446,7 +446,7 @@ export default function AdminLandingPage() {
         {/* Editor Panel */}
         {current && (
           <div className="bg-black/40 border border-white/[0.08] rounded-3xl p-6 md:p-8 backdrop-blur-xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 blur-[40px] rounded-full pointer-events-none" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 blur-[40px] rounded-full pointer-events-none" />
 
             {/* Section Header */}
             <div className="flex items-center justify-between mb-8 border-b border-white/[0.06] pb-4">
@@ -469,8 +469,8 @@ export default function AdminLandingPage() {
                   }}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all ${
                     current.is_visible
-                      ? 'bg-green-500/15 text-green-400 border border-green-500/20'
-                      : 'bg-red-500/15 text-red-400 border border-red-500/20'
+                      ? 'bg-red-500/15 text-red-400 border border-red-500/20'
+                      : 'bg-white/5 border border-white/10 text-gray-400'
                   }`}
                 >
                   {current.is_visible ? <Eye size={10} /> : <EyeOff size={10} />}
@@ -479,7 +479,7 @@ export default function AdminLandingPage() {
                 <button
                   onClick={() => saveSection(activeSection)}
                   disabled={saving === activeSection}
-                  className="flex items-center gap-2 px-5 py-2 rounded-xl bg-green-600 text-white text-[9px] font-black uppercase tracking-widest hover:bg-green-500 transition-all disabled:opacity-50"
+                  className="flex items-center gap-2 px-5 py-2 rounded-xl bg-red-600 text-white text-[9px] font-black uppercase tracking-widest hover:bg-red-500 transition-all disabled:opacity-50"
                 >
                   {saving === activeSection ? <RefreshCw size={11} className="animate-spin" /> : <CheckCircle size={11} />}
                   Save Section
@@ -521,7 +521,7 @@ function FieldInput({ label, value, onChange, multiline = false }) {
           value={value || ''}
           onChange={e => onChange(e.target.value)}
           rows={3}
-          className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-green-500/40 transition-colors resize-none"
+          className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-red-500/40 transition-colors resize-none"
         />
       ) : (
         <input
@@ -529,7 +529,7 @@ function FieldInput({ label, value, onChange, multiline = false }) {
           type="text"
           value={value || ''}
           onChange={e => onChange(e.target.value)}
-          className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-green-500/40 transition-colors"
+          className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-red-500/40 transition-colors"
         />
       )}
     </div>
@@ -610,7 +610,7 @@ function FeaturesEditor({ content, onChange }) {
           {cards.map((card, i) => (
             <div key={i} className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[8px] font-black text-green-400 uppercase tracking-widest">Card {i + 1}</span>
+                <span className="text-[8px] font-black text-red-400 uppercase tracking-widest">Card {i + 1}</span>
               </div>
               <FieldInput label="Title" value={card.title} onChange={val => updateCard(i, 'title', val)} />
               <FieldInput label="Description" value={card.description} onChange={val => updateCard(i, 'description', val)} multiline />
@@ -707,7 +707,7 @@ function FaqEditor({ content, onChange }) {
           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">FAQ Items ({items.length})</p>
           <button
             onClick={addItem}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500/15 text-green-400 text-[8px] font-black uppercase tracking-widest border border-green-500/20 hover:bg-green-500/25 transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/15 text-red-400 text-[8px] font-black uppercase tracking-widest border border-red-500/20 hover:bg-red-500/25 transition-all"
           >
             <Plus size={10} /> Add FAQ
           </button>
@@ -788,7 +788,7 @@ function CreatorEditor({ content, onChange }) {
           <button
             type="button"
             onClick={addSkill}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500/15 text-green-400 text-[8px] font-black uppercase tracking-widest border border-green-500/20 hover:bg-green-500/25 transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/15 text-red-400 text-[8px] font-black uppercase tracking-widest border border-red-500/20 hover:bg-red-500/25 transition-all"
           >
             <Plus size={10} /> Add Skill
           </button>
@@ -876,7 +876,7 @@ function HowItWorksEditor({ content, onChange }) {
           <button
             type="button"
             onClick={addStep}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500/15 text-green-400 text-[8px] font-black uppercase tracking-widest border border-green-500/20 hover:bg-green-500/25 transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/15 text-red-400 text-[8px] font-black uppercase tracking-widest border border-red-500/20 hover:bg-red-500/25 transition-all"
           >
             <Plus size={10} /> Add Step
           </button>
@@ -886,7 +886,7 @@ function HowItWorksEditor({ content, onChange }) {
           {steps.map((step, i) => (
             <div key={i} className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[8px] font-black text-green-400 uppercase tracking-widest">Step {i + 1}</span>
+                <span className="text-[8px] font-black text-red-400 uppercase tracking-widest">Step {i + 1}</span>
                 <button type="button" onClick={() => removeStep(i)} className="p-1 rounded bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all"><Trash2 size={12} /></button>
               </div>
               <div className="grid grid-cols-4 gap-3">
@@ -951,7 +951,7 @@ function PolicyEditor({ content, onChange, label }) {
           <button
             type="button"
             onClick={addItem}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500/15 text-green-400 text-[8px] font-black uppercase tracking-widest border border-green-500/20 hover:bg-green-500/25 transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/15 text-red-400 text-[8px] font-black uppercase tracking-widest border border-red-500/20 hover:bg-red-500/25 transition-all"
           >
             <Plus size={10} /> Add Clause
           </button>
@@ -961,7 +961,7 @@ function PolicyEditor({ content, onChange, label }) {
           {items.map((item, i) => (
             <div key={i} className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[8px] font-black text-green-400 uppercase tracking-widest">Clause {i + 1}</span>
+                <span className="text-[8px] font-black text-red-400 uppercase tracking-widest">Clause {i + 1}</span>
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => moveItem(i, -1)} disabled={i === 0} className="p-1 rounded bg-white/5 text-gray-400 hover:text-white disabled:opacity-20 transition-all"><ChevronUp size={12} /></button>
                   <button type="button" onClick={() => moveItem(i, 1)} disabled={i === items.length - 1} className="p-1 rounded bg-white/5 text-gray-400 hover:text-white disabled:opacity-20 transition-all"><ChevronDown size={12} /></button>

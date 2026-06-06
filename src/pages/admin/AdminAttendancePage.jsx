@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { GraduationCap, Users, Clock, CheckCircle2, Zap, AlertCircle, MapPin, Trash2, Shield, Search, Filter, History, RefreshCw, BarChart3, Activity, Download, Plus, X, Building, BookOpen, ChevronDown } from 'lucide-react'
+import { GraduationCap, Users, Clock, CheckCircle2, Zap, AlertCircle, MapPin, Trash2, Shield, Search, Filter, History, RefreshCw, BarChart3, Activity, Download, Plus, X, Building, BookOpen, ChevronDown, Eye, EyeOff } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import AdminLayout from './AdminLayout'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -15,6 +15,7 @@ export default function AdminAttendancePage() {
   const [filterType, setFilterType] = useState('all') // all, active, locked
   
   const [selectedSession, setSelectedSession] = useState(null)
+  const [showCode, setShowCode] = useState(false)
   const [sessionParticipants, setSessionParticipants] = useState([])
   const [loadingParticipants, setLoadingParticipants] = useState(false)
 
@@ -109,6 +110,7 @@ export default function AdminAttendancePage() {
 
   function handleViewSession(session) {
     setSelectedSession(session)
+    setShowCode(false)
     fetchParticipants(session.id)
   }
 
@@ -251,7 +253,7 @@ export default function AdminAttendancePage() {
                </div>
                <div className="bg-[#161b22] border border-white/5 rounded-3xl p-8 relative overflow-hidden group">
                   <div className="absolute top-0 right-0 p-6 opacity-5"><Users size={60} /></div>
-                  <p className="text-[9px] font-black text-green-500 uppercase tracking-widest mb-2">Global Presence</p>
+                  <p className="text-[9px] font-black text-red-500 uppercase tracking-widest mb-2">Global Presence</p>
                   <h3 className="text-4xl font-black text-white tracking-tighter italic">{stats.presentToday}</h3>
                </div>
                <div className="sm:col-span-2 lg:col-span-1 bg-[#161b22] border border-white/5 rounded-3xl p-8 relative overflow-hidden group">
@@ -301,7 +303,7 @@ export default function AdminAttendancePage() {
                                  <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/5 rounded-xl"><Users size={12} className="text-blue-500" /><span className="text-xs font-black text-white">{session.participant_count}</span></div>
                               </td>
                               <td className="px-8 py-6">
-                                 <span className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${session.status === 'active' ? 'bg-green-500/10 text-green-500 border-green-500/20 animate-pulse' : 'bg-red-500/10 text-red-500 border-red-500/20'}`}>{session.status}</span>
+                                 <span className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${session.status === 'active' ? 'bg-red-500/10 text-red-500 border-red-500/20 animate-pulse' : 'bg-red-500/10 text-red-500 border-red-500/20'}`}>{session.status}</span>
                               </td>
                               <td className="px-8 py-6 text-right">
                                  <button onClick={() => handleViewSession(session)} className="px-4 py-2 bg-blue-500/10 text-blue-500 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-blue-500 hover:text-white mr-2">Review</button>
@@ -351,8 +353,8 @@ export default function AdminAttendancePage() {
                          <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Department</label>
                          <div className="relative group/sel mt-2">
                            <div className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-white flex justify-between items-center cursor-pointer group-hover/sel:border-purple-500/50 transition-all">
-                              <span className="font-black uppercase tracking-widest text-[10px]">{newItem.department || 'CSE'}</span>
-                              <ChevronDown size={14} className="text-gray-500" />
+                             <span className="font-black uppercase tracking-widest text-[10px]">{newItem.department || 'CSE'}</span>
+                             <ChevronDown size={14} className="text-gray-500" />
                            </div>
                            <div className="absolute top-full left-0 right-0 mt-2 bg-[#0f172a] border border-white/10 rounded-xl overflow-hidden opacity-0 invisible group-hover/sel:opacity-100 group-hover/sel:visible transition-all z-50 shadow-xl">
                               {['CSE','ECE','ME','Civil','MBA','Other'].map(d => (
@@ -365,8 +367,8 @@ export default function AdminAttendancePage() {
                          <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Semester</label>
                          <div className="relative group/sel mt-2">
                            <div className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-white flex justify-between items-center cursor-pointer group-hover/sel:border-purple-500/50 transition-all">
-                              <span className="font-black uppercase tracking-widest text-[10px]">{semesters.find(s => s.id === newItem.semester_id)?.name ? `Semester ${semesters.find(s => s.id === newItem.semester_id)?.name}` : 'Select Sem'}</span>
-                              <ChevronDown size={14} className="text-gray-500" />
+                             <span className="font-black uppercase tracking-widest text-[10px]">{semesters.find(s => s.id === newItem.semester_id)?.name ? `Semester ${semesters.find(s => s.id === newItem.semester_id)?.name}` : 'Select Sem'}</span>
+                             <ChevronDown size={14} className="text-gray-500" />
                            </div>
                            <div className="absolute top-full left-0 right-0 mt-2 bg-[#0f172a] border border-white/10 rounded-xl overflow-hidden opacity-0 invisible group-hover/sel:opacity-100 group-hover/sel:visible transition-all z-50 shadow-xl max-h-48 overflow-y-auto no-scrollbar">
                               {semesters.map(s => (
@@ -430,18 +432,31 @@ export default function AdminAttendancePage() {
         <AnimatePresence>
           {selectedSession && (
             <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 lg:p-0">
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={() => setSelectedSession(null)} />
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={() => { setSelectedSession(null); setShowCode(false); }} />
               <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-4xl bg-[#161b22] border border-white/10 rounded-[32px] p-6 lg:p-10 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
                 <div className="flex items-start justify-between mb-8">
                    <div>
-                     <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">{selectedSession.teacher_name}</div>
-                     <h2 className="text-2xl font-black text-white uppercase italic">{selectedSession.subject}</h2>
-                     <p className="text-xs text-gray-500 mt-2 font-bold">{new Date(selectedSession.created_at).toLocaleString()}</p>
+                      <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">{selectedSession.teacher_name}</div>
+                      <h2 className="text-2xl font-black text-white uppercase italic">{selectedSession.subject}</h2>
+                      <p className="text-xs text-gray-500 mt-2 font-bold">{new Date(selectedSession.created_at).toLocaleString()}</p>
+                      <div className="mt-3 flex items-center gap-3">
+                        <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Protocol Code:</span>
+                        <span className="bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg text-xs font-black tracking-widest text-white font-mono">
+                          {showCode ? (selectedSession.session_code || selectedSession.id.slice(0, 6).toUpperCase()) : '••••••'}
+                        </span>
+                        <button 
+                          onClick={() => setShowCode(!showCode)} 
+                          className="p-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-all flex items-center justify-center"
+                          title={showCode ? "Hide Code" : "Show Code"}
+                        >
+                          {showCode ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
                    </div>
                    <div className="flex gap-3">
-                     <button onClick={() => exportLedger(selectedSession, sessionParticipants)} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2"><Download size={16}/> Export</button>
-                     {selectedSession.status === 'active' && <button onClick={() => terminateSession(selectedSession.id)} className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">Terminate</button>}
-                     <button onClick={() => setSelectedSession(null)} className="p-2 bg-white/5 text-gray-400 rounded-xl hover:text-white"><X size={20}/></button>
+                      <button onClick={() => exportLedger(selectedSession, sessionParticipants)} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2"><Download size={16}/> Export</button>
+                      {selectedSession.status === 'active' && <button onClick={() => terminateSession(selectedSession.id)} className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">Terminate</button>}
+                      <button onClick={() => { setSelectedSession(null); setShowCode(false); }} className="p-2 bg-white/5 text-gray-400 rounded-xl hover:text-white"><X size={20}/></button>
                    </div>
                 </div>
 
@@ -459,7 +474,7 @@ export default function AdminAttendancePage() {
                                <div className="text-[10px] text-gray-500 uppercase font-black tracking-widest mt-1">{p.profiles?.usn || 'NO USN'}</div>
                             </div>
                             <div className="text-right">
-                               <div className={`text-[10px] font-black uppercase tracking-widest ${p.verification_status==='verified'?'text-green-500':'text-red-500'}`}>{p.verification_status}</div>
+                               <div className={`text-[10px] font-black uppercase tracking-widest ${p.verification_status==='verified'?'text-red-500':'text-red-500'}`}>{p.verification_status}</div>
                                <div className="text-[8px] text-gray-600 font-black mt-1">{new Date(p.marked_at).toLocaleTimeString()}</div>
                             </div>
                           </div>

@@ -86,8 +86,8 @@ export default function AdminSustainabilityPage() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-[10px] font-black text-green-500 uppercase tracking-[0.3em]">Campus Carbon Offset Index</span>
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em]">Campus Carbon Offset Index</span>
             </div>
             <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Sustainability Hub</h2>
             <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mt-3">
@@ -196,7 +196,7 @@ export default function AdminSustainabilityPage() {
            <div className="grid grid-cols-1 gap-4 lg:hidden">
               {loading ? (
                 <div className="py-20 flex flex-col items-center justify-center gap-4">
-                   <div className="w-10 h-10 border-2 border-green-500/20 border-t-green-500 rounded-full animate-spin" />
+                   <div className="w-10 h-10 border-2 border-red-500/20 border-t-red-500 rounded-full animate-spin" />
                 </div>
               ) : logs.length === 0 ? (
                 <div className="py-20 text-center bg-white/5 border border-white/10 rounded-[32px]">
@@ -241,7 +241,7 @@ export default function AdminSustainabilityPage() {
                   </thead>
                   <tbody>
                      {loading ? (
-                       <tr><td colSpan={5} className="py-20 text-center"><div className="w-10 h-10 border-2 border-green-500/20 border-t-green-500 rounded-full animate-spin mx-auto" /></td></tr>
+                       <tr><td colSpan={5} className="py-20 text-center"><div className="w-10 h-10 border-2 border-red-500/20 border-t-red-500 rounded-full animate-spin mx-auto" /></td></tr>
                      ) : logs.length === 0 ? (
                        <tr><td colSpan={5} className="py-20 text-center text-xs font-black text-gray-600 uppercase tracking-widest">No Log Data Recorded</td></tr>
                      ) : logs.slice(0, 10).map((log, i) => (

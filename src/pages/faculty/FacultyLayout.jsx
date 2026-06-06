@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
-import { Menu, X, LogOut, Home, CalendarDays, Users, BarChart3, Leaf, Target, Bus, UtensilsCrossed, GraduationCap, MessageSquare, Megaphone, Bell, User, Shield, Clock, BookOpen } from 'lucide-react'
+import { Menu, X, LogOut, Home, CalendarDays, Users, BarChart3, Leaf, Target, Bus, UtensilsCrossed, GraduationCap, MessageSquare, Megaphone, Bell, User, Shield, Clock, BookOpen, HelpCircle } from 'lucide-react'
 import { useAuthStore } from '../../store/index'
 import { motion, AnimatePresence } from 'framer-motion'
 import FacultyBottomNav from '../../components/FacultyBottomNav'
@@ -18,6 +18,7 @@ const FACULTY_NAV = [
   { path: '/faculty/announcements', icon: Megaphone, label: 'Announcements' },
   { path: '/faculty/notifications', icon: Bell, label: 'Notifications' },
   { path: '/faculty/profile', icon: User, label: 'Profile Settings' },
+  { path: '/faculty/help', icon: HelpCircle, label: 'Help Center' },
 ]
 
 export default function FacultyLayout({ children }) {

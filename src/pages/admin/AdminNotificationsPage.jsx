@@ -6,12 +6,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
 
 const CATEGORIES = [
-  { id: 'All', label: 'All Alerts', icon: Bell, color: '#3b82f6' },
+  { id: 'All', label: 'All Alerts', icon: Bell, color: '#ef4444' },
   { id: 'system', label: 'System', icon: Zap, color: '#f59e0b' },
   { id: 'security', label: 'Security', icon: ShieldAlert, color: '#ef4444' },
   { id: 'complaint', label: 'Complaints', icon: MessageSquare, color: '#ec4899' },
   { id: 'event', label: 'Events', icon: Calendar, color: '#06b6d4' },
-]
+ ]
 
 export default function AdminNotificationsPage() {
   const [notifications, setNotifications] = useState([])
@@ -118,25 +118,13 @@ export default function AdminNotificationsPage() {
     }
   }
 
-  async function handleDelete(id) {
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .delete()
-        .eq('id', id)
-
-      if (error) throw error
-      setNotifications(prev => prev.filter(n => n.id !== id))
-      toast.success('Alert Removed')
-    } catch (err) {
-      toast.error(err.message)
-    }
-  }
-
   const filteredNotifications = notifications.filter(n => {
     if (activeCategory === 'All') return true
     return n.type === activeCategory
   })
+
+  const unreadNotifs = filteredNotifications.filter(n => !n.is_read)
+  const readNotifs = filteredNotifications.filter(n => n.is_read)
 
   const getNotifIcon = (type) => {
     switch (type) {
@@ -144,7 +132,7 @@ export default function AdminNotificationsPage() {
       case 'system': return <Zap size={18} className="text-amber-500" />
       case 'complaint': return <MessageSquare size={18} className="text-pink-500" />
       case 'event': return <Calendar size={18} className="text-cyan-500" />
-      default: return <Bell size={18} className="text-blue-500" />
+      default: return <Bell size={18} className="text-red-500" />
     }
   }
 
@@ -155,7 +143,7 @@ export default function AdminNotificationsPage() {
       case 'system': return 'bg-amber-500/5 border-amber-500/20 shadow-[0_0_30px_rgba(245,158,11,0.02)]'
       case 'complaint': return 'bg-pink-500/5 border-pink-500/20 shadow-[0_0_30px_rgba(236,72,153,0.02)]'
       case 'event': return 'bg-cyan-500/5 border-cyan-500/20 shadow-[0_0_30px_rgba(6,182,212,0.02)]'
-      default: return 'bg-blue-500/5 border-blue-500/20 shadow-[0_0_30px_rgba(59,130,246,0.02)]'
+      default: return 'bg-red-500/5 border-red-500/20 shadow-[0_0_30px_rgba(239,68,68,0.02)]'
     }
   }
 
@@ -166,11 +154,11 @@ export default function AdminNotificationsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-              <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em]">System Intelligence Logs</span>
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em]">System Intelligence Logs</span>
             </div>
             <h2 className="text-3xl lg:text-4xl font-black text-white tracking-tighter uppercase leading-none italic">
-              System <span className="text-blue-500">Alerts</span>
+              System <span className="text-red-500">Alerts</span>
             </h2>
           </div>
 
@@ -197,7 +185,7 @@ export default function AdminNotificationsPage() {
                 onClick={() => setActiveCategory(cat.id)}
                 className={`flex items-center gap-2.5 px-5 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border whitespace-nowrap ${
                   isSelected 
-                    ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20' 
+                    ? 'bg-red-600 border-red-600 text-white shadow-lg shadow-red-600/20' 
                     : 'bg-[#161b22] border-white/[0.06] text-gray-400 hover:text-white'
                 }`}
               >
@@ -214,10 +202,10 @@ export default function AdminNotificationsPage() {
         </div>
 
         {/* NOTIFICATIONS LIST */}
-        <div className="space-y-4">
+        <div className="space-y-8">
           {loading && notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <div className="w-10 h-10 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
+              <div className="w-10 h-10 border-2 border-red-500/20 border-t-red-500 rounded-full animate-spin" />
               <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest italic animate-pulse">Syncing Telemetry...</p>
             </div>
           ) : filteredNotifications.length === 0 ? (
@@ -227,59 +215,87 @@ export default function AdminNotificationsPage() {
               <p className="text-gray-500 text-[10px] uppercase font-bold tracking-widest mt-1">Operational status normal</p>
             </div>
           ) : (
-            <AnimatePresence mode="popLayout">
-              {filteredNotifications.map((notif, idx) => (
-                <motion.div 
-                  key={notif.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ delay: Math.min(idx * 0.03, 0.3) }}
-                  className={`p-6 lg:p-8 rounded-[24px] border transition-all flex items-start gap-5 relative group overflow-hidden ${getNotifStyles(notif)}`}
-                >
-                  {!notif.is_read && <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.6)]" />}
-                  
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
-                    notif.is_read ? 'bg-white/5 border-white/10 text-gray-600' : 'bg-white/5 border-white/10'
-                  }`}>
-                    {getNotifIcon(notif.type)}
-                  </div>
+            <>
+              {unreadNotifs.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em] ml-1">New Alerts</h3>
+                  <AnimatePresence mode="popLayout">
+                    {unreadNotifs.map((notif, idx) => (
+                      <motion.div 
+                        key={notif.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ delay: Math.min(idx * 0.03, 0.3) }}
+                        className={`p-6 lg:p-8 rounded-[24px] border transition-all flex items-start gap-5 relative group overflow-hidden border-red-500/30 shadow-[0_0_20px_rgba(239,68,68,0.15)] hover:border-red-500/50 ${getNotifStyles(notif)}`}
+                      >
+                        <div className="absolute top-0 left-0 w-1 h-full bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.6)]" />
+                        
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border bg-white/5 border-white/10">
+                          {getNotifIcon(notif.type)}
+                        </div>
 
-                  <div className="flex-1 min-w-0 space-y-2">
-                     <div className="flex items-start justify-between gap-4">
-                        <h4 className={`text-sm lg:text-base font-black uppercase tracking-tight truncate ${notif.is_read ? 'text-gray-500' : 'text-white'}`}>
-                          {notif.title}
-                        </h4>
-                        <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest whitespace-nowrap mt-1">
-                          {new Date(notif.created_at).toLocaleDateString()}
-                        </span>
-                     </div>
-                     <p className={`text-xs font-medium leading-relaxed ${notif.is_read ? 'text-gray-600' : 'text-gray-400'}`}>
-                       {notif.message}
-                     </p>
-                  </div>
+                        <div className="flex-1 min-w-0 space-y-2">
+                           <div className="flex items-start justify-between gap-4">
+                              <h4 className="text-sm lg:text-base font-black uppercase tracking-tight truncate text-white">
+                                {notif.title}
+                              </h4>
+                              <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest whitespace-nowrap mt-1">
+                                {new Date(notif.created_at).toLocaleDateString()}
+                              </span>
+                           </div>
+                           <p className="text-xs font-medium leading-relaxed text-gray-300">
+                             {notif.message}
+                           </p>
+                        </div>
 
-                  <div className="flex gap-2 self-center opacity-0 group-hover:opacity-100 transition-opacity">
-                     {!notif.is_read && (
-                       <button 
-                         onClick={() => handleMarkRead(notif.id)}
-                         className="p-2.5 bg-white/5 hover:bg-emerald-600/10 hover:text-emerald-500 rounded-lg text-gray-500 transition-all border border-white/5"
-                         title="Mark as Read"
-                       >
-                         <CheckCircle2 size={14} />
-                       </button>
-                     )}
-                     <button 
-                       onClick={() => handleDelete(notif.id)}
-                       className="p-2.5 bg-white/5 hover:bg-red-600/10 hover:text-red-500 rounded-lg text-gray-500 transition-all border border-white/5"
-                       title="Delete"
-                     >
-                       <Trash2 size={14} />
-                     </button>
+                        <div className="flex gap-2 self-center opacity-0 group-hover:opacity-100 transition-opacity">
+                           <button 
+                             onClick={() => handleMarkRead(notif.id)}
+                             className="p-2.5 bg-white/5 hover:bg-emerald-600/10 hover:text-emerald-500 rounded-lg text-gray-500 transition-all border border-white/5"
+                             title="Mark as Read"
+                           >
+                             <CheckCircle2 size={14} />
+                           </button>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              )}
+
+              {readNotifs.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em] ml-1">Earlier</h3>
+                  <div className="space-y-4">
+                    {readNotifs.map((notif, idx) => (
+                      <div 
+                        key={notif.id}
+                        className={`p-6 lg:p-8 rounded-[24px] border transition-all flex items-start gap-5 relative group overflow-hidden ${getNotifStyles(notif)}`}
+                      >
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border bg-white/5 border-white/10 text-gray-600">
+                          {getNotifIcon(notif.type)}
+                        </div>
+
+                        <div className="flex-1 min-w-0 space-y-2">
+                           <div className="flex items-start justify-between gap-4">
+                              <h4 className="text-sm lg:text-base font-black uppercase tracking-tight truncate text-gray-500">
+                                {notif.title}
+                              </h4>
+                              <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest whitespace-nowrap mt-1">
+                                {new Date(notif.created_at).toLocaleDateString()}
+                              </span>
+                           </div>
+                           <p className="text-xs font-medium leading-relaxed text-gray-650">
+                             {notif.message}
+                           </p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -288,7 +304,7 @@ export default function AdminNotificationsPage() {
            <div className="bg-[#161b22] border border-white/[0.06] rounded-[32px] p-6 lg:p-8 shadow-xl">
               <div className="flex flex-col lg:flex-row items-start justify-between gap-8">
                  <div className="space-y-3 max-w-sm">
-                    <div className="flex items-center gap-2 text-blue-500">
+                    <div className="flex items-center gap-2 text-red-500">
                       <Megaphone size={16} />
                       <h4 className="text-base font-black text-white uppercase tracking-tight">Broadcast Control</h4>
                     </div>
@@ -304,7 +320,7 @@ export default function AdminNotificationsPage() {
                       value={broadcastTitle}
                       onChange={(e) => setBroadcastTitle(e.target.value)}
                       placeholder="ANNOUNCEMENT TITLE..." 
-                      className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-xs font-black uppercase tracking-widest text-white outline-none focus:border-blue-500/50 transition-colors" 
+                      className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-xs font-black uppercase tracking-widest text-white outline-none focus:border-red-500/50 transition-colors" 
                     />
                     <textarea 
                       name="content" 
@@ -312,7 +328,7 @@ export default function AdminNotificationsPage() {
                       value={broadcastContent}
                       onChange={(e) => setBroadcastContent(e.target.value)}
                       placeholder="MESSAGE CONTENT..." 
-                      className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-xs text-white outline-none focus:border-blue-500/50 min-h-[80px] transition-colors" 
+                      className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-xs text-white outline-none focus:border-red-500/50 min-h-[80px] transition-colors" 
                     />
                     <div className="flex gap-4">
                        <select 
@@ -327,7 +343,7 @@ export default function AdminNotificationsPage() {
                        <button 
                          type="submit" 
                          disabled={broadcasting}
-                         className="px-10 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 transition-all flex items-center gap-2"
+                         className="px-10 py-4 bg-red-600 hover:bg-red-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-red-600/20 transition-all flex items-center gap-2"
                        >
                           {broadcasting ? 'Deploying...' : <><Send size={12} /> Deploy Broadcast</>}
                        </button>

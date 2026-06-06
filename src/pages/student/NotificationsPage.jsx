@@ -73,18 +73,8 @@ export default function NotificationsPage() {
         return t === targetType
       })
 
-  function groupByDate(notifs) {
-    const groups = {}
-    notifs.forEach(n => {
-      const d = new Date(n.created_at)
-      const label = isToday(d) ? 'Today' : isYesterday(d) ? 'Yesterday' : format(d, 'MMMM d')
-      if (!groups[label]) groups[label] = []
-      groups[label].push(n)
-    })
-    return groups
-  }
-
-  const grouped = groupByDate(filtered)
+  const unreadNotifs = filtered.filter(n => !n.is_read)
+  const readNotifs = filtered.filter(n => n.is_read)
 
   if (loading) {
     return (
@@ -133,7 +123,6 @@ export default function NotificationsPage() {
         )}
       </div>
 
-
       {/* FILTER TABS */}
       <div className="flex gap-2.5 overflow-x-auto no-scrollbar px-6 py-5 relative z-10">
         {FILTER_TABS.map((t, i) => (
@@ -176,12 +165,13 @@ export default function NotificationsPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              className="space-y-8"
             >
-              {Object.entries(grouped).map(([label, notifs]) => (
-                <div key={label} className="mb-10">
-                  <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em] mb-5 ml-1">{label}</p>
+              {unreadNotifs.length > 0 && (
+                <div>
+                  <h3 className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em] mb-4 ml-1">New Alerts</h3>
                   <div className="flex flex-col gap-4">
-                    {notifs.map((n, idx) => {
+                    {unreadNotifs.map((n, idx) => {
                        const cfg = TYPE_CONFIG[n.type] || TYPE_CONFIG.general
                        const Icon = cfg.icon
                        return (
@@ -192,43 +182,81 @@ export default function NotificationsPage() {
                            transition={{ delay: idx * 0.05 }}
                            whileTap={{ scale: 0.98 }}
                            onClick={() => markRead(n.id)}
-                           className={`w-full text-left rounded-2xl md:rounded-[32px] p-4 md:p-5 flex items-start gap-4 md:gap-5 transition-all border relative overflow-hidden group ${
-                             n.is_read 
-                               ? 'bg-white/[0.02] border-white/5 opacity-60' 
-                               : 'bg-white/[0.05] border-white/10 shadow-2xl'
-                           }`}
+                           className="w-full text-left rounded-2xl md:rounded-[32px] p-4 md:p-5 flex items-start gap-4 md:gap-5 transition-all border relative overflow-hidden group bg-white/[0.05] border-blue-500/30 shadow-[0_0_20px_rgba(59,130,246,0.15)] hover:border-blue-500/50"
                          >
-                           {!n.is_read && (
-                             <div className="absolute top-0 left-0 w-1 h-full bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.5)]" />
-                           )}
-                           <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center flex-shrink-0 transition-all ${
-                             n.is_read ? 'bg-white/5 text-gray-600' : `${cfg.bg} ${cfg.color} shadow-lg shadow-black/20`
-                           }`}>
+                           <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+                           <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center flex-shrink-0 transition-all ${cfg.bg} ${cfg.color} shadow-lg shadow-black/20`}>
                              <Icon size={20} className="md:w-6 md:h-6" />
                            </div>
                            <div className="flex-1 min-w-0 py-1">
                              <div className="flex justify-between items-start mb-1.5">
-                               <h3 className={`text-sm font-black tracking-tight ${n.is_read ? 'text-gray-400' : 'text-white'}`}>
+                               <h3 className="text-sm font-black tracking-tight text-white">
                                  {n.title}
                                </h3>
                                <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest ml-2 whitespace-nowrap">
                                  {format(new Date(n.created_at), 'h:mm a')}
                                </span>
                              </div>
-                             <p className={`text-xs leading-relaxed font-medium ${n.is_read ? 'text-gray-500' : 'text-gray-400'}`}>
+                             <p className="text-xs leading-relaxed font-medium text-gray-300">
                                {n.message}
                              </p>
+                             {n.sender && (
+                               <div className="mt-2 text-[8px] font-black text-blue-400 uppercase tracking-widest">
+                                 From: {n.sender.full_name} ({n.sender.role})
+                               </div>
+                             )}
                            </div>
                          </motion.button>
                        )
                     })}
                   </div>
                 </div>
-              ))}
+              )}
+
+              {readNotifs.length > 0 && (
+                <div>
+                  <h3 className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em] mb-4 ml-1">Earlier</h3>
+                  <div className="flex flex-col gap-4">
+                    {readNotifs.map((n, idx) => {
+                       const cfg = TYPE_CONFIG[n.type] || TYPE_CONFIG.general
+                       const Icon = cfg.icon
+                       return (
+                         <div
+                           key={n.id}
+                           className="w-full text-left rounded-2xl md:rounded-[32px] p-4 md:p-5 flex items-start gap-4 md:gap-5 transition-all border relative overflow-hidden group bg-white/[0.02] border-white/5 opacity-60"
+                         >
+                           <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center flex-shrink-0 transition-all bg-white/5 text-gray-600">
+                             <Icon size={20} className="md:w-6 md:h-6" />
+                           </div>
+                           <div className="flex-1 min-w-0 py-1">
+                             <div className="flex justify-between items-start mb-1.5">
+                               <h3 className="text-sm font-black tracking-tight text-gray-400">
+                                 {n.title}
+                               </h3>
+                               <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest ml-2 whitespace-nowrap">
+                                 {format(new Date(n.created_at), 'MM/dd h:mm a')}
+                               </span>
+                             </div>
+                             <p className="text-xs leading-relaxed font-medium text-gray-500">
+                               {n.message}
+                             </p>
+                             {n.sender && (
+                               <div className="mt-2 text-[8px] font-black text-gray-500 uppercase tracking-widest">
+                                 From: {n.sender.full_name} ({n.sender.role})
+                               </div>
+                             )}
+                           </div>
+                         </div>
+                       )
+                    })}
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
       </main>
+      <BottomTabBar />
     </div>
   )
 }

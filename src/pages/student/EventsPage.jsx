@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { CalendarDays, MapPin, Star, ChevronLeft, Sparkles, QrCode, X, Filter, Clock, Users, Search, Home, LayoutGrid, Coffee, User } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store/index'
@@ -17,6 +17,97 @@ export default function EventsPage() {
   const [selectedEvent, setSelectedEvent] = useState(null)
   const [registeredEvents, setRegisteredEvents] = useState([])
   const [loading, setLoading] = useState(true)
+
+  const [roomMessages, setRoomMessages] = useState([])
+  const [newMessage, setNewMessage] = useState('')
+  const messagesEndRef = useRef(null)
+
+  // Scroll chat room to bottom
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [roomMessages])
+
+  // Real-time Event Room messaging subscription
+  useEffect(() => {
+    if (!selectedEvent || !registeredEvents.includes(selectedEvent.id)) return
+
+    fetchRoomMessages(selectedEvent.id)
+
+    const channel = supabase
+      .channel(`event_room_student_${selectedEvent.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'event_messages',
+          filter: `event_id=eq.${selectedEvent.id}`
+        },
+        async (payload) => {
+          const { data: pData } = await supabase
+            .from('profiles')
+            .select('full_name, role')
+            .eq('id', payload.new.sender_id)
+            .single()
+
+          const messageWithProfile = {
+            ...payload.new,
+            profiles: pData || { full_name: 'Unknown User', role: 'student' }
+          }
+
+          setRoomMessages((prev) => {
+            if (prev.some((m) => m.id === payload.new.id)) return prev
+            return [...prev, messageWithProfile]
+          })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [selectedEvent, registeredEvents])
+
+  async function fetchRoomMessages(eventId) {
+    try {
+      const { data, error } = await supabase
+        .from('event_messages')
+        .select('*, profiles(full_name, role)')
+        .eq('event_id', eventId)
+        .order('created_at', { ascending: true })
+
+      if (!error && data) {
+        setRoomMessages(data)
+      }
+    } catch (err) {
+      console.error('Error fetching room messages:', err)
+    }
+  }
+
+  async function handleSendMessage(e) {
+    e.preventDefault()
+    if (!newMessage.trim() || !selectedEvent || !profile?.id) return
+
+    const messageText = newMessage.trim()
+    setNewMessage('')
+
+    try {
+      const { error } = await supabase
+        .from('event_messages')
+        .insert({
+          event_id: selectedEvent.id,
+          sender_id: profile.id,
+          message: messageText
+        })
+
+      if (error) throw error
+    } catch (err) {
+      console.error('Send message error:', err)
+      toast.error('Failed to send message')
+    }
+  }
 
   useEffect(() => {
     fetchEvents()
@@ -245,18 +336,69 @@ export default function EventsPage() {
                       <StatNode label="Yield" value={`+${selectedEvent.eco_points} XP`} icon={Star} />
                    </div>
 
-                   <motion.button
-                     whileTap={{ scale: 0.98 }}
-                     onClick={() => handleRegister(selectedEvent)}
-                     disabled={registeredEvents.includes(selectedEvent.id)}
-                     className={`w-full py-5 md:py-7 rounded-2xl md:rounded-[32px] font-black text-[10px] md:text-xs uppercase tracking-[0.3em] md:tracking-[0.4em] transition-all flex items-center justify-center gap-3 ${
-                       registeredEvents.includes(selectedEvent.id)
-                         ? 'bg-white/5 text-gray-500 border border-white/5'
-                         : 'bg-blue-600 text-white shadow-[0_15px_40px_rgba(37,99,235,0.4)] hover:bg-blue-500 active:scale-95'
-                     }`}
-                   >
-                     {registeredEvents.includes(selectedEvent.id) ? 'Uplink Synchronized ✓' : 'Initiate Linking'}
-                   </motion.button>
+                    {registeredEvents.includes(selectedEvent.id) ? (
+                      <div className="space-y-4 mt-6 pt-6 border-t border-white/5">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                          <h4 className="text-[10px] font-black uppercase tracking-widest text-green-500">Event Discussion Room</h4>
+                        </div>
+                        
+                        <div className="h-48 overflow-y-auto no-scrollbar bg-white/5 rounded-2xl p-4 border border-white/5 flex flex-col gap-3">
+                          {roomMessages.length === 0 ? (
+                            <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest text-center my-auto">No messages in this event room yet. Be the first to start the discussion!</p>
+                          ) : (
+                            roomMessages.map((m) => {
+                              const isSelf = m.sender_id === profile?.id
+                              const isFaculty = m.profiles?.role === 'faculty' || m.profiles?.role === 'admin'
+                              return (
+                                <div key={m.id} className={`flex flex-col max-w-[85%] ${isSelf ? 'self-end items-end' : 'self-start items-start'}`}>
+                                  {!isSelf && (
+                                    <div className="flex items-center gap-1.5 mb-1 ml-1">
+                                      <span className="text-[8px] font-black text-gray-500 uppercase">{m.profiles?.full_name || 'Anonymous'}</span>
+                                      {isFaculty && (
+                                        <span className="px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-500 text-[6px] font-black uppercase">Faculty</span>
+                                      )}
+                                    </div>
+                                  )}
+                                  <div className={`px-4 py-2.5 rounded-2xl text-xs font-semibold leading-relaxed ${
+                                    isSelf 
+                                      ? 'bg-blue-600 text-white rounded-tr-none' 
+                                      : 'bg-white/5 border border-white/5 text-gray-300 rounded-tl-none'
+                                  }`}>
+                                    {m.message}
+                                  </div>
+                                </div>
+                              )
+                            })
+                          )}
+                          <div ref={messagesEndRef} />
+                        </div>
+
+                        <form onSubmit={handleSendMessage} className="flex gap-2">
+                          <input
+                            type="text"
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            placeholder="Type a message to event members..."
+                            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs outline-none focus:border-blue-500/50 transition-colors"
+                          />
+                          <button
+                            type="submit"
+                            className="px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
+                          >
+                            Send
+                          </button>
+                        </form>
+                      </div>
+                    ) : (
+                      <motion.button
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => handleRegister(selectedEvent)}
+                        className="w-full py-5 md:py-7 rounded-2xl md:rounded-[32px] font-black text-[10px] md:text-xs uppercase tracking-[0.3em] md:tracking-[0.4em] transition-all flex items-center justify-center gap-3 bg-blue-600 text-white shadow-[0_15px_40px_rgba(37,99,235,0.4)] hover:bg-blue-500 active:scale-95"
+                      >
+                        Initiate Linking
+                      </motion.button>
+                    )}
                 </div>
               </motion.div>
             </div>

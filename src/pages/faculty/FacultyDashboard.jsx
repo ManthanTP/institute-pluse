@@ -11,7 +11,6 @@ const MOCK_STATS = {
   avgEcoScore: 73,
   attendanceRate: 87,
   openComplaints: 4,
-  challengesActive: 3,
 }
 
 function StatCard({ icon: Icon, label, value, sub, color = '#3b82f6', delay = 0 }) {
@@ -40,7 +39,6 @@ export default function FacultyDashboard() {
     avgEcoScore: 0,
     attendanceRate: 0, // Placeholder
     openComplaints: 0,
-    challengesActive: 0,
   })
   const [recentEvents, setRecentEvents] = useState([])
 
@@ -84,12 +82,6 @@ export default function FacultyDashboard() {
         .select('*', { count: 'exact', head: true })
         .eq('status', 'open')
 
-      // Fetch active green challenges
-      const { count: challengesCount } = await supabase
-        .from('green_challenges')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'active')
-
       // Fetch real attendance rate (Presence / Total Students * Active Sessions)
       const { count: totalVerified } = await supabase
         .from('attendance_records')
@@ -109,7 +101,6 @@ export default function FacultyDashboard() {
         avgEcoScore: avgScore,
         attendanceRate: attRate || 87, 
         openComplaints: complaintsCount || 0,
-        challengesActive: challengesCount || 0,
       })
     }
 
@@ -146,7 +137,6 @@ export default function FacultyDashboard() {
           <StatCard icon={Leaf} label="Avg Eco Score" value={`${stats.avgEcoScore} XP`} sub="Campus Average" color="#22c55e" delay={0.15} />
           <StatCard icon={GraduationCap} label="Attendance Rate" value={`${stats.attendanceRate}%`} sub="This Semester" color="#14b8a6" delay={0.2} />
           <StatCard icon={MessageSquare} label="Open Complaints" value={stats.openComplaints} color="#ef4444" delay={0.25} />
-          <StatCard icon={Target} label="Active Challenges" value={stats.challengesActive} color="#f59e0b" delay={0.3} />
         </div>
         {/* QUICK ACTIONS */}
         <section className="mb-10">
@@ -159,7 +149,6 @@ export default function FacultyDashboard() {
               { label: 'Events', icon: CalendarDays, path: '/faculty/events', color: '#3b82f6' },
               { label: 'Complaints', icon: MessageSquare, path: '/faculty/complaints', color: '#ef4444' },
               { label: 'Sustainability', icon: Leaf, path: '/faculty/sustainability', color: '#22c55e' },
-              { label: 'Challenges', icon: Target, path: '/faculty/challenges', color: '#f59e0b' },
               { label: 'Announcements', icon: Zap, path: '/faculty/announcements', color: '#8b5cf6' },
               { label: 'Notifications', icon: Clock, path: '/faculty/notifications', color: '#6366f1' },
               { label: 'Security Profile', icon: Users, path: '/faculty/profile', color: '#94a3b8' },
@@ -211,7 +200,6 @@ export default function FacultyDashboard() {
             <div className="space-y-4">
               {[
                 { label: 'Total CO2 Saved', value: '1,240 kg', color: '#22c55e' },
-                { label: 'Active Eco Challenges', value: '3 Running', color: '#f59e0b' },
                 { label: 'Department Score', value: '78%', color: '#3b82f6' },
               ].map(metric => (
                 <div key={metric.label} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { GraduationCap, Users, Clock, CheckCircle2, Zap, AlertCircle, MapPin, Edit3, Settings, BookOpen, X, ChevronRight, MoreHorizontal, Layout, Filter, History, Trash2, ExternalLink, RefreshCw } from 'lucide-react'
+import { GraduationCap, Users, Clock, CheckCircle2, Zap, AlertCircle, MapPin, Edit3, Settings, BookOpen, X, ChevronRight, MoreHorizontal, Layout, Filter, History, Trash2, ExternalLink, RefreshCw, Eye, EyeOff } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import FacultyLayout from './FacultyLayout'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -16,6 +16,7 @@ export default function FacultyAttendancePage() {
   const [loading, setLoading] = useState(true)
   const [timeLeft, setTimeLeft] = useState(null)
   const [sessionHistory, setSessionHistory] = useState([])
+  const [showCode, setShowCode] = useState(false)
   
   // Metadata States
   const [subjects, setSubjects] = useState([])
@@ -577,9 +578,20 @@ export default function FacultyAttendancePage() {
                            <div className="bg-white p-4 rounded-2xl md:rounded-[36px] shadow-3xl transform hover:scale-105 transition-transform flex items-center justify-center">
                               <QRCodeSVG value={activeSession.id} size={220} className="w-full max-w-[160px] md:max-w-[220px] h-auto" level="H" />
                            </div>
-                           <div className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl md:rounded-2xl backdrop-blur-xl text-center shadow-xl">
+                           <div className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl md:rounded-2xl backdrop-blur-xl text-center shadow-xl relative group">
                               <p className="text-[8px] md:text-[9px] font-black text-blue-300 uppercase tracking-[0.4em] mb-1 italic">Manual Protocol Code</p>
-                              <h4 className="text-xl md:text-2xl font-black text-white tracking-[0.2em]">{activeSession.session_code || activeSession.id.slice(0, 6).toUpperCase()}</h4>
+                              <div className="flex items-center justify-center gap-3">
+                                 <h4 className="text-xl md:text-2xl font-black text-white tracking-[0.2em]">
+                                    {showCode ? (activeSession.session_code || activeSession.id.slice(0, 6).toUpperCase()) : '••••••'}
+                                 </h4>
+                                 <button 
+                                    onClick={() => setShowCode(!showCode)} 
+                                    className="p-1 rounded bg-white/15 hover:bg-white/25 text-blue-200 hover:text-white transition-all"
+                                    title={showCode ? "Hide Code" : "Show Code"}
+                                 >
+                                    {showCode ? <EyeOff size={14} /> : <Eye size={14} />}
+                                 </button>
+                              </div>
                            </div>
                         </div>
                      )}

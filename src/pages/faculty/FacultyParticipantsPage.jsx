@@ -162,6 +162,7 @@ export default function FacultyParticipantsPage() {
       if (isBroadcast && roomParticipants.length > 0) {
         const notifications = roomParticipants.map(p => ({
           student_id: p.student_id,
+          sender_id: profile.id,
           title: `Broadcast: ${activeEventRoom.title}`,
           message: messageText,
           type: 'general',
@@ -255,6 +256,7 @@ export default function FacultyParticipantsPage() {
         .from('student_notifications')
         .insert({
           student_id: messageStudent.id,
+          sender_id: profile.id,
           title: messageTitle.trim(),
           message: messageBody.trim(),
           type: 'general',

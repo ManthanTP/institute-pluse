@@ -109,7 +109,7 @@ export default function AdminUsersPage() {
           <div className="flex gap-3">
             <div className="flex bg-[#161b22] border border-white/10 rounded-2xl p-1 mr-4">
                <button onClick={() => setActiveTab('all')} className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'all' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-white'}`}>All Users</button>
-               <button onClick={() => setActiveTab('students')} className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'students' ? 'bg-green-600 text-white' : 'text-gray-500 hover:text-white'}`}>Student Registry</button>
+               <button onClick={() => setActiveTab('students')} className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'students' ? 'bg-red-600 text-white' : 'text-gray-500 hover:text-white'}`}>Student Registry</button>
             </div>
             <button 
               onClick={handleExportRegistry}
@@ -294,7 +294,7 @@ export default function AdminUsersPage() {
                        <div key={divName} className="bg-white/5 border border-white/10 rounded-[32px] p-6 backdrop-blur-xl">
                           <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/5">
                              <div className="flex items-center gap-2">
-                                <span className="w-8 h-8 rounded-xl bg-green-500/10 border border-green-500/20 text-green-500 flex items-center justify-center font-black text-xs">{divName}</span>
+                                <span className="w-8 h-8 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 flex items-center justify-center font-black text-xs">{divName}</span>
                                 <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Division {divName}</span>
                              </div>
                              <div className="text-[10px] font-black text-white bg-white/10 px-3 py-1 rounded-lg">
@@ -339,7 +339,7 @@ export default function AdminUsersPage() {
               className="fixed inset-x-6 top-[15%] bottom-[15%] max-w-2xl mx-auto bg-slate-900 border border-white/10 rounded-[48px] z-[70] p-12 overflow-y-auto no-scrollbar shadow-2xl"
             >
               <div className="flex flex-col items-center text-center mb-10">
-                <div className="w-24 h-24 rounded-[40px] bg-gradient-to-br from-blue-500 to-green-600 p-1 mb-6">
+                <div className="w-24 h-24 rounded-[40px] bg-gradient-to-br from-blue-500 to-red-600 p-1 mb-6">
                   <div className="w-full h-full rounded-[38px] bg-slate-900 flex items-center justify-center text-4xl font-black text-white">
                     {selectedUser.full_name?.[0] || 'U'}
                   </div>

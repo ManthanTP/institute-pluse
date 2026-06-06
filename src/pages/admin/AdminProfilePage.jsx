@@ -51,7 +51,7 @@ export default function AdminProfilePage() {
       <div className="space-y-12 pb-20 max-w-6xl mx-auto">
         {/* PROFILE HEADER */}
         <div className="relative">
-           <div className="h-64 w-full bg-gradient-to-br from-green-600 to-blue-900 rounded-[60px] overflow-hidden">
+           <div className="h-64 w-full bg-gradient-to-br from-red-600 to-blue-900 rounded-[60px] overflow-hidden">
               <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
            </div>
            
@@ -63,14 +63,14 @@ export default function AdminProfilePage() {
                        <Camera size={30} />
                     </div>
                  </div>
-                 <div className="absolute -right-2 -bottom-2 w-10 h-10 bg-green-500 rounded-2xl border-4 border-[#020617] flex items-center justify-center">
+                 <div className="absolute -right-2 -bottom-2 w-10 h-10 bg-red-500 rounded-2xl border-4 border-[#020617] flex items-center justify-center">
                     <ShieldCheck size={18} className="text-white" />
                  </div>
               </div>
               
               <div className="pb-4">
                  <h2 className="text-4xl font-black text-white tracking-tighter uppercase italic leading-none">{profile?.full_name}</h2>
-                 <p className="text-[10px] font-black text-green-500 uppercase tracking-[0.4em] mt-3">Verified Root Admin • Sector: Global</p>
+                 <p className="text-[10px] font-black text-red-500 uppercase tracking-[0.4em] mt-3">Verified Root Admin • Sector: Global</p>
               </div>
            </div>
         </div>
@@ -80,7 +80,7 @@ export default function AdminProfilePage() {
            <div className="lg:col-span-2 space-y-8">
               <div className="bg-[#0f172a]/40 border border-white/10 rounded-[48px] p-12 space-y-10">
                  <div className="flex items-center gap-4">
-                    <User size={20} className="text-green-500" />
+                    <User size={20} className="text-red-500" />
                     <h4 className="text-[11px] font-black text-white uppercase tracking-[0.4em]">Identity Profile</h4>
                  </div>
 
@@ -91,7 +91,7 @@ export default function AdminProfilePage() {
                          type="text" 
                          value={formData.full_name}
                          onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                         className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 text-[11px] font-black uppercase tracking-widest text-white focus:outline-none focus:border-green-500 transition-all"
+                         className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 text-[11px] font-black uppercase tracking-widest text-white focus:outline-none focus:border-red-500 transition-all"
                        />
                     </div>
                     <div className="space-y-3 opacity-50">
@@ -111,7 +111,7 @@ export default function AdminProfilePage() {
                     </div>
                     <div className="space-y-3">
                        <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Clearance Protocol</label>
-                       <div className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 text-[11px] font-black uppercase tracking-widest text-green-500 flex items-center gap-3">
+                       <div className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 text-[11px] font-black uppercase tracking-widest text-red-500 flex items-center gap-3">
                           <Shield size={14} /> {formData.clearance}
                        </div>
                     </div>
@@ -120,7 +120,7 @@ export default function AdminProfilePage() {
                  <button 
                    onClick={handleUpdate}
                    disabled={loading}
-                   className="px-10 py-5 bg-green-600 text-white rounded-[24px] text-[10px] font-black uppercase tracking-widest shadow-xl shadow-green-600/20 hover:scale-105 transition-all disabled:opacity-50"
+                   className="px-10 py-5 bg-red-600 text-white rounded-[24px] text-[10px] font-black uppercase tracking-widest shadow-xl shadow-red-600/20 hover:scale-105 transition-all disabled:opacity-50"
                  >
                     {loading ? 'Synchronizing...' : 'Update Identity Protocol'}
                  </button>
@@ -197,7 +197,7 @@ export default function AdminProfilePage() {
                  <div className="space-y-6">
                     <div className="flex items-center justify-between">
                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Extended Debug Info</span>
-                       <div className="w-12 h-6 bg-green-600 rounded-full relative"><div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-lg" /></div>
+                       <div className="w-12 h-6 bg-red-600 rounded-full relative"><div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-lg" /></div>
                     </div>
                     <div className={`flex items-center justify-between`}>
                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Global Telemetry</span>

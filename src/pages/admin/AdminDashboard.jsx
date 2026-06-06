@@ -19,7 +19,7 @@ const MOCK_TREND = [
   { day: 'Sun', co2: 2.2, logs: 540 },
 ]
 
-function StatCard({ icon: Icon, label, value, sub, color = '#16a34a', delay = 0 }) {
+function StatCard({ icon: Icon, label, value, sub, color = '#ef4444', delay = 0 }) {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -156,10 +156,10 @@ export default function AdminDashboard() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="text-center md:text-left">
             <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
-              <span className="text-[8px] lg:text-[10px] font-black text-green-500 uppercase tracking-[0.3em]">Real-time Pulse Command</span>
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.6)]" />
+              <span className="text-[8px] lg:text-[10px] font-black text-red-500 uppercase tracking-[0.3em]">Real-time Pulse Command</span>
             </div>
-            <h2 className="text-3xl lg:text-4xl font-black text-white tracking-tighter uppercase leading-none italic">Campus <span className="text-green-500">Core</span></h2>
+            <h2 className="text-3xl lg:text-4xl font-black text-white tracking-tighter uppercase leading-none italic">Campus <span className="text-red-500">Core</span></h2>
             <p className="text-gray-500 text-[8px] lg:text-[10px] font-black uppercase tracking-[0.2em] mt-3 italic">
                System Online: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </p>
@@ -171,7 +171,7 @@ export default function AdminDashboard() {
              >
                 Diagnostic Export
              </button>
-             <button onClick={() => window.location.reload()} className="px-6 py-4 rounded-xl lg:rounded-2xl bg-green-600 text-white text-[8px] lg:text-[10px] font-black uppercase tracking-widest hover:bg-green-500 shadow-lg shadow-green-600/20 transition-all">
+             <button onClick={() => window.location.reload()} className="px-6 py-4 rounded-xl lg:rounded-2xl bg-red-600 text-white text-[8px] lg:text-[10px] font-black uppercase tracking-widest hover:bg-red-500 shadow-lg shadow-red-600/20 transition-all">
                 Global Refresh
              </button>
           </div>
@@ -180,9 +180,9 @@ export default function AdminDashboard() {
         {/* STAT GRID */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard icon={Users} label="Identity Nodes" value={stats.totalUsers.toLocaleString()} color="#3b82f6" delay={0.05} />
-          <StatCard icon={Leaf} label="Daily Flux" value={stats.todayLogs} sub={`Efficiency: ${stats.avgEcoScore}%`} color="#22c55e" delay={0.1} />
+          <StatCard icon={Leaf} label="Daily Flux" value={stats.todayLogs} sub={`Efficiency: ${stats.avgEcoScore}%`} color="#ef4444" delay={0.1} />
           <StatCard icon={TrendingDown} label="Carbon Aggregation" value={`${stats.totalCo2} kg`} sub="Life-cycle Total" color="#0ea5e9" delay={0.15} />
-          <StatCard icon={ShieldCheck} label="Offset Protocol" value={`${stats.totalSaved} kg`} sub="Verified Reduction" color="#166534" delay={0.2} />
+          <StatCard icon={ShieldCheck} label="Offset Protocol" value={`${stats.totalSaved} kg`} sub="Verified Reduction" color="#991b1b" delay={0.2} />
           <StatCard icon={AlertCircle} label="Distress Signals" value={stats.openComplaints} sub="Action Required" color="#ef4444" delay={0.25} />
           <StatCard icon={Zap} label="Eco-Points Issued" value={stats.totalPoints.toLocaleString()} color="#f59e0b" delay={0.3} />
           <Link to="/12345678/admin/events" className="block h-full">
@@ -200,15 +200,15 @@ export default function AdminDashboard() {
           >
             <div className="flex items-center justify-between mb-8">
                <h3 className="text-[8px] lg:text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Emission Trajectory</h3>
-               <div className="flex items-center gap-1.5"><div className="w-1 h-1 rounded-full bg-green-500" /> <span className="text-[7px] lg:text-[9px] font-black uppercase text-gray-500">CO2 Flow</span></div>
+               <div className="flex items-center gap-1.5"><div className="w-1 h-1 rounded-full bg-red-500" /> <span className="text-[7px] lg:text-[9px] font-black uppercase text-gray-500">CO2 Flow</span></div>
             </div>
             <div className="h-[200px] lg:h-[250px] w-full">
                <ResponsiveContainer width="100%" height="100%">
                  <AreaChart data={chartData}>
                    <defs>
                      <linearGradient id="colorCo2" x1="0" y1="0" x2="0" y2="1">
-                       <stop offset="5%" stopColor="#16a34a" stopOpacity={0.2}/>
-                       <stop offset="95%" stopColor="#16a34a" stopOpacity={0}/>
+                       <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2}/>
+                       <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
                      </linearGradient>
                    </defs>
                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
@@ -217,7 +217,7 @@ export default function AdminDashboard() {
                    <Tooltip 
                      contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '9px' }}
                    />
-                   <Area type="monotone" dataKey="co2" stroke="#16a34a" strokeWidth={3} fillOpacity={1} fill="url(#colorCo2)" />
+                   <Area type="monotone" dataKey="co2" stroke="#ef4444" strokeWidth={3} fillOpacity={1} fill="url(#colorCo2)" />
                  </AreaChart>
                </ResponsiveContainer>
             </div>
@@ -259,7 +259,7 @@ export default function AdminDashboard() {
           >
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-[8px] lg:text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Distress Signals</h3>
-              <Link to="/12345678/admin/complaints" className="text-[7px] lg:text-[9px] font-black text-green-500 uppercase tracking-widest hover:text-green-400 transition-all">Full Console →</Link>
+              <Link to="/12345678/admin/complaints" className="text-[7px] lg:text-[9px] font-black text-red-500 uppercase tracking-widest hover:text-red-400 transition-all">Full Console →</Link>
             </div>
             <div className="space-y-3">
               {recentComplaints.length === 0 ? (
@@ -292,12 +292,12 @@ export default function AdminDashboard() {
             <div className="space-y-6">
                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                     <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500 border border-green-500/20">
+                     <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 border border-red-500/20">
                         <Zap size={18} />
                      </div>
                      <span className="text-[9px] lg:text-[10px] font-black text-white uppercase tracking-widest">Main Node Uptime</span>
                   </div>
-                  <span className="text-[9px] lg:text-[10px] font-black text-green-500 uppercase tracking-widest">99.98%</span>
+                  <span className="text-[9px] lg:text-[10px] font-black text-red-500 uppercase tracking-widest">99.98%</span>
                </div>
                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">

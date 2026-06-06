@@ -16,6 +16,7 @@ const STUDENT_NAV = [
   { path: '/cafeteria', icon: UtensilsCrossed, label: 'Cafeteria' },
   { path: '/attendance', icon: GraduationCap, label: 'Attendance' },
   { path: '/study-planner', icon: BookOpen, label: 'Study Planner' },
+  { path: '/resources', icon: BookOpen, label: 'Resource Hub' },
   { path: '/navigation', icon: MapPin, label: 'Campus Navigation' },
   { path: '/lost-found', icon: Search, label: 'Lost & Found' },
   { path: '/announcements', icon: Megaphone, label: 'Announcements' },

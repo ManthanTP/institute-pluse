@@ -87,16 +87,16 @@ export default function AdminSettingsPage() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <Building size={14} className="text-green-500" />
-              <span className="text-[10px] font-black text-green-500 uppercase tracking-[0.4em]">Core Brand Identity</span>
+              <Building size={14} className="text-red-500" />
+              <span className="text-[10px] font-black text-red-500 uppercase tracking-[0.4em]">Core Brand Identity</span>
             </div>
-            <h2 className="text-5xl font-black text-white tracking-tighter uppercase leading-none italic">Institution <span className="text-green-500">Profile</span></h2>
+            <h2 className="text-5xl font-black text-white tracking-tighter uppercase leading-none italic">Institution <span className="text-red-500">Profile</span></h2>
           </div>
 
           <button 
             onClick={handleSave} 
             disabled={loading || fetching}
-            className="px-10 py-5 bg-green-600 hover:bg-green-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+            className="px-10 py-5 bg-red-600 hover:bg-red-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
           >
             {loading ? 'Syncing...' : 'Save Core Sync'}
           </button>
@@ -104,7 +104,7 @@ export default function AdminSettingsPage() {
 
         {fetching ? (
           <div className="py-20 flex flex-col items-center justify-center">
-            <div className="w-10 h-10 border-2 border-green-500/20 border-t-green-500 rounded-full animate-spin mb-4" />
+            <div className="w-10 h-10 border-2 border-red-500/20 border-t-red-500 rounded-full animate-spin mb-4" />
             <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest italic">Streaming Profile Telemetry...</p>
           </div>
         ) : (
@@ -112,7 +112,7 @@ export default function AdminSettingsPage() {
              {/* PROFILE FORM */}
              <div className="lg:col-span-2 bg-slate-900/40 border border-white/10 rounded-[48px] p-12 space-y-8 backdrop-blur-xl">
                 <div className="flex items-center gap-4">
-                   <Settings size={24} className="text-green-500" />
+                   <Settings size={24} className="text-red-500" />
                    <h4 className="text-[11px] font-black text-white uppercase tracking-[0.4em]">Identity Parameters</h4>
                 </div>
 
@@ -125,7 +125,7 @@ export default function AdminSettingsPage() {
                           type="text"
                           value={settings.name}
                           onChange={e => setSettings({ ...settings, name: e.target.value })}
-                          className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-green-500/50 transition-all uppercase tracking-widest font-black"
+                          className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-red-500/50 transition-all uppercase tracking-widest font-black"
                           required
                         />
                      </div>
@@ -140,7 +140,7 @@ export default function AdminSettingsPage() {
                             type="email"
                             value={settings.contact_email}
                             onChange={e => setSettings({ ...settings, contact_email: e.target.value })}
-                            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-green-500/50 transition-all"
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-red-500/50 transition-all"
                             required
                           />
                        </div>
@@ -153,7 +153,7 @@ export default function AdminSettingsPage() {
                             type="text"
                             value={settings.contact_phone}
                             onChange={e => setSettings({ ...settings, contact_phone: e.target.value })}
-                            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-green-500/50 transition-all"
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-red-500/50 transition-all"
                             required
                           />
                        </div>
@@ -168,7 +168,7 @@ export default function AdminSettingsPage() {
                           type="text"
                           value={settings.address}
                           onChange={e => setSettings({ ...settings, address: e.target.value })}
-                          className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-green-500/50 transition-all"
+                          className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-red-500/50 transition-all"
                           required
                         />
                      </div>
@@ -178,7 +178,7 @@ export default function AdminSettingsPage() {
                   <div className="space-y-2">
                      <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Brand Logo Upload</label>
                      <div className="flex items-center gap-4">
-                        <label className="flex-1 flex items-center justify-between bg-white/5 border border-white/10 hover:border-green-500/30 rounded-2xl p-4 cursor-pointer hover:bg-white/[0.08] transition-all">
+                        <label className="flex-1 flex items-center justify-between bg-white/5 border border-white/10 hover:border-red-500/30 rounded-2xl p-4 cursor-pointer hover:bg-white/[0.08] transition-all">
                           <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
                             <Upload size={14} /> Choose Logo Image
                           </span>
@@ -197,7 +197,7 @@ export default function AdminSettingsPage() {
              {/* LIVE BRAND PREVIEW */}
              <div className="bg-slate-900/40 border border-white/10 rounded-[48px] p-12 flex flex-col justify-between backdrop-blur-xl">
                 <div>
-                   <div className="flex items-center gap-2 text-green-500 mb-6">
+                   <div className="flex items-center gap-2 text-red-500 mb-6">
                       <Eye size={16} />
                       <span className="text-[10px] font-black uppercase tracking-widest">Live Brand Preview</span>
                    </div>
