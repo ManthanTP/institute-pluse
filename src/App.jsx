@@ -31,6 +31,7 @@ const ProfilePage = lazy(() => import('./pages/student/ProfilePage'))
 const NotificationsPage = lazy(() => import('./pages/student/NotificationsPage'))
 const HelpPage = lazy(() => import('./pages/shared/HelpPage'))
 const NotFoundPage = lazy(() => import('./pages/shared/NotFoundPage'))
+const VerificationPage = lazy(() => import('./pages/shared/VerificationPage'))
 const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'))
 const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'))
 const ResourceHubPage = lazy(() => import('./pages/student/ResourceHubPage'))
@@ -158,6 +159,8 @@ function App() {
           <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
           <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/verify" element={<VerificationPage />} />
+          <Route path="/verify/:id" element={<VerificationPage />} />
           <Route path="/12345678/admin/login" element={<AdminLoginPage />} />
 
           {/* ══════════ STUDENT ══════════ */}
