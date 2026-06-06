@@ -86,8 +86,8 @@ export default function FacultySustainabilityPage() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-[10px] font-black text-green-500 uppercase tracking-[0.3em]">Campus Carbon Offset Index</span>
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em]">Campus Carbon Offset Index</span>
             </div>
             <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Sustainability Hub</h2>
             <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mt-3">
@@ -104,13 +104,13 @@ export default function FacultySustainabilityPage() {
           </div>
         </div>
 
-        {/* TOP STATS */}
+         {/* TOP STATS */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
            {[
-             { label: 'Cumulative CO2 Flux', value: `${stats.totalCo2} kg`, icon: Wind, color: 'text-blue-500', bg: 'bg-blue-500/10' },
-             { label: 'Offset Protocol', value: `${stats.totalSaved} kg`, icon: Leaf, color: 'text-green-500', bg: 'bg-green-500/10' },
-             { label: 'Ecosystem Nodes', value: stats.activeUsers, icon: Zap, color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
-             { label: 'Efficiency Index', value: `${stats.avgEfficiency}%`, icon: Target, color: 'text-purple-500', bg: 'bg-purple-500/10' },
+             { label: 'Cumulative CO2 Flux', value: `${stats.totalCo2} kg`, icon: Wind, color: 'text-red-500', bg: 'bg-red-500/10' },
+             { label: 'Offset Protocol', value: `${stats.totalSaved} kg`, icon: Leaf, color: 'text-rose-500', bg: 'bg-rose-500/10' },
+             { label: 'Ecosystem Nodes', value: stats.activeUsers, icon: Zap, color: 'text-orange-500', bg: 'bg-orange-500/10' },
+             { label: 'Efficiency Index', value: `${stats.avgEfficiency}%`, icon: Target, color: 'text-red-600', bg: 'bg-red-600/10' },
            ].map((s, i) => (
              <motion.div 
                key={s.label}
@@ -138,7 +138,7 @@ export default function FacultySustainabilityPage() {
            >
               <div className="flex items-center justify-between mb-8">
                  <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Node Distribution (By Dept)</h3>
-                 <BarChart3 size={18} className="text-blue-500" />
+                 <BarChart3 size={18} className="text-red-500" />
               </div>
               <ResponsiveContainer width="100%" height={300}>
                  <BarChart data={deptData}>
@@ -149,7 +149,7 @@ export default function FacultySustainabilityPage() {
                       cursor={{ fill: 'rgba(255,255,255,0.03)' }}
                       contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '10px' }}
                     />
-                    <Bar dataKey="value" fill="#3b82f6" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="value" fill="#dc2626" radius={[6, 6, 0, 0]} />
                  </BarChart>
               </ResponsiveContainer>
            </motion.div>
@@ -162,7 +162,7 @@ export default function FacultySustainabilityPage() {
            >
               <div className="flex items-center justify-between mb-8">
                  <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Ecosystem Health Index</h3>
-                 <ShieldCheck size={18} className="text-green-500" />
+                 <ShieldCheck size={18} className="text-red-500" />
               </div>
               <div className="flex items-center justify-center">
                  <ResponsiveContainer width="100%" height={300}>
@@ -174,7 +174,7 @@ export default function FacultySustainabilityPage() {
                           ]}
                           cx="50%" cy="50%" innerRadius={80} outerRadius={110} paddingAngle={10} dataKey="value"
                        >
-                          <Cell fill="#22c55e" />
+                          <Cell fill="#dc2626" />
                           <Cell fill="#334155" />
                        </Pie>
                        <Tooltip 
@@ -196,7 +196,7 @@ export default function FacultySustainabilityPage() {
            <div className="grid grid-cols-1 gap-4 lg:hidden">
               {loading ? (
                 <div className="py-20 flex flex-col items-center justify-center gap-4">
-                   <div className="w-10 h-10 border-2 border-green-500/20 border-t-green-500 rounded-full animate-spin" />
+                   <div className="w-10 h-10 border-2 border-red-500/20 border-t-red-500 rounded-full animate-spin" />
                 </div>
               ) : logs.length === 0 ? (
                 <div className="py-20 text-center bg-white/5 border border-white/10 rounded-[32px]">
@@ -241,7 +241,7 @@ export default function FacultySustainabilityPage() {
                   </thead>
                   <tbody>
                      {loading ? (
-                       <tr><td colSpan={5} className="py-20 text-center"><div className="w-10 h-10 border-2 border-green-500/20 border-t-green-500 rounded-full animate-spin mx-auto" /></td></tr>
+                       <tr><td colSpan={5} className="py-20 text-center"><div className="w-10 h-10 border-2 border-red-500/20 border-t-red-500 rounded-full animate-spin mx-auto" /></td></tr>
                      ) : logs.length === 0 ? (
                        <tr><td colSpan={5} className="py-20 text-center text-xs font-black text-gray-600 uppercase tracking-widest">No Log Data Recorded</td></tr>
                      ) : logs.slice(0, 10).map((log, i) => (

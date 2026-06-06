@@ -37,10 +37,11 @@ export default function FacultyDashboard() {
     activeEvents: 0,
     totalParticipants: 0,
     avgEcoScore: 0,
-    attendanceRate: 0, // Placeholder
+    attendanceRate: 0,
     openComplaints: 0,
   })
   const [recentEvents, setRecentEvents] = useState([])
+  const [sustainMetrics, setSustainMetrics] = useState({ co2Saved: 0, engagementScore: 0 })
 
   useEffect(() => {
     async function fetchData() {
@@ -94,6 +95,22 @@ export default function FacultyDashboard() {
         .eq('role', 'student')
 
       const attRate = Math.min(100, Math.round(((totalVerified || 0) / ((totalStudents || 1) * (eventsCount || 1))) * 100))
+
+      // Fetch real sustainability metrics
+      const { data: carbonData } = await supabase
+        .from('carbon_logs')
+        .select('carbon_saved')
+      const totalCO2 = (carbonData || []).reduce((sum, c) => sum + (c.carbon_saved || 0), 0)
+
+      const { data: ecoProfiles } = await supabase
+        .from('profiles')
+        .select('eco_points')
+        .eq('role', 'student')
+        .gt('eco_points', 0)
+      const engagedCount = (ecoProfiles || []).length
+      const engagementScore = totalStudents ? Math.round((engagedCount / totalStudents) * 100) : 0
+
+      setSustainMetrics({ co2Saved: Math.round(totalCO2 * 100) / 100, engagementScore })
 
       setStats({
         activeEvents: eventsCount || 0,
@@ -199,8 +216,8 @@ export default function FacultyDashboard() {
             </div>
             <div className="space-y-4">
               {[
-                { label: 'Total CO2 Saved', value: '1,240 kg', color: '#22c55e' },
-                { label: 'Department Score', value: '78%', color: '#3b82f6' },
+                { label: 'Total CO2 Saved', value: `${sustainMetrics.co2Saved.toLocaleString()} kg`, color: '#22c55e' },
+                { label: 'Engagement Rate', value: `${sustainMetrics.engagementScore}%`, color: '#3b82f6' },
               ].map(metric => (
                 <div key={metric.label} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5">
                   <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{metric.label}</span>

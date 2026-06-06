@@ -51,7 +51,7 @@ export default function AdminProfilePage() {
       <div className="space-y-12 pb-20 max-w-6xl mx-auto">
         {/* PROFILE HEADER */}
         <div className="relative">
-           <div className="h-64 w-full bg-gradient-to-br from-red-600 to-blue-900 rounded-[60px] overflow-hidden">
+           <div className="h-64 w-full bg-gradient-to-br from-red-600 to-red-950 rounded-[60px] overflow-hidden">
               <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
            </div>
            
@@ -104,13 +104,13 @@ export default function AdminProfilePage() {
                        />
                     </div>
                     <div className="space-y-3">
-                       <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Operation Sector</label>
+                       <label className="text-[9px] font-black text-gray-550 uppercase tracking-widest ml-1">Operation Sector</label>
                        <div className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 text-[11px] font-black uppercase tracking-widest text-white flex items-center gap-3">
                           <Building size={14} className="text-gray-700" /> {formData.sector}
                        </div>
                     </div>
                     <div className="space-y-3">
-                       <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Clearance Protocol</label>
+                       <label className="text-[9px] font-black text-gray-550 uppercase tracking-widest ml-1">Clearance Protocol</label>
                        <div className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 text-[11px] font-black uppercase tracking-widest text-red-500 flex items-center gap-3">
                           <Shield size={14} /> {formData.clearance}
                        </div>
@@ -136,7 +136,7 @@ export default function AdminProfilePage() {
                  <div className="space-y-6">
                     <div className="flex items-center justify-between p-6 bg-white/2 border border-white/5 rounded-3xl group hover:border-orange-500/30 transition-all">
                        <div className="flex items-center gap-6">
-                          <Key size={24} className="text-blue-500" />
+                          <Key size={24} className="text-red-500" />
                           <div>
                              <span className="block text-[11px] font-black text-white uppercase tracking-widest">Administrative Credentials</span>
                              <span className="block text-[9px] text-gray-600 font-bold uppercase tracking-[0.2em] mt-1">Request a secure password reset link</span>
@@ -145,11 +145,11 @@ export default function AdminProfilePage() {
                        <button 
                          onClick={handleResetPassword}
                          type="button"
-                         className="px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black text-gray-400 uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all"
+                         className="px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black text-gray-400 uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all"
                        >
                          Reset Password
                        </button>
-                    </div>
+                    </div>v>
 
                     <div className="flex items-center justify-between p-6 bg-white/2 border border-white/5 rounded-3xl group hover:border-orange-500/30 transition-all">
                        <div className="flex items-center gap-6">

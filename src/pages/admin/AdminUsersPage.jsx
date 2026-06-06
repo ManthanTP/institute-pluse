@@ -25,6 +25,7 @@ export default function AdminUsersPage() {
   const [messageBody, setMessageBody] = useState('')
   const [sendingMessage, setSendingMessage] = useState(false)
   const [showMessageBox, setShowMessageBox] = useState(false)
+  const [calibratingPoints, setCalibratingPoints] = useState('')
 
   useEffect(() => {
     fetchUsers()
@@ -74,10 +75,12 @@ export default function AdminUsersPage() {
 
   async function updatePoints(userId, newPoints) {
     try {
-      const { error } = await supabase.from('profiles').update({ eco_points: parseInt(newPoints) }).eq('id', userId)
+      const parsed = parseInt(newPoints)
+      const { error } = await supabase.from('profiles').update({ eco_points: parsed }).eq('id', userId)
       if (error) throw error
-      setUsers(prev => prev.map(u => u.id === userId ? { ...u, eco_points: parseInt(newPoints) } : u))
-      setSelectedUser(prev => ({ ...prev, eco_points: parseInt(newPoints) }))
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, eco_points: parsed } : u))
+      setSelectedUser(prev => ({ ...prev, eco_points: parsed }))
+      setCalibratingPoints(parsed.toString())
       toast.success('Ecosystem Credits Recalibrated')
     } catch (err) {
       console.error('Points calibration failed:', err)
@@ -153,6 +156,7 @@ export default function AdminUsersPage() {
 
   function handleOpenUserDetail(u) {
     setSelectedUser(u)
+    setCalibratingPoints(u.eco_points !== undefined && u.eco_points !== null ? u.eco_points.toString() : '0')
     setShowMessageBox(false)
     setMessageTitle('')
     setMessageBody('')
@@ -437,17 +441,17 @@ export default function AdminUsersPage() {
 
               <div className="bg-white/5 border border-white/10 rounded-[32px] p-8 mb-10">
                 <p className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em] mb-4">Point Calibration Node</p>
-                <div className="flex items-center gap-4">
+                <form onSubmit={(e) => { e.preventDefault(); updatePoints(selectedUser.id, calibratingPoints); }} className="flex items-center gap-4">
                   <input 
                     type="number"
-                    defaultValue={selectedUser.eco_points || 0}
-                    onBlur={(e) => updatePoints(selectedUser.id, e.target.value)}
+                    value={calibratingPoints}
+                    onChange={(e) => setCalibratingPoints(e.target.value)}
                     className="flex-1 bg-black/20 border border-white/10 rounded-2xl p-4 text-white font-black text-xl outline-none focus:border-red-500/50"
                   />
-                  <div className="px-6 py-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 font-black text-[10px] uppercase tracking-widest">
-                    Eco Points
-                  </div>
-                </div>
+                  <button type="submit" className="px-6 py-4 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-black text-[10px] uppercase tracking-widest transition-all">
+                    Calibrate
+                  </button>
+                </form>
               </div>
 
               {showMessageBox ? (

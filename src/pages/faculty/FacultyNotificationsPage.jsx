@@ -83,12 +83,21 @@ export default function FacultyNotificationsPage() {
 
   async function markAllRead() {
     try {
-      const { error } = await supabase
+      // Update user-specific notifications
+      const { error: err1 } = await supabase
         .from('notifications')
         .update({ is_read: true })
         .eq('user_id', profile?.id)
         .eq('is_read', false)
-      if (error) throw error
+      
+      // Update system-wide notifications (user_id IS NULL)
+      const { error: err2 } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .is('user_id', null)
+        .eq('is_read', false)
+      
+      if (err1 || err2) throw (err1 || err2)
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
       toast.success('All marked as read')
     } catch (err) {
@@ -173,7 +182,7 @@ export default function FacultyNotificationsPage() {
         </div>
 
         {/* NOTIFICATIONS LIST */}
-        {loading ? (
+        {loading && notifications.length === 0 ? (
           <div className="py-16 flex flex-col items-center gap-4">
             <div className="relative w-12 h-12">
               <div className="absolute inset-0 border-4 border-blue-500/20 rounded-full" />

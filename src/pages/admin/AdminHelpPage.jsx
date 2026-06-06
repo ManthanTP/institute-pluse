@@ -78,16 +78,16 @@ export default function AdminHelpPage() {
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-              <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em]">Knowledge Management Protocol</span>
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em]">Knowledge Management Protocol</span>
             </div>
-            <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none italic">Help <span className="text-blue-500">Editor</span></h2>
+            <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none italic">Help <span className="text-red-500">Editor</span></h2>
           </div>
           <div className="flex gap-4">
              <button onClick={() => startAdd('student')} className="px-6 py-4 rounded-2xl bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-widest hover:text-white transition-all flex items-center gap-3">
                 <Plus size={16} /> New Student Node
              </button>
-             <button onClick={() => startAdd('faculty')} className="px-6 py-4 rounded-2xl bg-blue-600 text-white text-[9px] font-black uppercase tracking-widest hover:bg-blue-500 shadow-xl shadow-blue-600/20 transition-all flex items-center gap-3">
+             <button onClick={() => startAdd('faculty')} className="px-6 py-4 rounded-2xl bg-red-600 text-white text-[9px] font-black uppercase tracking-widest hover:bg-red-500 shadow-xl shadow-red-600/20 transition-all flex items-center gap-3">
                 <Plus size={16} /> New Faculty Node
              </button>
           </div>
@@ -95,7 +95,7 @@ export default function AdminHelpPage() {
 
         {loading ? (
            <div className="py-20 flex flex-col items-center justify-center gap-4">
-              <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
+              <div className="w-12 h-12 border-4 border-red-500/20 border-t-red-500 rounded-full animate-spin" />
               <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest italic">Decrypting Knowledge Base...</p>
            </div>
         ) : (
@@ -117,7 +117,7 @@ export default function AdminHelpPage() {
                     >
                       <div className="flex items-center justify-between gap-6">
                         <div className="flex items-center gap-5">
-                          <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-gray-500 group-hover:text-blue-400 transition-colors">
+                          <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-gray-500 group-hover:text-red-400 transition-colors">
                              <HelpCircle size={18} />
                           </div>
                           <div>
@@ -126,7 +126,7 @@ export default function AdminHelpPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                           <button onClick={() => startEdit(item)} className="p-3 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-blue-600 transition-all">
+                           <button onClick={() => startEdit(item)} className="p-3 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-red-600 transition-all">
                               <Edit2 size={14} />
                            </button>
                            <button onClick={() => handleDelete(item.id)} className="p-3 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-red-600 transition-all">
@@ -176,7 +176,7 @@ export default function AdminHelpPage() {
                          type="text" 
                          value={editForm.title}
                          onChange={e => setEditForm({...editForm, title: e.target.value})}
-                         className="w-full bg-white/5 border border-white/5 rounded-2xl p-5 text-sm text-white font-medium outline-none focus:border-blue-500/50 transition-all shadow-inner"
+                         className="w-full bg-white/5 border border-white/5 rounded-2xl p-5 text-sm text-white font-medium outline-none focus:border-red-500/50 transition-all shadow-inner"
                          placeholder="e.g. Attendance Terminal"
                        />
                     </div>
@@ -186,7 +186,7 @@ export default function AdminHelpPage() {
                          type="text" 
                          value={editForm.icon}
                          onChange={e => setEditForm({...editForm, icon: e.target.value})}
-                         className="w-full bg-white/5 border border-white/5 rounded-2xl p-5 text-sm text-white font-medium outline-none focus:border-blue-500/50 transition-all shadow-inner"
+                         className="w-full bg-white/5 border border-white/5 rounded-2xl p-5 text-sm text-white font-medium outline-none focus:border-red-500/50 transition-all shadow-inner"
                          placeholder="e.g. Leaf, Zap, Award"
                        />
                     </div>
@@ -197,7 +197,7 @@ export default function AdminHelpPage() {
                     <textarea 
                       value={editForm.description}
                       onChange={e => setEditForm({...editForm, description: e.target.value})}
-                      className="w-full bg-white/5 border border-white/5 rounded-2xl p-5 text-sm text-white font-medium outline-none focus:border-blue-500/50 transition-all shadow-inner resize-none"
+                      className="w-full bg-white/5 border border-white/5 rounded-2xl p-5 text-sm text-white font-medium outline-none focus:border-red-500/50 transition-all shadow-inner resize-none"
                       rows={2}
                       placeholder="Operational summary..."
                     />
@@ -208,7 +208,7 @@ export default function AdminHelpPage() {
                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Protocol Instructions</label>
                        <button 
                          onClick={() => setEditForm({...editForm, instructions: [...editForm.instructions, '']})}
-                         className="text-[9px] font-black text-blue-500 uppercase tracking-widest flex items-center gap-2 hover:text-blue-400"
+                         className="text-[9px] font-black text-red-500 uppercase tracking-widest flex items-center gap-2 hover:text-red-400"
                        >
                           <Plus size={12} /> Add Step
                        </button>
@@ -245,7 +245,7 @@ export default function AdminHelpPage() {
 
                  <button 
                    onClick={handleSave}
-                   className="w-full py-6 rounded-[24px] bg-blue-600 text-white font-black uppercase tracking-[0.3em] text-[11px] shadow-2xl shadow-blue-600/30 hover:bg-blue-500 transition-all"
+                   className="w-full py-6 rounded-[24px] bg-red-600 text-white font-black uppercase tracking-[0.3em] text-[11px] shadow-2xl shadow-red-600/30 hover:bg-red-500 transition-all"
                  >
                     Confirm Synchronization
                  </button>

@@ -65,14 +65,14 @@ export default function AdminNavigationPage() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <Compass size={14} className="text-blue-500" />
-              <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.4em]">Campus Topology</span>
+              <Compass size={14} className="text-red-500" />
+              <span className="text-[10px] font-black text-red-500 uppercase tracking-[0.4em]">Campus Topology</span>
             </div>
-            <h2 className="text-4xl lg:text-5xl font-black text-white tracking-tighter uppercase leading-none italic">Spatial <span className="text-blue-500">Directory</span></h2>
+            <h2 className="text-4xl lg:text-5xl font-black text-white tracking-tighter uppercase leading-none italic">Spatial <span className="text-red-500">Directory</span></h2>
           </div>
 
           {!isAdding && (
-            <button onClick={() => setIsAdding(true)} className="px-8 py-4 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-600/20 hover:scale-105 transition-all flex items-center gap-2">
+            <button onClick={() => setIsAdding(true)} className="px-8 py-4 bg-red-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-red-600/20 hover:scale-105 transition-all flex items-center gap-2">
               <Plus size={16} /> Add Location
             </button>
           )}
@@ -84,29 +84,29 @@ export default function AdminNavigationPage() {
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Room Name / Number</label>
-                <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full mt-2 bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-sm text-white outline-none focus:border-blue-500/50" placeholder="e.g. Room 304, Main Library" />
+                <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full mt-2 bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-sm text-white outline-none focus:border-red-500/50" placeholder="e.g. Room 304, Main Library" />
               </div>
               <div>
                 <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Block / Building</label>
-                <input required value={formData.building} onChange={e => setFormData({...formData, building: e.target.value})} className="w-full mt-2 bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-sm text-white outline-none focus:border-blue-500/50" placeholder="e.g. Block Z, Admin Block" />
+                <input required value={formData.building} onChange={e => setFormData({...formData, building: e.target.value})} className="w-full mt-2 bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-sm text-white outline-none focus:border-red-500/50" placeholder="e.g. Block Z, Admin Block" />
               </div>
               <div>
                 <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Floor</label>
-                <input required value={formData.floor} onChange={e => setFormData({...formData, floor: e.target.value})} className="w-full mt-2 bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-sm text-white outline-none focus:border-blue-500/50" placeholder="e.g. Ground Floor, 3rd Floor" />
+                <input required value={formData.floor} onChange={e => setFormData({...formData, floor: e.target.value})} className="w-full mt-2 bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-sm text-white outline-none focus:border-red-500/50" placeholder="e.g. Ground Floor, 3rd Floor" />
               </div>
               <div>
                 <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Category</label>
-                <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full mt-2 bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-sm text-white outline-none focus:border-blue-500/50 appearance-none">
+                <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full mt-2 bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-sm text-white outline-none focus:border-red-500/50 appearance-none">
                   {['Academic', 'Administrative', 'Cafeteria', 'Laboratory', 'Utility', 'Other'].map(t => <option key={t} value={t} className="bg-slate-900">{t}</option>)}
                 </select>
               </div>
               <div className="md:col-span-2">
                 <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Direction Reference (Guide)</label>
-                <textarea required value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full mt-2 bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-sm text-white outline-none focus:border-blue-500/50 min-h-[100px]" placeholder="e.g. Take the left stairs from the main entrance, 2nd door on the right." />
+                <textarea required value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full mt-2 bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-sm text-white outline-none focus:border-red-500/50 min-h-[100px]" placeholder="e.g. Take the left stairs from the main entrance, 2nd door on the right." />
               </div>
               <div className="md:col-span-2 flex gap-4">
                 <button type="button" onClick={() => setIsAdding(false)} className="px-8 py-4 bg-white/5 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10">Cancel</button>
-                <button type="submit" className="px-8 py-4 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500">Save Location</button>
+                <button type="submit" className="px-8 py-4 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500">Save Location</button>
               </div>
             </form>
           </motion.div>
@@ -121,11 +121,11 @@ export default function AdminNavigationPage() {
                <p className="text-xs font-black text-gray-500 uppercase tracking-widest">No Locations Found in Directory</p>
              </div>
           ) : locations.map((loc) => (
-             <div key={loc.id} className="bg-[#161b22] border border-white/5 rounded-[32px] p-6 hover:border-blue-500/30 transition-all group">
+             <div key={loc.id} className="bg-[#161b22] border border-white/5 rounded-[32px] p-6 hover:border-red-500/30 transition-all group">
                 <div className="flex items-start justify-between mb-4">
                    <div>
                       <h4 className="text-lg font-black text-white uppercase tracking-tight">{loc.name}</h4>
-                      <span className="inline-block px-2 py-1 mt-2 bg-blue-500/10 text-blue-500 text-[8px] font-black uppercase tracking-widest rounded-md border border-blue-500/20">{loc.type}</span>
+                      <span className="inline-block px-2 py-1 mt-2 bg-red-500/10 text-red-500 text-[8px] font-black uppercase tracking-widest rounded-md border border-red-500/20">{loc.type}</span>
                    </div>
                    <button onClick={() => handleDelete(loc.id)} className="p-2 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity bg-red-500/10 rounded-lg hover:bg-red-500 hover:text-white"><Trash2 size={14}/></button>
                 </div>
@@ -140,7 +140,7 @@ export default function AdminNavigationPage() {
                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Floor: <span className="text-white">{loc.floor}</span></span>
                    </div>
                    <div className="flex items-start gap-3 mt-4 pt-4 border-t border-white/5">
-                      <AlignLeft size={14} className="text-blue-500 shrink-0 mt-0.5" />
+                      <AlignLeft size={14} className="text-red-500 shrink-0 mt-0.5" />
                       <p className="text-[10px] font-bold text-gray-500 leading-relaxed">{loc.description}</p>
                    </div>
                 </div>

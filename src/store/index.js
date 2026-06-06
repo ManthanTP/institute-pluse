@@ -95,11 +95,16 @@ export const useNotifStore = create((set, get) => ({
   },
 
   markAllRead: async (userId) => {
-    await supabase
+    const { data, error } = await supabase
       .from('student_notifications')
       .update({ is_read: true })
       .eq('student_id', userId)
       .eq('is_read', false)
+      .select()
+
+    if (error) {
+      console.error('Error marking all notifications read:', error)
+    }
 
     set(state => ({
       notifications: state.notifications.map(n => ({ ...n, is_read: true })),
@@ -108,10 +113,15 @@ export const useNotifStore = create((set, get) => ({
   },
 
   markRead: async (notifId) => {
-    await supabase
+    const { data, error } = await supabase
       .from('student_notifications')
       .update({ is_read: true })
       .eq('id', notifId)
+      .select()
+
+    if (error) {
+      console.error('Error marking notification read:', error)
+    }
 
     set(state => ({
       notifications: state.notifications.map(n =>

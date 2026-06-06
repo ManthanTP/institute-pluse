@@ -240,7 +240,7 @@ export default function AdminComplaintsPage() {
               <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-5">
                 <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-3">Filed By</p>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500 font-black text-sm">
+                  <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 font-black text-sm">
                     {selected.student?.full_name?.[0] || '?'}
                   </div>
                   <div>
@@ -275,7 +275,7 @@ export default function AdminComplaintsPage() {
                   onChange={e => setResponseText(e.target.value)}
                   placeholder="Write your response to the student..."
                   rows={3}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white placeholder:text-gray-600 outline-none resize-none focus:border-blue-500/50 transition-all"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white placeholder:text-gray-600 outline-none resize-none focus:border-red-500/50 transition-all"
                 />
               </div>
 

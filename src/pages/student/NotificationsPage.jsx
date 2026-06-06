@@ -28,6 +28,12 @@ const FILTER_TABS = [
   { label: 'Issues', type: 'complaint' },
 ]
 
+// Strip session codes from notification messages (students should not see them)
+function sanitizeMessage(msg) {
+  if (!msg) return msg
+  return msg.replace(/\s*Use Code:\s*\S+/gi, '').trim()
+}
+
 export default function NotificationsPage() {
   const navigate = useNavigate()
   const { profile } = useAuthStore()
@@ -198,7 +204,7 @@ export default function NotificationsPage() {
                                </span>
                              </div>
                              <p className="text-xs leading-relaxed font-medium text-gray-300">
-                               {n.message}
+                               {sanitizeMessage(n.message)}
                              </p>
                              {n.sender && (
                                <div className="mt-2 text-[8px] font-black text-blue-400 uppercase tracking-widest">
@@ -238,7 +244,7 @@ export default function NotificationsPage() {
                                </span>
                              </div>
                              <p className="text-xs leading-relaxed font-medium text-gray-500">
-                               {n.message}
+                               {sanitizeMessage(n.message)}
                              </p>
                              {n.sender && (
                                <div className="mt-2 text-[8px] font-black text-gray-500 uppercase tracking-widest">
