@@ -624,7 +624,7 @@ function drawFooter(doc, docId, dateStr, studentName, colors) {
 /**
  * Export tabular data as a premium branded PDF
  */
-export function exportTablePDF({ title, subtitle, headers, rows, filename, summaryCards, studentName, theme = 'cyber' }) {
+export async function exportTablePDF({ title, subtitle, headers, rows, filename, summaryCards, studentName, theme = 'cyber' }) {
   const colors = getThemeColors(theme)
   const doc = new jsPDF({ 
     orientation: rows[0]?.length > 5 ? 'landscape' : 'portrait',
