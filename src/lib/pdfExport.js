@@ -142,12 +142,12 @@ export function drawCard(doc, x, y, w, h, colors) {
   doc.roundedRect(x + 1, y + 1.5, w, h, 2, 2, 'F')
 
   // 2. Card Background (Glassmorphism fill)
-  doc.setGState(new doc.GState({ opacity: colors.isDark ? 0.45 : 0.9 }))
+  doc.setGState(new doc.GState({ opacity: colors.isDark ? 0.92 : 0.98 }))
   doc.setFillColor(...colors.cardBg)
   doc.roundedRect(x, y, w, h, 2, 2, 'F')
 
   // 3. Card Border
-  doc.setGState(new doc.GState({ opacity: colors.isDark ? 0.25 : 0.5 }))
+  doc.setGState(new doc.GState({ opacity: colors.isDark ? 0.45 : 0.7 }))
   doc.setDrawColor(...colors.border)
   doc.setLineWidth(0.25)
   doc.roundedRect(x, y, w, h, 2, 2, 'D')
@@ -330,7 +330,7 @@ function drawCoverPage(doc, { title, subtitle, docId, dateStr, name, summaryCard
 
   // Container panel
   doc.setFillColor(...colors.surface)
-  doc.setGState(new doc.GState({ opacity: colors.isDark ? 0.35 : 0.88 }))
+  doc.setGState(new doc.GState({ opacity: colors.isDark ? 0.90 : 0.96 }))
   doc.roundedRect(18, 30, w - 36, h - 60, 4, 4, 'F')
   doc.setGState(new doc.GState({ opacity: 1 }))
   doc.setDrawColor(...colors.border)
