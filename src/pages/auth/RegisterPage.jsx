@@ -288,7 +288,7 @@ export default function RegisterPage() {
                   <div className="space-y-1.5 sm:col-span-2">
                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Account Role</label>
                     <div className="flex gap-2">
-                      {['student', 'faculty', 'admin'].map(r => (
+                      {['student', 'faculty'].map(r => (
                         <button
                           key={r}
                           type="button"

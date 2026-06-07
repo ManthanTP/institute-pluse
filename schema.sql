@@ -366,15 +366,56 @@ on conflict do nothing;
 -- ══════════════════════════════════════════════════════════════════
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer as $$
+declare
+  v_role text;
+  v_semester_id uuid;
+  v_division_id uuid;
 begin
-  insert into public.profiles (id, full_name, role, eco_points)
+  -- Determine role, default to 'student' if not provided or invalid
+  v_role := coalesce(new.raw_user_meta_data->>'role', 'student');
+  if v_role not in ('student', 'faculty', 'admin', 'driver', 'owner') then
+    v_role := 'student';
+  end if;
+
+  -- Safely cast semester_id and division_id to UUID
+  begin
+    v_semester_id := (new.raw_user_meta_data->>'semester_id')::uuid;
+  exception when others then
+    v_semester_id := null;
+  end;
+
+  begin
+    v_division_id := (new.raw_user_meta_data->>'division_id')::uuid;
+  exception when others then
+    v_division_id := null;
+  end;
+
+  insert into public.profiles (
+    id, full_name, role, email, phone, department, usn,
+    semester_id, division_id, eco_points
+  )
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
-    'student',
+    v_role,
+    new.email,
+    coalesce(new.raw_user_meta_data->>'phone', ''),
+    coalesce(new.raw_user_meta_data->>'department', ''),
+    coalesce(new.raw_user_meta_data->>'usn', ''),
+    v_semester_id,
+    v_division_id,
     20 -- welcome bonus
   )
-  on conflict (id) do nothing;
+  on conflict (id) do update set
+    full_name = excluded.full_name,
+    role = excluded.role,
+    email = excluded.email,
+    phone = excluded.phone,
+    department = excluded.department,
+    usn = excluded.usn,
+    semester_id = excluded.semester_id,
+    division_id = excluded.division_id,
+    updated_at = now();
   return new;
 end;
 $$;
