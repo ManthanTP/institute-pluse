@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Lock, User, Phone, Building, ArrowRight, CheckCircle2, ShieldCheck, Sparkles, ChevronLeft } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { useLandingContent } from '../../hooks/useLandingContent'
 import toast from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 import logo from '../../assets/logo.png'
@@ -51,6 +52,13 @@ export default function RegisterPage() {
   const [error, setError] = useState('')
   const [agreed, setAgreed] = useState(false)
   const [adminKey, setAdminKey] = useState('')
+  const [termsOpen, setTermsOpen] = useState(false)
+  const [privacyOpen, setPrivacyOpen] = useState(false)
+
+  // Pull Terms & Privacy content from the same CMS the landing page and admin editor use
+  const { content: cms } = useLandingContent()
+  const termsContent = cms?.terms || {}
+  const privacyContent = cms?.privacy || {}
 
   useEffect(() => {
     async function loadAcademicData() {
@@ -435,7 +443,7 @@ export default function RegisterPage() {
                   <CheckCircle2 size={12} className="absolute text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
                 </div>
                 <span className="text-xs text-gray-400 leading-relaxed font-medium">
-                  I agree to the <a href="#" className="text-white font-bold hover:text-green-500 transition-colors">Terms of Service</a> and <a href="#" className="text-white font-bold hover:text-green-500 transition-colors">Privacy Policy</a>.
+                  I agree to the <button type="button" onClick={(e) => { e.preventDefault(); setTermsOpen(true); }} className="text-white font-bold hover:text-green-500 transition-colors">Terms of Service</button> and <button type="button" onClick={(e) => { e.preventDefault(); setPrivacyOpen(true); }} className="text-white font-bold hover:text-green-500 transition-colors">Privacy Policy</button>.
                 </span>
               </label>
 
@@ -456,6 +464,84 @@ export default function RegisterPage() {
           </div>
         </motion.div>
       </div>
+
+      {/* ─── TERMS OF SERVICE MODAL ─── */}
+      <AnimatePresence>
+        {termsOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setTermsOpen(false)}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-lg bg-slate-900/95 border border-white/[0.08] rounded-3xl p-6 md:p-8 max-h-[85vh] overflow-y-auto shadow-2xl relative"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 blur-[40px] rounded-full pointer-events-none" />
+              <div className="flex items-center justify-between border-b border-white/[0.05] pb-4 mb-5">
+                <span className="text-xs font-black uppercase tracking-widest text-green-400">{termsContent.sectionTitle || 'Terms of Service'}</span>
+                <button onClick={() => setTermsOpen(false)} className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors text-sm">✕</button>
+              </div>
+              <div className="text-xs text-gray-400 space-y-5 leading-relaxed font-medium">
+                {(termsContent.items || [
+                  { title: '1. Usage License', content: 'Students and faculty members are granted permission to access InstitutePulse for academic, sustainability tracking, and coordination activities.' },
+                  { title: '2. Accurate Reporting', content: 'Users agree to log genuine, authentic commute methods and attendance sessions. Fraudulent logging may result in account suspension.' },
+                  { title: '3. Service Access', content: 'While we target 99.9% operational uptime, access to dashboard features may occasionally be paused for system enhancements.' }
+                ]).map((item, idx) => (
+                  <div key={idx}>
+                    <p className="text-white font-bold uppercase tracking-wider mb-1.5 text-[10px]">{item.title}</p>
+                    <p>{item.content}</p>
+                  </div>
+                ))}
+                <div className="pt-4 border-t border-white/[0.05]">
+                  <p className="text-[10px] text-gray-600 font-black uppercase tracking-widest">Effective: June 1, 2026 • Version 1.0</p>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ─── PRIVACY POLICY MODAL ─── */}
+      <AnimatePresence>
+        {privacyOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setPrivacyOpen(false)}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-lg bg-slate-900/95 border border-white/[0.08] rounded-3xl p-6 md:p-8 max-h-[85vh] overflow-y-auto shadow-2xl relative"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-[40px] rounded-full pointer-events-none" />
+              <div className="flex items-center justify-between border-b border-white/[0.05] pb-4 mb-5">
+                <span className="text-xs font-black uppercase tracking-widest text-blue-400">{privacyContent.sectionTitle || 'Privacy Policy'}</span>
+                <button onClick={() => setPrivacyOpen(false)} className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors text-sm">✕</button>
+              </div>
+              <div className="text-xs text-gray-400 space-y-5 leading-relaxed font-medium">
+                {(privacyContent.items || [
+                  { title: '1. Data Collection', content: 'InstitutePulse securely logs carbon saving records and class QR code check-ins.' },
+                  { title: '2. Secure Encryption', content: 'All data is transmitted via SSL and stored securely, protected by row-level security (RLS).' },
+                  { title: '3. Data Ownership', content: 'We do not share your campus logs with third-party service providers.' }
+                ]).map((item, idx) => (
+                  <div key={idx}>
+                    <p className="text-white font-bold uppercase tracking-wider mb-1.5 text-[10px]">{item.title}</p>
+                    <p>{item.content}</p>
+                  </div>
+                ))}
+                <div className="pt-4 border-t border-white/[0.05]">
+                  <p className="text-[10px] text-gray-600 font-black uppercase tracking-widest">Effective: June 1, 2026 • Version 1.0</p>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
