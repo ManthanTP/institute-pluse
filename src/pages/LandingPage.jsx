@@ -300,8 +300,9 @@ export default function LandingPage() {
       try {
         const { data } = await supabase
           .from('profiles')
-          .select('full_name, department, eco_points, role')
+          .select('full_name, department, eco_points, role, sustainability_restricted')
           .eq('role', 'student')
+          .or('sustainability_restricted.is.null,sustainability_restricted.eq.false')
           .order('eco_points', { ascending: false })
           .limit(3)
 

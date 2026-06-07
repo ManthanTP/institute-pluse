@@ -31,8 +31,9 @@ export default function LeaderboardPage() {
     setLoading(true)
     let query = supabase
       .from('profiles')
-      .select('full_name, eco_points, department, avatar_url, id, role')
+      .select('full_name, eco_points, department, avatar_url, id, role, sustainability_restricted')
       .eq('role', 'student')
+      .or('sustainability_restricted.is.null,sustainability_restricted.eq.false')
       .order('eco_points', { ascending: false })
       .limit(50)
     

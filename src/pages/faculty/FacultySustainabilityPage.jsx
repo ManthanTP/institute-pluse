@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { createPortal } from 'react-dom'
 import toast from 'react-hot-toast'
 import { exportReportPDF, exportTablePDF } from '../../lib/pdfExport'
+import { getCarbonConfig } from '../../lib/carbonCalc'
 
 const COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#a855f7']
 
@@ -16,6 +17,179 @@ export default function FacultySustainabilityPage() {
   const [stats, setStats] = useState({ totalCo2: 0, totalSaved: 0, activeUsers: 0, avgEfficiency: 0 })
   const [deptData, setDeptData] = useState([])
   const [selectedLog, setSelectedLog] = useState(null)
+
+  const handleApproveLog = async (log) => {
+    try {
+      const { data: prof, error: profErr } = await supabase
+        .from('profiles')
+        .select('eco_points, total_co2_kg')
+        .eq('id', log.student_id)
+        .single()
+      
+      if (profErr) throw profErr;
+
+      const { error: updErr } = await supabase
+        .from('profiles')
+        .update({
+          eco_points: (prof.eco_points || 0) + (log.eco_points_earned || 0),
+          total_co2_kg: (prof.total_co2_kg || 0) + Number(log.total_kg || 0)
+        })
+        .eq('id', log.student_id)
+
+      if (updErr) throw updErr;
+
+      const { error: logErr } = await supabase
+        .from('carbon_logs')
+        .update({ status: 'approved' })
+        .eq('id', log.id)
+
+      if (logErr) throw logErr;
+
+      await supabase.from('student_notifications').insert({
+        student_id: log.student_id,
+        title: 'Carbon Log Approved',
+        message: `Your carbon log for ${new Date(log.log_date).toLocaleDateString()} has been verified. +${log.eco_points_earned} XP added!`,
+        type: 'success',
+        is_read: false
+      });
+
+      toast.success('Log entry approved and student points credited!');
+      setLogs(prev => prev.map(l => l.id === log.id ? { ...l, status: 'approved' } : l));
+      setSelectedLog(null);
+    } catch (err) {
+      console.error('Approve error:', err);
+      toast.error('Failed to approve log: ' + err.message);
+    }
+  }
+
+  const handleRejectLog = async (log) => {
+    if (!window.confirm("Are you sure you want to reject this log entry? The student's streak will reset to 0, and they will receive a warning.")) return;
+    try {
+      const { error: logErr } = await supabase
+        .from('carbon_logs')
+        .update({ status: 'rejected' })
+        .eq('id', log.id)
+
+      if (logErr) throw logErr;
+
+      const { error: streakErr } = await supabase
+        .from('profiles')
+        .update({ logging_streak: 0 })
+        .eq('id', log.student_id)
+
+      if (streakErr) throw streakErr;
+
+      const { count: rejectedCount } = await supabase
+        .from('carbon_logs')
+        .select('*', { count: 'exact', head: true })
+        .eq('student_id', log.student_id)
+        .eq('status', 'rejected')
+
+      const { data: instData } = await supabase
+        .from('institution_settings')
+        .select('carbon_config')
+        .eq('id', 1)
+        .single();
+      const config = getCarbonConfig(instData?.carbon_config);
+      const maxBans = config.validation_limits.max_rejections_before_ban ?? 2;
+
+      let banAlert = '';
+      if ((rejectedCount || 0) >= maxBans) {
+        await supabase
+          .from('profiles')
+          .update({ sustainability_restricted: true })
+          .eq('id', log.student_id);
+        banAlert = ' Student has been suspended from leaderboards.';
+      }
+
+      await supabase.from('student_notifications').insert({
+        student_id: log.student_id,
+        title: 'Carbon Log Rejected',
+        message: `Your carbon log for ${new Date(log.log_date).toLocaleDateString()} was audited and rejected due to false entries. Your logging streak has been reset to 0.`,
+        type: 'warning',
+        is_read: false
+      });
+
+      toast.success(`Log entry rejected. Streak penalized.${banAlert}`);
+      setLogs(prev => prev.map(l => l.id === log.id ? { ...l, status: 'rejected' } : l));
+      setSelectedLog(null);
+    } catch (err) {
+      console.error('Reject error:', err);
+      toast.error('Failed to reject log: ' + err.message);
+    }
+  }
+
+  const handleInvalidateLog = async (log) => {
+    if (!window.confirm("Are you sure you want to retroactively invalidate this approved entry? This will revert the student's points and total offset calculations, and reset their streak.")) return;
+    try {
+      const { data: prof, error: profErr } = await supabase
+        .from('profiles')
+        .select('eco_points, total_co2_kg')
+        .eq('id', log.student_id)
+        .single()
+      
+      if (profErr) throw profErr;
+
+      const pointsToDeduct = log.eco_points_earned || 0;
+      const co2ToDeduct = Number(log.total_kg || 0);
+
+      const { error: updErr } = await supabase
+        .from('profiles')
+        .update({
+          eco_points: Math.max(0, (prof.eco_points || 0) - pointsToDeduct),
+          total_co2_kg: Math.max(0, (prof.total_co2_kg || 0) - co2ToDeduct),
+          logging_streak: 0
+        })
+        .eq('id', log.student_id)
+
+      if (updErr) throw updErr;
+
+      const { error: logErr } = await supabase
+        .from('carbon_logs')
+        .update({ status: 'rejected' })
+        .eq('id', log.id)
+
+      if (logErr) throw logErr;
+
+      const { count: rejectedCount } = await supabase
+        .from('carbon_logs')
+        .select('*', { count: 'exact', head: true })
+        .eq('student_id', log.student_id)
+        .eq('status', 'rejected')
+
+      const { data: instData } = await supabase
+        .from('institution_settings')
+        .select('carbon_config')
+        .eq('id', 1)
+        .single();
+      const config = getCarbonConfig(instData?.carbon_config);
+      const maxBans = config.validation_limits.max_rejections_before_ban ?? 2;
+
+      let banAlert = '';
+      if ((rejectedCount || 0) >= maxBans) {
+        await supabase
+          .from('profiles')
+          .update({ sustainability_restricted: true })
+          .eq('id', log.student_id);
+        banAlert = ' Student has been suspended from leaderboards.';
+      }
+
+      await supabase.from('student_notifications').insert({
+        student_id: log.student_id,
+        title: 'Carbon Log Invalidated',
+        message: `Your approved carbon log for ${new Date(log.log_date).toLocaleDateString()} was audited and invalidated. Points reverted, and streak reset to 0.`,
+        type: 'warning',
+        is_read: false
+      });
+
+      toast.success(`Log entry invalidated. Points reverted and streak penalized.${banAlert}`);
+      setLogs(prev => prev.map(l => l.id === log.id ? { ...l, status: 'rejected' } : l));
+      setSelectedLog(null);
+    } catch (err) {
+      console.error('Invalidate error:', err);
+      toast.error('Failed to invalidate log: ' + err.message);
+    }
+  }
 
   useEffect(() => {
     async function fetchData() {
@@ -254,7 +428,13 @@ export default function FacultySustainabilityPage() {
                 >
                    <div className="flex items-center justify-between mb-4">
                       <span className="text-[10px] font-black text-white uppercase tracking-tight">{new Date(log.log_date).toLocaleDateString()}</span>
-                      <span className="px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-[8px] font-black text-green-500 uppercase tracking-widest">+{log.eco_points_earned} Pts</span>
+                      {log.status === 'pending' ? (
+                        <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-[8px] font-black text-amber-500 uppercase tracking-widest animate-pulse">⚠️ Suspicious</span>
+                      ) : log.status === 'rejected' ? (
+                        <span className="px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-[8px] font-black text-red-500 uppercase tracking-widest">❌ Rejected</span>
+                      ) : (
+                        <span className="px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-[8px] font-black text-green-500 uppercase tracking-widest">+{log.eco_points_earned} Pts</span>
+                      )}
                    </div>
                    <div className="flex items-center justify-between">
                       <div>
@@ -314,9 +494,15 @@ export default function FacultySustainabilityPage() {
                          </td>
                          <td className="px-8 py-5 font-black text-white text-xs">{(log.total_kg || 0).toFixed(2)} kg</td>
                          <td className="px-8 py-5 font-black text-green-500 text-xs">+{(log.eco_points_earned || 0)} Pts</td>
-                         <td className="px-8 py-5">
-                            <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[8px] font-black text-gray-400 uppercase tracking-widest">Pulse Log</span>
-                         </td>
+                          <td className="px-8 py-5">
+                             {log.status === 'pending' ? (
+                               <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-[8px] font-black text-amber-500 uppercase tracking-widest animate-pulse">⚠️ Suspicious</span>
+                             ) : log.status === 'rejected' ? (
+                               <span className="px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-[8px] font-black text-red-500 uppercase tracking-widest">❌ Rejected</span>
+                             ) : (
+                               <span className="px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-[8px] font-black text-green-500 uppercase tracking-widest">✓ Verified</span>
+                             )}
+                          </td>
                        </tr>
                      ))}
                   </tbody>
@@ -473,6 +659,35 @@ export default function FacultySustainabilityPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Moderation Controls */}
+              {selectedLog.status === 'pending' && (
+                <div className="flex gap-4 pt-4 border-t border-white/5 flex-shrink-0 relative z-[99999] pointer-events-auto">
+                  <button
+                    onClick={() => handleApproveLog(selectedLog)}
+                    className="flex-1 py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg transition-all cursor-pointer"
+                  >
+                    Approve Entry & Credit XP
+                  </button>
+                  <button
+                    onClick={() => handleRejectLog(selectedLog)}
+                    className="flex-1 py-3 bg-red-600/20 border border-red-500/30 hover:bg-red-600 hover:text-white text-red-400 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer"
+                  >
+                    Reject & Flag Abuse
+                  </button>
+                </div>
+              )}
+              {selectedLog.status === 'approved' && (
+                <div className="pt-4 border-t border-white/5 flex-shrink-0 flex justify-end relative z-[99999] pointer-events-auto">
+                  <button
+                    onClick={() => handleInvalidateLog(selectedLog)}
+                    className="px-6 py-2.5 bg-red-500/10 border border-red-500/25 hover:bg-red-500 hover:text-white text-red-400 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer"
+                  >
+                    Retroactively Invalidate Log
+                  </button>
+                </div>
+              )}
+
             </motion.div>
           </div>
         </AnimatePresence>,

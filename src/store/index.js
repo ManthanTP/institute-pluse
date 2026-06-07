@@ -172,14 +172,34 @@ export const useCarbonStore = create((set, get) => ({
   todayLog: null,
   history: [],
   loading: false,
+  carbonConfig: null,
+
+  fetchCarbonConfig: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('institution_settings')
+        .select('carbon_config')
+        .eq('id', 1)
+        .single()
+      
+      if (error) throw error
+      if (data?.carbon_config) {
+        set({ carbonConfig: data.carbon_config })
+        return data.carbon_config
+      }
+    } catch (err) {
+      console.error('Error fetching carbon config:', err)
+    }
+    return null
+  },
 
   fetchTodayLog: async (userId) => {
-    const today = new Date().toISOString().split('T')[0]
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
     const { data } = await supabase
       .from('carbon_logs')
       .select('*')
       .eq('student_id', userId)
-      .eq('log_date', today)
+      .eq('log_date', yesterday)
       .maybeSingle()
 
     set({ todayLog: data || null })

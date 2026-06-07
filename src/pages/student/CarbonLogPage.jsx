@@ -5,7 +5,7 @@ import {
   TRANSPORT_FACTORS, FOOD_TYPES, MEAL_SLOTS,
   DEVICE_FACTORS, WASTE_TYPES,
   calcTransportKg, calcFoodKg, calcElectricityKg, calcWaterKg, calcWasteKg,
-  calcTotalKg, calcEcoScore, calcEcoPoints, getScoreGrade
+  calcTotalKg, calcEcoScore, calcEcoPoints, getScoreGrade, getCarbonConfig, checkCarbonLogValidation
 } from '../../lib/carbonCalc'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore, useCarbonStore } from '../../store/index'
@@ -95,31 +95,90 @@ function CategoryBar({ label, value, maxVal, color, icon: Icon }) {
   )
 }
 
+function checkCanteenAnomaly(meals, orders) {
+  if (!orders || orders.length === 0) return false;
+  const orderedItems = [];
+  orders.forEach(o => {
+    if (Array.isArray(o.items)) {
+      orderedItems.push(...o.items);
+    }
+  });
+
+  for (const item of orderedItems) {
+    const itemCategory = item.category?.toLowerCase();
+    if (['breakfast', 'lunch', 'dinner'].includes(itemCategory)) {
+      if (meals[itemCategory] === 'skipped') {
+        return true;
+      }
+      if (meals[itemCategory] === 'vegan' && item.is_vegan === false) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 export default function CarbonLogPage() {
   const navigate = useNavigate()
   const { profile } = useAuthStore()
-  const { setTodayLog } = useCarbonStore()
+  const { setTodayLog, carbonConfig, fetchCarbonConfig } = useCarbonStore()
   
   const [currentStep, setCurrentStep] = useState(0)
   const [form, setForm] = useState(INITIAL_STATE)
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(null)
-  const [showChart, setShowChart] = useState(false) // hidden by default to save space in wizard
+  const [showChart, setShowChart] = useState(false)
+  const [yesterdayOrders, setYesterdayOrders] = useState([])
+  const [lastLogs, setLastLogs] = useState([])
 
-  const transportKg = calcTransportKg(form.transport)
-  const foodKg = calcFoodKg(form.meals)
-  const electricityKg = calcElectricityKg(form.devices)
-  const waterKg = calcWaterKg(form.shower_type, form.general_water)
-  const wasteKg = calcWasteKg(form.waste)
+  const activeConfig = getCarbonConfig(carbonConfig)
+
+  const transportKg = calcTransportKg(form.transport, activeConfig.transport_factors)
+  const foodKg = calcFoodKg(form.meals, activeConfig.food_factors)
+  const electricityKg = calcElectricityKg(form.devices, activeConfig.device_factors)
+  const waterKg = calcWaterKg(form.shower_type, form.general_water, activeConfig)
+  const wasteKg = calcWasteKg(form.waste, activeConfig.waste_factors)
   const totalKg = calcTotalKg({ transport_kg: transportKg, food_kg: foodKg, electricity_kg: electricityKg, water_kg: waterKg, waste_kg: wasteKg })
-  const ecoScore = calcEcoScore(totalKg)
+  const ecoScore = calcEcoScore(totalKg, activeConfig.campus_budget_kg)
 
-  const maxCat = Math.max(transportKg, foodKg, electricityKg, waterKg, wasteKg, 0.01)
   const topCategory = getTopCategory(transportKg, foodKg, electricityKg, waterKg, wasteKg)
 
-  // Pick a random tip for the top category
   const tipList = AI_TIPS[topCategory] || AI_TIPS.transport
   const aiTip = tipList[Math.floor((ecoScore * tipList.length) / 101) % tipList.length]
+
+  useEffect(() => {
+    fetchCarbonConfig()
+  }, [])
+
+  useEffect(() => {
+    if (profile?.id) {
+      fetchVerificationTelemetry()
+    }
+  }, [profile])
+
+  async function fetchVerificationTelemetry() {
+    try {
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('items')
+        .eq('student_id', profile.id)
+        .gte('created_at', yesterday + 'T00:00:00')
+        .lte('created_at', yesterday + 'T23:59:59')
+      if (orders) setYesterdayOrders(orders)
+
+      const { data: logs } = await supabase
+        .from('carbon_logs')
+        .select('eco_score')
+        .eq('student_id', profile.id)
+        .order('log_date', { ascending: false })
+        .limit(5)
+      if (logs) setLastLogs(logs)
+    } catch (err) {
+      console.error('Telemetry fetch error:', err)
+    }
+  }
 
   const goNext = () => setCurrentStep(p => Math.min(p + 1, 5))
   const goBack = () => setCurrentStep(p => Math.max(p - 1, 0))
@@ -158,17 +217,33 @@ export default function CarbonLogPage() {
     if (!profile) return
     setSubmitting(true)
     try {
-      const today = new Date().toISOString().split('T')[0]
-      const ecoPoints = calcEcoPoints({
-        eco_score: ecoScore,
-        transport_entries: form.transport,
-        meals: form.meals,
-        is_first_log: !profile.total_co2_kg,
-        streak: profile.logging_streak,
-      })
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+
+      const { errors, isSuspicious } = checkCarbonLogValidation(form, activeConfig, lastLogs)
+      if (errors.length > 0) {
+        toast.error(errors.join(', '))
+        setSubmitting(false)
+        return
+      }
+
+      const isCanteenAnomaly = checkCanteenAnomaly(form.meals, yesterdayOrders)
+      const shouldQuarantine = isSuspicious || isCanteenAnomaly
+
+      const ecoPoints = calcEcoPoints(
+        {
+          eco_score: ecoScore,
+          transport_entries: form.transport,
+          meals: form.meals,
+          is_first_log: !profile.total_co2_kg,
+          streak: profile.logging_streak,
+        },
+        activeConfig.points_config,
+        activeConfig.validation_limits.max_daily_xp_cap
+      )
+
       const logData = {
         student_id: profile.id,
-        log_date: today,
+        log_date: yesterday,
         transport_kg: transportKg,
         electricity_kg: electricityKg,
         food_kg: foodKg,
@@ -177,6 +252,7 @@ export default function CarbonLogPage() {
         total_kg: totalKg,
         eco_score: ecoScore,
         eco_points_earned: ecoPoints,
+        status: shouldQuarantine ? 'pending' : 'approved',
         transport_mode: form.transport[0]?.mode,
         transport_km: form.transport[0]?.km,
         transport_detail: form.transport,
@@ -185,16 +261,29 @@ export default function CarbonLogPage() {
         water_detail: { shower_type: form.shower_type, general_level: form.general_water },
         waste_detail: form.waste,
       }
+
       const { data, error } = await supabase.from('carbon_logs').upsert(logData, { onConflict: 'student_id,log_date' }).select().single()
       if (error) throw error
-      await supabase.from('profiles').update({
-        eco_points: (profile.eco_points || 0) + ecoPoints,
-        total_co2_kg: (profile.total_co2_kg || 0) + totalKg,
-        last_log_date: today,
-        logging_streak: (profile.logging_streak || 0) + 1,
-      }).eq('id', profile.id)
+
+      if (!shouldQuarantine) {
+        await supabase.from('profiles').update({
+          eco_points: (profile.eco_points || 0) + ecoPoints,
+          total_co2_kg: (profile.total_co2_kg || 0) + totalKg,
+          last_log_date: yesterday,
+          logging_streak: (profile.logging_streak || 0) + 1,
+        }).eq('id', profile.id)
+      }
+
       setTodayLog(data)
-      setSuccess({ ecoScore, ecoPoints, topCategory, aiTip })
+      setSuccess({ 
+        ecoScore, 
+        ecoPoints: shouldQuarantine ? 0 : ecoPoints, 
+        topCategory, 
+        aiTip: shouldQuarantine 
+          ? "⚠️ Telemetry values are flagged as suspicious or contradict your canteen orders. Log quarantined pending audit. No points credited yet."
+          : aiTip,
+        isQuarantined: shouldQuarantine
+      })
     } catch (err) {
       console.error('Submit error:', err)
       toast.error(err.message || 'Failed to save log. Please try again.')
@@ -697,7 +786,7 @@ export default function CarbonLogPage() {
   )
 }
 
-function SuccessOverlay({ ecoScore, ecoPoints, topCategory, aiTip, onDone, onHistory }) {
+function SuccessOverlay({ ecoScore, ecoPoints, topCategory, aiTip, onDone, onHistory, isQuarantined }) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -705,7 +794,11 @@ function SuccessOverlay({ ecoScore, ecoPoints, topCategory, aiTip, onDone, onHis
       className="fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-center p-6 text-center"
     >
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[50%] rounded-full bg-green-500/10 blur-[120px]" />
+        {isQuarantined ? (
+          <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[50%] rounded-full bg-amber-500/5 blur-[120px]" />
+        ) : (
+          <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[50%] rounded-full bg-green-500/10 blur-[120px]" />
+        )}
         <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[50%] rounded-full bg-blue-500/10 blur-[120px]" />
       </div>
 
@@ -715,15 +808,23 @@ function SuccessOverlay({ ecoScore, ecoPoints, topCategory, aiTip, onDone, onHis
         className="relative z-10 w-full max-w-sm"
       >
         <motion.div
-          animate={{ rotate: [0, -5, 5, -3, 3, 0] }}
+          animate={{ rotate: isQuarantined ? [0, -2, 2, 0] : [0, -5, 5, -3, 3, 0] }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="w-24 h-24 rounded-[40px] bg-green-600/20 border border-green-500/30 flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-green-500/10"
+          className={`w-24 h-24 rounded-[40px] flex items-center justify-center mx-auto mb-8 shadow-2xl ${
+            isQuarantined 
+              ? 'bg-amber-600/20 border border-amber-500/30 text-amber-500 shadow-amber-500/10'
+              : 'bg-green-600/20 border border-green-500/30 text-green-500 shadow-green-500/10'
+          }`}
         >
-          <CheckCircle2 size={48} className="text-green-500" />
+          {isQuarantined ? <Sparkles size={48} /> : <CheckCircle2 size={48} />}
         </motion.div>
 
-        <h1 className="text-4xl font-black text-white tracking-tighter mb-2 uppercase">Log Synced</h1>
-        <p className="text-gray-500 font-bold uppercase tracking-[0.2em] mb-8 text-xs">Ecosystem Data Processed</p>
+        <h1 className={`text-3xl font-black tracking-tighter mb-2 uppercase ${isQuarantined ? 'text-amber-500' : 'text-white'}`}>
+          {isQuarantined ? 'Log Held' : 'Log Synced'}
+        </h1>
+        <p className="text-gray-500 font-bold uppercase tracking-[0.2em] mb-8 text-xs">
+          {isQuarantined ? 'Under Audit Verification' : 'Ecosystem Data Processed'}
+        </p>
 
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div className="bg-white/5 border border-white/10 rounded-[32px] p-6">
@@ -732,23 +833,35 @@ function SuccessOverlay({ ecoScore, ecoPoints, topCategory, aiTip, onDone, onHis
           </div>
           <div className="bg-white/5 border border-white/10 rounded-[32px] p-6">
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">XP Gained</p>
-            <p className="text-3xl font-black text-green-500">+{ecoPoints}</p>
+            <p className={`text-3xl font-black ${isQuarantined ? 'text-amber-500' : 'text-green-500'}`}>
+              {isQuarantined ? 'PENDING' : `+${ecoPoints}`}
+            </p>
           </div>
         </div>
 
-        {/* AI Tip on success screen */}
-        <div className="bg-green-600/10 border border-green-500/20 rounded-[24px] p-5 mb-8 text-left">
-          <p className="text-[9px] font-black text-green-500 uppercase tracking-[0.25em] mb-2 flex items-center gap-2">
-            <Lightbulb size={10} /> AI Recommendation
+        {/* AI Tip / Quarantine Msg */}
+        <div className={`border rounded-[24px] p-5 mb-8 text-left ${
+          isQuarantined 
+            ? 'bg-amber-600/10 border-amber-500/20'
+            : 'bg-green-600/10 border-green-500/20'
+        }`}>
+          <p className={`text-[9px] font-black uppercase tracking-[0.25em] mb-2 flex items-center gap-2 ${
+            isQuarantined ? 'text-amber-500' : 'text-green-500'
+          }`}>
+            <Lightbulb size={10} /> {isQuarantined ? 'Audit Telemetry Protocol' : 'AI Recommendation'}
           </p>
-          <p className="text-[11px] font-medium text-white/80 leading-relaxed">{aiTip || "Keep logging daily to grow your Eco Score!"}</p>
+          <p className="text-[11px] font-medium text-white/80 leading-relaxed">{aiTip}</p>
         </div>
 
         <div className="space-y-4">
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={onDone}
-            className="w-full py-5 bg-green-600 text-white rounded-[32px] font-black text-sm uppercase tracking-[0.3em] shadow-xl shadow-green-600/20 flex items-center justify-center gap-3"
+            className={`w-full py-5 text-white rounded-[32px] font-black text-sm uppercase tracking-[0.3em] shadow-xl flex items-center justify-center gap-3 ${
+              isQuarantined 
+                ? 'bg-amber-600 shadow-amber-600/20'
+                : 'bg-green-600 shadow-green-600/20'
+            }`}
           >
             Return to Home <ArrowRight size={18} />
           </motion.button>
