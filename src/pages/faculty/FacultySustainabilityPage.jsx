@@ -49,7 +49,7 @@ export default function FacultySustainabilityPage() {
       } else {
         // Use sample data
         setLogs([])
-        setStats({ totalSaved: 0, participationRate: 0, activeChallenges: 0 })
+        setStats({ totalCo2: 0, totalSaved: 0, activeUsers: 0, avgEfficiency: 0 })
         setDeptData([])
       }
       setLoading(false)
