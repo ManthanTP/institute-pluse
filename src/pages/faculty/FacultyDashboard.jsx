@@ -99,8 +99,9 @@ export default function FacultyDashboard() {
       // Fetch real sustainability metrics
       const { data: carbonData } = await supabase
         .from('carbon_logs')
-        .select('carbon_saved')
-      const totalCO2 = (carbonData || []).reduce((sum, c) => sum + (c.carbon_saved || 0), 0)
+        .select('total_kg')
+      const totalCO2 = (carbonData || []).reduce((sum, c) => sum + (c.total_kg || 0), 0)
+      const co2Saved = totalCO2 * 0.15
 
       const { data: ecoProfiles } = await supabase
         .from('profiles')
@@ -110,7 +111,7 @@ export default function FacultyDashboard() {
       const engagedCount = (ecoProfiles || []).length
       const engagementScore = totalStudents ? Math.round((engagedCount / totalStudents) * 100) : 0
 
-      setSustainMetrics({ co2Saved: Math.round(totalCO2 * 100) / 100, engagementScore })
+      setSustainMetrics({ co2Saved: Math.round(co2Saved * 100) / 100, engagementScore })
 
       setStats({
         activeEvents: eventsCount || 0,
