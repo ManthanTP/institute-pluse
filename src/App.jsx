@@ -207,6 +207,7 @@ function App() {
            {/* ══════════ ADMIN (OBFUSCATED) ══════════ */}
            <Route path="/12345678/admin/dashboard" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminDashboard /></Suspense></AdminRoute>} />
            <Route path="/12345678/admin/sustainability" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminSustainabilityPage /></Suspense></AdminRoute>} />
+           <Route path="/12345678/admin/settings" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminSettingsPage /></Suspense></AdminRoute>} />
            <Route path="/12345678/admin/users" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminUsersPage /></Suspense></AdminRoute>} />
            <Route path="/12345678/admin/complaints" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminComplaintsPage /></Suspense></AdminRoute>} />
            <Route path="/12345678/admin/events" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminEventsPage /></Suspense></AdminRoute>} />
