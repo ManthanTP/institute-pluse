@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { path: '/12345678/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/12345678/admin/users', icon: Users, label: 'User Management' },
   { path: '/12345678/admin/sustainability', icon: BarChart3, label: 'Sustainability' },
+  { path: '/12345678/admin/settings', icon: Settings, label: 'Carbon Settings' },
   { path: '/12345678/admin/events', icon: CalendarDays, label: 'Event Management' },
   { path: '/12345678/admin/resources', icon: BookOpen, label: 'Resource Hub' },
   { path: '/12345678/admin/cafeteria', icon: UtensilsCrossed, label: 'Cafeteria' },
