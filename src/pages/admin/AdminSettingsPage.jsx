@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Settings, Shield, Key, Globe, Database, Cpu, Lock, Bell, RefreshCw, Zap, ShieldCheck, ChevronRight, Info, Building, Mail, Phone, MapPin, Upload, Eye, Leaf, Utensils, Droplets, Trash2, Award } from 'lucide-react'
 import AdminLayout from './AdminLayout'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { supabase } from '../../lib/supabase'
 import { DEFAULT_CARBON_CONFIG } from '../../lib/carbonCalc'
