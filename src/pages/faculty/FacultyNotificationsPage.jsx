@@ -45,11 +45,22 @@ export default function FacultyNotificationsPage() {
         event: 'INSERT', 
         schema: 'public', 
         table: 'notifications'
-      }, (payload) => {
+      }, async (payload) => {
         if (!payload.new.user_id || payload.new.user_id === profile.id) {
+          // Fetch sender info for real-time insert
+          let senderData = null
+          if (payload.new.sender_id) {
+            const { data } = await supabase
+              .from('profiles')
+              .select('full_name, role')
+              .eq('id', payload.new.sender_id)
+              .single()
+            senderData = data
+          }
+          const notifWithSender = { ...payload.new, sender: senderData }
           setNotifications(prev => {
             if (prev.some(n => n.id === payload.new.id)) return prev
-            return [payload.new, ...prev]
+            return [notifWithSender, ...prev]
           })
           toast('New notification 🔔', { icon: '📡' })
         }
@@ -65,7 +76,7 @@ export default function FacultyNotificationsPage() {
     try {
       const { data, error } = await supabase
         .from('notifications')
-        .select('*')
+        .select('*, sender:profiles!sender_id(full_name, role)')
         .or(`user_id.eq.${profile.id},user_id.is.null`)
         .order('created_at', { ascending: false })
         .limit(100)
@@ -234,6 +245,12 @@ export default function FacultyNotificationsPage() {
                           <p className="text-xs leading-relaxed font-medium text-gray-300">
                             {n.message}
                           </p>
+                          {n.sender && (
+                            <div className="mt-2 text-[8px] font-black text-blue-400 uppercase tracking-widest flex items-center gap-1.5">
+                              <span>Relayed By: {n.sender.full_name}</span>
+                              <span className="px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-500 text-[6px] font-black uppercase">{n.sender.role}</span>
+                            </div>
+                          )}
                         </div>
                       </motion.button>
                     )
@@ -269,6 +286,12 @@ export default function FacultyNotificationsPage() {
                           <p className="text-xs leading-relaxed font-medium text-gray-500">
                             {n.message}
                           </p>
+                          {n.sender && (
+                            <div className="mt-2 text-[8px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-1.5">
+                              <span>Relayed By: {n.sender.full_name}</span>
+                              <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-gray-400 text-[6px] font-black uppercase">{n.sender.role}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )

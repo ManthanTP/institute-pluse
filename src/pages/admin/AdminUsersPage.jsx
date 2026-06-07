@@ -115,6 +115,7 @@ export default function AdminUsersPage() {
           .from('notifications')
           .insert({
             user_id: selectedUser.id,
+            sender_id: profile.id,
             title: messageTitle.trim(),
             message: messageBody.trim(),
             type: 'general',

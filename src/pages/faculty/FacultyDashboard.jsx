@@ -100,7 +100,7 @@ export default function FacultyDashboard() {
       const { data: carbonData } = await supabase
         .from('carbon_logs')
         .select('total_kg')
-      const totalCO2 = (carbonData || []).reduce((sum, c) => sum + (c.total_kg || 0), 0)
+      const totalCO2 = (carbonData || []).reduce((sum, c) => sum + Number(c.total_kg || 0), 0)
       const co2Saved = totalCO2 * 0.15
 
       const { data: ecoProfiles } = await supabase

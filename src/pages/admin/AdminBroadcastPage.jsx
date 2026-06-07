@@ -32,7 +32,7 @@ export default function AdminBroadcastPage() {
       setLoading(true)
       const { data, error } = await supabase
         .from('announcements')
-        .select('*, author:profiles!created_by(full_name)')
+        .select('*, author:profiles!created_by(full_name, role)')
         .order('created_at', { ascending: false })
       
       if (error) throw error
@@ -133,30 +133,30 @@ export default function AdminBroadcastPage() {
                     <div className="space-y-2">
                        <label className="text-[8px] font-black text-gray-500 uppercase tracking-widest ml-1">Target Sector</label>
                        <div className="relative group">
-                         <div className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 px-4 text-sm text-white cursor-pointer flex justify-between items-center group-hover:border-orange-500/50 transition-all">
-                           <span>
-                             {target === 'all' ? 'Full Campus' : 
-                              target === 'students' ? 'Students Only' : 
-                              target === 'faculty' ? 'Faculty Only' : 'Staff Only'}
-                           </span>
-                           <ChevronDown size={14} className="text-gray-500" />
-                         </div>
-                         <div className="absolute top-full left-0 right-0 mt-2 bg-[#0f172a] border border-white/10 rounded-xl overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-xl">
-                            {[
-                              { val: 'all', label: 'Full Campus' },
-                              { val: 'students', label: 'Students Only' },
-                              { val: 'faculty', label: 'Faculty Only' },
-                              { val: 'staff', label: 'Staff Only' }
-                            ].map(opt => (
-                              <div
-                                key={opt.val}
-                                onClick={() => setTarget(opt.val)}
-                                className={`px-4 py-3 text-sm cursor-pointer hover:bg-white/5 transition-colors ${target === opt.val ? 'text-orange-500 font-bold bg-orange-500/5' : 'text-gray-300'}`}
-                              >
-                                {opt.label}
-                              </div>
-                            ))}
-                         </div>
+                          <div className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 px-4 text-sm text-white cursor-pointer flex justify-between items-center group-hover:border-orange-500/50 transition-all">
+                            <span>
+                              {target === 'all' ? 'Full Campus' : 
+                               target === 'students' ? 'Students Only' : 
+                               target === 'faculty' ? 'Faculty Only' : 'Staff Only'}
+                            </span>
+                            <ChevronDown size={14} className="text-gray-500" />
+                          </div>
+                          <div className="absolute top-full left-0 right-0 mt-2 bg-[#0f172a] border border-white/10 rounded-xl overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-xl">
+                             {[
+                               { val: 'all', label: 'Full Campus' },
+                               { val: 'students', label: 'Students Only' },
+                               { val: 'faculty', label: 'Faculty Only' },
+                               { val: 'staff', label: 'Staff Only' }
+                             ].map(opt => (
+                               <div
+                                 key={opt.val}
+                                 onClick={() => setTarget(opt.val)}
+                                 className={`px-4 py-3 text-sm cursor-pointer hover:bg-white/5 transition-colors ${target === opt.val ? 'text-orange-500 font-bold bg-orange-500/5' : 'text-gray-300'}`}
+                               >
+                                 {opt.label}
+                               </div>
+                             ))}
+                          </div>
                        </div>
                     </div>
 
@@ -212,13 +212,13 @@ export default function AdminBroadcastPage() {
               
               {loading ? (
                 <div className="py-12 flex flex-col items-center gap-3">
-                  <div className="w-8 h-8 border-2 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
-                  <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Loading...</p>
+                   <div className="w-8 h-8 border-2 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
+                   <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Loading...</p>
                 </div>
               ) : broadcasts.length === 0 ? (
                 <div className="py-12 text-center flex flex-col items-center gap-3">
-                  <Megaphone size={32} className="text-gray-800 opacity-20" />
-                  <p className="text-[10px] font-black text-gray-700 uppercase tracking-[0.3em]">No broadcasts yet</p>
+                   <Megaphone size={32} className="text-gray-800 opacity-20" />
+                   <p className="text-[10px] font-black text-gray-700 uppercase tracking-[0.3em]">No broadcasts yet</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -250,7 +250,7 @@ export default function AdminBroadcastPage() {
                                        {ann.author?.full_name && (
                                          <>
                                            <span className="w-1 h-1 rounded-full bg-gray-700" />
-                                           <span className="text-[7px] font-black text-gray-500 uppercase tracking-widest">By {ann.author.full_name}</span>
+                                           <span className="text-[7px] font-black text-gray-500 uppercase tracking-widest">By {ann.author.full_name} ({ann.author.role})</span>
                                          </>
                                        )}
                                     </div>

@@ -44,7 +44,7 @@ export default function FacultyAnnouncementsPage() {
       setLoading(true)
       const { data, error } = await supabase
         .from('announcements')
-        .select('*, author:profiles!created_by(full_name)')
+        .select('*, author:profiles!created_by(full_name, role)')
         .order('created_at', { ascending: false })
       
       if (error) throw error
@@ -254,7 +254,7 @@ export default function FacultyAnnouncementsPage() {
                                        {ann.author?.full_name && (
                                          <>
                                            <span className="w-1 h-1 rounded-full bg-gray-700" />
-                                           <span className="text-[7px] font-black text-gray-500 uppercase tracking-widest">By {ann.author.full_name}</span>
+                                           <span className="text-[7px] font-black text-gray-500 uppercase tracking-widest">By {ann.author.full_name} ({ann.author.role})</span>
                                          </>
                                        )}
                                     </div>

@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import AdminLayout from './AdminLayout'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
+import { useAuthStore } from '../../store/index'
 
 const CATEGORIES = [
   { id: 'All', label: 'All Alerts', icon: Bell, color: '#ef4444' },
@@ -14,6 +15,7 @@ const CATEGORIES = [
  ]
 
 export default function AdminNotificationsPage() {
+  const { profile } = useAuthStore()
   const [notifications, setNotifications] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState('All')
@@ -30,11 +32,22 @@ export default function AdminNotificationsPage() {
     // Subscribe to real-time notifications
     const channel = supabase
       .channel('admin_notifications_realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, (payload) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, async (payload) => {
         if (payload.eventType === 'INSERT') {
+          // Fetch sender info for the new notification
+          let senderData = null
+          if (payload.new.sender_id) {
+            const { data } = await supabase
+              .from('profiles')
+              .select('full_name, role')
+              .eq('id', payload.new.sender_id)
+              .single()
+            senderData = data
+          }
+          const notifWithSender = { ...payload.new, sender: senderData }
           setNotifications(prev => {
             if (prev.some(n => n.id === payload.new.id)) return prev
-            return [payload.new, ...prev]
+            return [notifWithSender, ...prev]
           })
           toast('New system alert 🔔', { icon: '📡' })
         } else {
@@ -53,7 +66,7 @@ export default function AdminNotificationsPage() {
       if (!quiet) setLoading(true)
       const { data, error } = await supabase
         .from('notifications')
-        .select('*')
+        .select('*, sender:profiles!sender_id(full_name, role)')
         .order('created_at', { ascending: false })
         .limit(100)
       
@@ -82,7 +95,8 @@ export default function AdminNotificationsPage() {
           title: broadcastTitle.trim(),
           content: broadcastContent.trim(),
           priority: broadcastPriority,
-          audience_type: 'global'
+          audience_type: 'global',
+          created_by: profile?.id
         })
 
       if (error) throw error
@@ -252,9 +266,15 @@ export default function AdminNotificationsPage() {
                                 {new Date(notif.created_at).toLocaleDateString()}
                               </span>
                            </div>
-                           <p className="text-xs font-medium leading-relaxed text-gray-300">
+                           <p className="text-xs font-medium leading-relaxed text-gray-300 font-semibold">
                              {notif.message}
                            </p>
+                           {notif.sender && (
+                             <div className="mt-2 text-[8px] font-black text-red-400 uppercase tracking-widest flex items-center gap-1.5">
+                               <span>Relayed By: {notif.sender.full_name}</span>
+                               <span className="px-1.5 py-0.5 rounded bg-red-500/10 border border-red-500/20 text-red-500 text-[6px] font-black uppercase">{notif.sender.role}</span>
+                             </div>
+                           )}
                         </div>
 
                         <div className="flex gap-2 self-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -294,9 +314,15 @@ export default function AdminNotificationsPage() {
                                 {new Date(notif.created_at).toLocaleDateString()}
                               </span>
                            </div>
-                           <p className="text-xs font-medium leading-relaxed text-gray-650">
+                           <p className="text-xs font-medium leading-relaxed text-gray-400">
                              {notif.message}
                            </p>
+                           {notif.sender && (
+                             <div className="mt-2 text-[8px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-1.5">
+                               <span>Relayed By: {notif.sender.full_name}</span>
+                               <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-gray-400 text-[6px] font-black uppercase">{notif.sender.role}</span>
+                             </div>
+                           )}
                         </div>
                       </div>
                     ))}

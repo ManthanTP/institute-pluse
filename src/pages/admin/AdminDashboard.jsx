@@ -78,7 +78,7 @@ export default function AdminDashboard() {
         supabase.from('events').select('*', { count: 'exact', head: true }).eq('status', 'upcoming')
       ])
 
-      const totalCo2 = allLogs.data?.reduce((acc, curr) => acc + (curr.total_kg || 0), 0) || 0
+      const totalCo2 = allLogs.data?.reduce((acc, curr) => acc + Number(curr.total_kg || 0), 0) || 0
       const totalPoints = allLogs.data?.reduce((acc, curr) => acc + (curr.eco_points_earned || 0), 0) || 0
       const totalSaved = (totalCo2 * 0.15) 
 
