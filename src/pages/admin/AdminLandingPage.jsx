@@ -57,8 +57,8 @@ function getDefaultContentForSection(key) {
         },
         { 
           title: "Events", 
-          description: "Join organized campaigns, support ecological challenges, earn badges, and build credentials.",
-          bullets: ["Join campus-wide eco campaigns", "Earn achievement badges and certificates", "Track challenge progress in real-time", "Department vs department competitions"]
+          description: "Join organized campaigns, participate in campus-wide eco events, earn badges, and build credentials.",
+          bullets: ["Join campus-wide eco campaigns", "Earn achievement badges and certificates", "Track campaign progress in real-time", "Department vs department competitions"]
         },
         { 
           title: "Smart Cafeteria", 
@@ -113,7 +113,7 @@ function getDefaultContentForSection(key) {
       steps: [
         { number: "01", title: "Create Your Account", description: "Sign up with your college email. Your eco-profile, timetable, and campus map sync automatically." },
         { number: "02", title: "Track Your Impact", description: "Log daily commutes, meals, and energy usage. Watch your carbon score drop and eco-points rise." },
-        { number: "03", title: "Earn & Compete", description: "Climb the leaderboard, unlock green badges, and join sustainability challenges across departments." }
+        { number: "03", title: "Earn & Compete", description: "Climb the leaderboard, unlock green badges, and participate in campus-wide eco campaigns." }
       ]
     },
     faq: {

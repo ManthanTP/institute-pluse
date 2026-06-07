@@ -15,7 +15,7 @@ const FEATURE_DETAILS = [
   { title: 'Eco Track', icon: Target, color: '#8b5cf6', gradient: 'from-purple-500/20 to-violet-500/5', bullets: ['Log daily transport, meals & energy usage', 'Personal CO₂ footprint dashboard', 'Earn leaderboard points for green choices', 'Track weekly/monthly sustainability trends'] },
   { title: 'Study Planner', icon: BookOpen, color: '#f59e0b', gradient: 'from-yellow-500/20 to-amber-500/5', bullets: ['Study timer with subject tracking', 'Custom study alarms & scheduling', 'Subject-wise revision partitioning', 'Peer coordination and group study logs'] },
   { title: 'Floor Maps', icon: MapPin, color: '#ef4444', gradient: 'from-red-500/20 to-rose-500/5', bullets: ['Interactive multi-floor building navigation', 'Filter by labs, classrooms, and offices', 'Real-time room availability status', 'Fastest route pathfinding between blocks'] },
-  { title: 'Events', icon: Award, color: '#06b6d4', gradient: 'from-cyan-500/20 to-sky-500/5', bullets: ['Join campus-wide eco campaigns', 'Earn achievement badges and certificates', 'Track challenge progress in real-time', 'Department vs department competitions'] },
+  { title: 'Events', icon: Award, color: '#06b6d4', gradient: 'from-cyan-500/20 to-sky-500/5', bullets: ['Join campus-wide eco campaigns', 'Earn achievement badges and certificates', 'Track campaign progress in real-time', 'Department vs department competitions'] },
   { title: 'Smart Cafeteria', icon: Utensils, color: '#f97316', gradient: 'from-orange-500/20 to-amber-500/5', bullets: ['Browse full digital menu with prices', 'Pre-order meals to skip the queue', 'Nutritional info & calorie tracking', 'Real-time item availability updates'] },
   { title: 'Carbon Analytics', icon: BarChart3, color: '#22c55e', gradient: 'from-green-500/20 to-teal-500/5', bullets: ['Interactive emission breakdown charts', 'Transport, food, energy & waste categories', 'Monthly trend reports with comparisons', 'Campus-wide vs individual analytics'] },
   { title: 'Leaderboards', icon: Trophy, color: '#f59e0b', gradient: 'from-yellow-500/20 to-orange-500/5', bullets: ['Real-time XP-based ranking system', 'Weekly and all-time leaderboard views', 'Department and class-level competitions', 'Green badge tier system with rewards'] },
@@ -247,9 +247,9 @@ export default function LandingPage() {
           ? `${(totalCo2 / 1000).toFixed(1)} T` 
           : `${Math.round(totalCo2)} kg`
 
-        // 3. Get real active events count (green challenges)
+        // 3. Get real active events count
         const { count: eventsCount } = await supabase
-          .from('green_challenges')
+          .from('events')
           .select('id', { count: 'exact', head: true })
 
         // 4. Count commutes (transport logs)
@@ -394,7 +394,7 @@ export default function LandingPage() {
   const STATS_ITEMS = [
     { label: 'Active Users', value: liveStats.activeUsers, icon: Users, color: '#22c55e' },
     { label: 'CO₂ Saved', value: liveStats.co2Tracked, icon: Leaf, color: '#00f5ff' },
-    { label: 'Green Challenges', value: liveStats.eventsHosted, icon: Award, color: '#8b5cf6' },
+    { label: 'Active Events', value: liveStats.eventsHosted, icon: Award, color: '#8b5cf6' },
     { label: 'Eco Points Earned', value: liveStats.ecoPoints, icon: Trophy, color: '#f59e0b' },
   ]
 
@@ -402,7 +402,7 @@ export default function LandingPage() {
   const howItWorksSteps = milestonesContent.steps || [
     { number: '01', title: 'Create Your Account', description: 'Sign up with your college email. Your eco-profile, timetable, and campus map sync automatically.' },
     { number: '02', title: 'Track Your Impact', description: 'Log daily commutes, meals, and energy usage. Watch your carbon score drop and eco-points rise.' },
-    { number: '03', title: 'Earn & Compete', description: 'Climb the leaderboard, unlock green badges, and join sustainability challenges across departments.' },
+    { number: '03', title: 'Earn & Compete', description: 'Climb the leaderboard, unlock green badges, and participate in campus-wide eco campaigns.' },
   ]
   const stepIcons = [UserPlus, TrendingUp, Medal]
 
@@ -1302,7 +1302,7 @@ export default function LandingPage() {
                            {[
                               { label: 'Active Users', value: liveStats.activeUsers, icon: <Users size={16} />, accent: 'from-green-500/20 to-green-500/5', iconBg: 'bg-green-500/10 border-green-500/20', iconColor: 'text-green-400', valueColor: 'text-green-400' },
                               { label: 'CO₂ Saved', value: liveStats.co2Tracked, icon: <Leaf size={16} />, accent: 'from-cyan-500/20 to-cyan-500/5', iconBg: 'bg-cyan-500/10 border-cyan-500/20', iconColor: 'text-cyan-400', valueColor: 'text-cyan-400' },
-                              { label: 'Active Challenges', value: liveStats.eventsHosted, icon: <Trophy size={16} />, accent: 'from-purple-500/20 to-purple-500/5', iconBg: 'bg-purple-500/10 border-purple-500/20', iconColor: 'text-purple-400', valueColor: 'text-purple-400' },
+                              { label: 'Active Events', value: liveStats.eventsHosted, icon: <Trophy size={16} />, accent: 'from-purple-500/20 to-purple-500/5', iconBg: 'bg-purple-500/10 border-purple-500/20', iconColor: 'text-purple-400', valueColor: 'text-purple-400' },
                               { label: 'Eco Points Earned', value: liveStats.ecoPoints, icon: <Award size={16} />, accent: 'from-yellow-500/20 to-yellow-500/5', iconBg: 'bg-yellow-500/10 border-yellow-500/20', iconColor: 'text-yellow-400', valueColor: 'text-yellow-400' },
                            ].map(card => (
                               <div key={card.label} className="relative rounded-2xl bg-white/[0.02] border border-white/[0.06] p-5 flex flex-col gap-3 overflow-hidden group hover:border-white/[0.1] transition-all duration-300">

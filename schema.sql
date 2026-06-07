@@ -57,31 +57,6 @@ create table if not exists public.eco_badges (
   unique (student_id, badge_key)
 );
 
--- ── 4. GREEN CHALLENGES ──
-create table if not exists public.green_challenges (
-  id uuid default uuid_generate_v4() primary key,
-  title text not null,
-  description text,
-  category text not null,
-  points_reward integer not null default 50,
-  duration_days integer not null default 7,
-  start_date date not null,
-  end_date date not null,
-  status text not null default 'active' check (status in ('active', 'completed', 'cancelled')),
-  created_by uuid references public.profiles(id),
-  created_at timestamptz not null default now()
-);
-
--- ── 5. CHALLENGE PARTICIPANTS ──
-create table if not exists public.challenge_participants (
-  id uuid default uuid_generate_v4() primary key,
-  challenge_id uuid references public.green_challenges(id) on delete cascade not null,
-  student_id uuid references public.profiles(id) on delete cascade not null,
-  joined_at timestamptz not null default now(),
-  completed boolean not null default false,
-  completed_at timestamptz,
-  unique (challenge_id, student_id)
-);
 
 -- ── 6. BUSES ──
 create table if not exists public.buses (
@@ -215,8 +190,7 @@ create table if not exists public.notifications (
 alter table public.profiles enable row level security;
 alter table public.carbon_logs enable row level security;
 alter table public.eco_badges enable row level security;
-alter table public.green_challenges enable row level security;
-alter table public.challenge_participants enable row level security;
+
 alter table public.buses enable row level security;
 alter table public.bus_locations enable row level security;
 alter table public.menu_items enable row level security;
@@ -262,14 +236,7 @@ create policy "carbon_own_update" on public.carbon_logs for update using (studen
 create policy "badges_own_select" on public.eco_badges for select using (student_id = auth.uid() or public.is_admin());
 create policy "badges_system_insert" on public.eco_badges for insert with check (student_id = auth.uid() or public.is_admin());
 
--- GREEN CHALLENGES RLS
-create policy "challenges_all_select" on public.green_challenges for select using (true);
-create policy "challenges_admin_insert" on public.green_challenges for insert with check (public.is_admin());
-create policy "challenges_admin_update" on public.green_challenges for update using (public.is_admin());
 
--- CHALLENGE PARTICIPANTS RLS
-create policy "cp_own_select" on public.challenge_participants for select using (student_id = auth.uid() or public.is_admin());
-create policy "cp_own_insert" on public.challenge_participants for insert with check (student_id = auth.uid());
 
 -- BUSES RLS (public read)
 create policy "buses_all_select" on public.buses for select using (true);
@@ -354,12 +321,6 @@ insert into public.buses (bus_number, route_name, driver_name, status) values
   ('Bus 4', 'Tech Park Route', 'Prakash', 'stopped')
 on conflict (bus_number) do nothing;
 
--- Sample green challenge
-insert into public.green_challenges (title, description, category, points_reward, duration_days, start_date, end_date, status) values
-  ('7-Day Bus Challenge', 'Take the college bus every day for 7 days and earn 100 eco-points!', 'transport', 100, 7, current_date, current_date + 7, 'active'),
-  ('Veg Week', 'Go vegetarian for all meals for 7 days straight!', 'food', 75, 7, current_date, current_date + 7, 'active'),
-  ('Zero Waste Day', 'Use only organic/compost waste for 3 consecutive days', 'waste', 50, 3, current_date, current_date + 3, 'active')
-on conflict do nothing;
 
 -- ══════════════════════════════════════════════════════════════════
 -- FUNCTIONS FOR AUTO-PROFILE CREATION

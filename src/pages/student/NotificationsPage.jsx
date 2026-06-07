@@ -14,7 +14,6 @@ const TYPE_CONFIG = {
   attendance: { icon: GraduationCap, color: 'text-teal-500', bg: 'bg-teal-500/10' },
   class_update: { icon: Clock, color: 'text-teal-400', bg: 'bg-teal-500/10' },
   complaint: { icon: AlertCircle, color: 'text-red-500', bg: 'bg-red-500/10' },
-  challenge: { icon: Trophy, color: 'text-purple-500', bg: 'bg-purple-500/10' },
   announcement: { icon: Info, color: 'text-blue-500', bg: 'bg-blue-500/10' },
   general: { icon: Info, color: 'text-gray-400', bg: 'bg-white/5' }
 }
@@ -74,7 +73,7 @@ export default function NotificationsPage() {
           return t === 'badge' || t === 'badges' || t === 'eco_badge'
         }
         if (targetType === 'eco') {
-          return t === 'eco' || t === 'challenge' || t === 'sustainability'
+          return t === 'eco' || t === 'sustainability'
         }
         return t === targetType
       })

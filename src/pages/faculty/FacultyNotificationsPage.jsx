@@ -14,7 +14,6 @@ const TYPE_CONFIG = {
   attendance: { icon: GraduationCap, color: 'text-teal-500', bg: 'bg-teal-500/10' },
   class_update: { icon: Clock, color: 'text-teal-400', bg: 'bg-teal-500/10' },
   complaint: { icon: AlertCircle, color: 'text-red-500', bg: 'bg-red-500/10' },
-  challenge: { icon: Trophy, color: 'text-purple-500', bg: 'bg-purple-500/10' },
   announcement: { icon: Megaphone, color: 'text-blue-500', bg: 'bg-blue-500/10' },
   event: { icon: Calendar, color: 'text-purple-500', bg: 'bg-purple-500/10' },
   system: { icon: ShieldCheck, color: 'text-gray-400', bg: 'bg-white/5' },
@@ -126,7 +125,7 @@ export default function FacultyNotificationsPage() {
           return t === 'complaint' || t === 'issue' || t === 'issues'
         }
         if (targetType === 'event') {
-          return t === 'event' || t === 'events' || t === 'challenge'
+          return t === 'event' || t === 'events'
         }
         if (targetType === 'system') {
           return t === 'system' || t === 'security' || t === 'alert'

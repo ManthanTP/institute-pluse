@@ -149,7 +149,7 @@ export default function AdminProfilePage() {
                        >
                          Reset Password
                        </button>
-                    </div>v>
+                    </div>
 
                     <div className="flex items-center justify-between p-6 bg-white/2 border border-white/5 rounded-3xl group hover:border-orange-500/30 transition-all">
                        <div className="flex items-center gap-6">
