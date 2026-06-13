@@ -253,7 +253,6 @@ export default function CarbonLogPage() {
         total_kg: totalKg,
         eco_score: ecoScore,
         eco_points_earned: ecoPoints,
-        status: shouldQuarantine ? 'pending' : 'approved',
         transport_mode: form.transport[0]?.mode,
         transport_km: form.transport[0]?.km,
         transport_detail: form.transport,
@@ -263,8 +262,34 @@ export default function CarbonLogPage() {
         waste_detail: form.waste,
       }
 
-      const { data, error } = await supabase.from('carbon_logs').upsert(logData, { onConflict: 'student_id,log_date' }).select().single()
-      if (error) throw error
+      // Try insert first; if duplicate key (already logged today) fall back to update
+      let savedLog = null
+      const { data: insertData, error: insertError } = await supabase
+        .from('carbon_logs')
+        .insert(logData)
+        .select()
+        .single()
+
+      if (insertError) {
+        if (insertError.code === '23505') {
+          // Duplicate — update existing row
+          const { data: updateData, error: updateError } = await supabase
+            .from('carbon_logs')
+            .update(logData)
+            .eq('student_id', profile.id)
+            .eq('log_date', yesterday)
+            .select()
+            .single()
+          if (updateError) throw updateError
+          savedLog = updateData
+        } else {
+          throw insertError
+        }
+      } else {
+        savedLog = insertData
+      }
+
+      if (!savedLog) throw new Error('Log could not be saved. Please try again.')
 
       if (!shouldQuarantine) {
         await supabase.from('profiles').update({
@@ -275,7 +300,7 @@ export default function CarbonLogPage() {
         }).eq('id', profile.id)
       }
 
-      setTodayLog(data)
+      setTodayLog(savedLog)
       setSuccess({ 
         ecoScore, 
         ecoPoints: shouldQuarantine ? 0 : ecoPoints, 
