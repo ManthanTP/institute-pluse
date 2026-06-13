@@ -14,6 +14,7 @@ export default function CarbonHistoryPage() {
   const [history, setHistory] = useState([])
   const [loading, setLoading] = useState(true)
   const [timeFrame, setTimeFrame] = useState(0)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   const [selectedItem, setSelectedItem] = useState(null)
   const [selectedType, setSelectedType] = useState(null) // 'log' | 'order'
@@ -21,15 +22,15 @@ export default function CarbonHistoryPage() {
 
   useEffect(() => {
     fetchHistory()
-  }, [profile?.id, timeFrame])
+  }, [profile?.id, timeFrame, refreshKey])
 
   async function fetchHistory() {
     if (!profile?.id) return
     setLoading(true)
-    
+
     let logQuery = supabase
       .from('carbon_logs')
-      .select('id,log_date,transport_kg,electricity_kg,food_kg,water_kg,waste_kg,total_kg,eco_score,eco_points_earned,transport_mode,transport_km,transport_detail,meals_detail,devices_detail,water_detail,waste_detail,created_at')
+      .select('*')
       .eq('student_id', profile.id)
       .order('log_date', { ascending: false })
 
@@ -59,15 +60,14 @@ export default function CarbonHistoryPage() {
     try {
       const [logsRes, ordersRes] = await Promise.all([logQuery, orderQuery])
 
-      if (logsRes.error) console.error('Carbon logs fetch error:', logsRes.error)
-      if (ordersRes.error) console.error('Orders fetch error:', ordersRes.error)
+      if (logsRes.error) console.error('Carbon logs fetch error:', logsRes.error.message, logsRes.error)
+      if (ordersRes.error) console.error('Orders fetch error:', ordersRes.error.message, ordersRes.error)
 
       // Normalize and merge
-      const logs = (logsRes.data || []).map(l => ({ ...l, _type: 'log', _date: new Date(l.log_date) }))
+      const logs = (logsRes.data || []).map(l => ({ ...l, _type: 'log', _date: new Date(l.log_date + 'T00:00:00') }))
       const orders = (ordersRes.data || []).map(o => ({ ...o, _type: 'order', _date: new Date(o.created_at) }))
-      
+
       const merged = [...logs, ...orders].sort((a, b) => b._date - a._date)
-      
       setHistory(merged)
     } catch (err) {
       console.error('History fetch failed:', err)
@@ -75,8 +75,6 @@ export default function CarbonHistoryPage() {
       setLoading(false)
     }
   }
-
-
   const totalSaved = history.reduce((acc, curr) => {
     if (curr._type === 'log') return acc + (curr.total_kg * 0.15 || 0)
     return acc // Orders don't "save" carbon, they are footprints
@@ -164,12 +162,22 @@ export default function CarbonHistoryPage() {
               </p>
             </div>
           </div>
-          <button 
-            onClick={handleShare}
-            className="p-3 rounded-2xl bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-all ml-auto lg:ml-0"
-          >
-            <Share2 size={18} />
-          </button>
+          <div className="flex items-center gap-2 ml-auto lg:ml-0">
+            <button
+              onClick={() => setRefreshKey(k => k + 1)}
+              disabled={loading}
+              className="p-3 rounded-2xl bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-all disabled:opacity-40"
+              title="Refresh"
+            >
+              <TrendingDown size={18} className={loading ? 'animate-spin' : ''} />
+            </button>
+            <button 
+              onClick={handleShare}
+              className="p-3 rounded-2xl bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-all"
+            >
+              <Share2 size={18} />
+            </button>
+          </div>
         </div>
 
         {/* OVERVIEW CARDS */}
@@ -239,9 +247,25 @@ export default function CarbonHistoryPage() {
                <div className="py-12 text-center bg-white/5 border border-white/10 rounded-[32px] backdrop-blur-xl">
                   <div className="text-4xl mb-4 opacity-40">📜</div>
                   <p className="text-xs font-black text-white uppercase tracking-widest">No Log History</p>
-                  <p className="text-[10px] font-medium text-gray-500 mt-2">Start your sustainability journey today!</p>
+                  <p className="text-[10px] font-medium text-gray-500 mt-2">Carbon logs appear here after you submit them from the Daily Pulse page.</p>
+                  <button
+                    onClick={() => setRefreshKey(k => k + 1)}
+                    className="mt-4 px-6 py-2 rounded-2xl bg-green-600/20 border border-green-500/30 text-green-400 text-[10px] font-black uppercase tracking-widest hover:bg-green-600/30 transition-all"
+                  >
+                    Refresh
+                  </button>
                </div>
-            ) : history.map((item, i) => (
+            ) : history.map((item, i) => {
+              // Compute relative date label
+              const today = new Date()
+              today.setHours(0,0,0,0)
+              const itemDay = new Date(item._date)
+              itemDay.setHours(0,0,0,0)
+              const diffDays = Math.round((today - itemDay) / 86400000)
+              const dateLabel = diffDays === 0 ? 'Today'
+                : diffDays === 1 ? 'Yesterday'
+                : item._date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }).toUpperCase()
+              return (
               <motion.div
                 key={item.id}
                 initial={{ opacity: 0, y: 10 }}
@@ -261,13 +285,18 @@ export default function CarbonHistoryPage() {
                    <div>
                       <div className="flex items-center gap-2 mb-1">
                         <h4 className="text-sm font-black text-white uppercase tracking-tight">
-                          {item._date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }).toUpperCase()}
+                          {dateLabel}
                         </h4>
                         <span className={`px-2 py-0.5 rounded-md text-[7px] font-black uppercase tracking-widest ${
                           item._type === 'order' ? 'bg-orange-500/10 text-orange-500' : 'bg-green-500/10 text-green-500'
                         }`}>
                           {item._type === 'order' ? 'Cafeteria Node' : 'Daily Manifest'}
                         </span>
+                        {item.log_status === 'quarantined' && (
+                          <span className="px-2 py-0.5 rounded-md text-[7px] font-black uppercase tracking-widest bg-yellow-500/10 text-yellow-400">
+                            Under Review
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-3">
                           <div className="flex items-center gap-1">
@@ -276,12 +305,17 @@ export default function CarbonHistoryPage() {
                               {(item.total_kg || item.total_carbon_kg || 0).toFixed(1)} kg CO2
                             </span>
                           </div>
+                          {item._type === 'log' && item.eco_score !== undefined && (
+                            <div className="flex items-center gap-1">
+                              <span className="text-[9px] font-black text-green-500">⚡ {item.eco_score}%</span>
+                            </div>
+                          )}
                       </div>
                    </div>
                 </div>
                 <ChevronRight size={18} className="text-gray-700 group-hover:text-white transition-colors" />
               </motion.div>
-            ))}
+            )})}
            </AnimatePresence>
         </div>
 

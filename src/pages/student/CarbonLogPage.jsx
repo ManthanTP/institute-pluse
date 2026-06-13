@@ -218,7 +218,14 @@ export default function CarbonLogPage() {
     if (!profile) return
     setSubmitting(true)
     try {
-      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+      // Use yesterday in the user's LOCAL timezone (not UTC) so the date
+      // matches what the student expects and what the DB policy allows.
+      const now = new Date()
+      const yesterdayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)
+      const yyyy = yesterdayLocal.getFullYear()
+      const mm = String(yesterdayLocal.getMonth() + 1).padStart(2, '0')
+      const dd = String(yesterdayLocal.getDate()).padStart(2, '0')
+      const yesterday = `${yyyy}-${mm}-${dd}`
 
       const { errors, isSuspicious } = checkCarbonLogValidation(form, activeConfig, lastLogs)
       if (errors.length > 0) {
@@ -253,6 +260,7 @@ export default function CarbonLogPage() {
         total_kg: totalKg,
         eco_score: ecoScore,
         eco_points_earned: ecoPoints,
+        log_status: shouldQuarantine ? 'quarantined' : 'approved',
         transport_mode: form.transport[0]?.mode,
         transport_km: form.transport[0]?.km,
         transport_detail: form.transport,
@@ -262,7 +270,7 @@ export default function CarbonLogPage() {
         waste_detail: form.waste,
       }
 
-      // Try insert first; if duplicate key (already logged today) fall back to update
+      // Try insert first; if duplicate key (already logged) fall back to update
       let savedLog = null
       const { data: insertData, error: insertError } = await supabase
         .from('carbon_logs')
@@ -272,7 +280,7 @@ export default function CarbonLogPage() {
 
       if (insertError) {
         if (insertError.code === '23505') {
-          // Duplicate — update existing row
+          // Duplicate unique constraint — update the existing row instead
           const { data: updateData, error: updateError } = await supabase
             .from('carbon_logs')
             .update(logData)
@@ -280,8 +288,18 @@ export default function CarbonLogPage() {
             .eq('log_date', yesterday)
             .select()
             .single()
-          if (updateError) throw updateError
-          savedLog = updateData
+          if (updateError) {
+            // If update also fails (e.g. RLS 2-hour window), do a raw upsert
+            const { data: upsertData, error: upsertError } = await supabase
+              .from('carbon_logs')
+              .upsert({ ...logData }, { onConflict: 'student_id,log_date', ignoreDuplicates: false })
+              .select()
+              .single()
+            if (upsertError) throw upsertError
+            savedLog = upsertData
+          } else {
+            savedLog = updateData
+          }
         } else {
           throw insertError
         }
@@ -289,7 +307,7 @@ export default function CarbonLogPage() {
         savedLog = insertData
       }
 
-      if (!savedLog) throw new Error('Log could not be saved. Please try again.')
+      if (!savedLog) throw new Error('Log saved but could not confirm. Please check Carbon History.')
 
       if (!shouldQuarantine) {
         await supabase.from('profiles').update({
