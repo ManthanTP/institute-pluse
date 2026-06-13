@@ -194,12 +194,28 @@ export const useCarbonStore = create((set, get) => ({
   },
 
   fetchTodayLog: async (userId) => {
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+    // Compute yesterday in LOCAL timezone (same as how the log is saved)
+    const now = new Date()
+    const yesterdayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)
+    const yyyy = yesterdayLocal.getFullYear()
+    const mm = String(yesterdayLocal.getMonth() + 1).padStart(2, '0')
+    const dd = String(yesterdayLocal.getDate()).padStart(2, '0')
+    const yesterday = `${yyyy}-${mm}-${dd}`
+
+    // Also compute today in local timezone (in case student logs same day)
+    const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const ty = todayLocal.getFullYear()
+    const tm = String(todayLocal.getMonth() + 1).padStart(2, '0')
+    const td = String(todayLocal.getDate()).padStart(2, '0')
+    const today = `${ty}-${tm}-${td}`
+
     const { data } = await supabase
       .from('carbon_logs')
       .select('*')
       .eq('student_id', userId)
-      .eq('log_date', yesterday)
+      .in('log_date', [yesterday, today])
+      .order('log_date', { ascending: false })
+      .limit(1)
       .maybeSingle()
 
     set({ todayLog: data || null })

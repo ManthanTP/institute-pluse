@@ -193,6 +193,63 @@ export default function DashboardPage() {
            )}
         </AnimatePresence>
 
+        {/* CARBON LOG NOTIFICATION BANNER */}
+        <AnimatePresence mode="wait">
+          {hasLogged ? (
+            <motion.div
+              key="logged"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              onClick={() => navigate('/carbon/history')}
+              className="relative overflow-hidden rounded-[28px] p-5 mb-5 bg-gradient-to-r from-green-600/15 to-emerald-600/10 border border-green-500/30 flex items-center justify-between cursor-pointer hover:border-green-500/50 transition-all group"
+            >
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_0%_50%,rgba(34,197,94,0.1),transparent_60%)]" />
+              <div className="flex items-center gap-4 relative z-10">
+                <div className="w-10 h-10 rounded-2xl bg-green-500/20 border border-green-500/30 flex items-center justify-center shadow-[0_0_12px_rgba(34,197,94,0.3)]">
+                  <span className="text-lg">✅</span>
+                </div>
+                <div>
+                  <p className="text-[9px] font-black text-green-400 uppercase tracking-[0.3em]">Carbon Log Synced</p>
+                  <p className="text-xs font-black text-white">Yesterday's footprint recorded — {todayLog?.total_kg?.toFixed(2) || '0.00'} kg CO₂</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 relative z-10">
+                <span className="text-[8px] font-black text-green-500 uppercase tracking-widest hidden sm:block">View History</span>
+                <ChevronRight size={16} className="text-green-500 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="not-logged"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              onClick={() => navigate('/carbon/log')}
+              className="relative overflow-hidden rounded-[28px] p-5 mb-5 bg-gradient-to-r from-amber-600/15 to-orange-600/10 border border-amber-500/30 flex items-center justify-between cursor-pointer hover:border-amber-500/50 transition-all group"
+            >
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_0%_50%,rgba(245,158,11,0.1),transparent_60%)]" />
+              <div className="flex items-center gap-4 relative z-10">
+                <motion.div
+                  animate={{ scale: [1, 1.08, 1] }}
+                  transition={{ repeat: Infinity, duration: 2 }}
+                  className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center shadow-[0_0_12px_rgba(245,158,11,0.3)]"
+                >
+                  <span className="text-lg">🌿</span>
+                </motion.div>
+                <div>
+                  <p className="text-[9px] font-black text-amber-400 uppercase tracking-[0.3em]">Action Required</p>
+                  <p className="text-xs font-black text-white">Log yesterday's carbon footprint to earn Eco XP</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 relative z-10">
+                <span className="text-[8px] font-black text-amber-500 uppercase tracking-widest hidden sm:block">Log Now</span>
+                <ChevronRight size={16} className="text-amber-500 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* STREAK BANNER */}
         <motion.div 
           initial={{ opacity: 0, y: 15 }}
