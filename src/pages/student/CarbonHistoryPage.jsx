@@ -29,7 +29,7 @@ export default function CarbonHistoryPage() {
     
     let logQuery = supabase
       .from('carbon_logs')
-      .select('*')
+      .select('id,log_date,transport_kg,electricity_kg,food_kg,water_kg,waste_kg,total_kg,eco_score,eco_points_earned,transport_mode,transport_km,transport_detail,meals_detail,devices_detail,water_detail,waste_detail,created_at')
       .eq('student_id', profile.id)
       .order('log_date', { ascending: false })
 
@@ -56,17 +56,26 @@ export default function CarbonHistoryPage() {
       orderQuery = orderQuery.gte('created_at', date.toISOString())
     }
 
-    const [logsRes, ordersRes] = await Promise.all([logQuery, orderQuery])
-    
-    // Normalize and merge
-    const logs = (logsRes.data || []).map(l => ({ ...l, _type: 'log', _date: new Date(l.log_date) }))
-    const orders = (ordersRes.data || []).map(o => ({ ...o, _type: 'order', _date: new Date(o.created_at) }))
-    
-    const merged = [...logs, ...orders].sort((a, b) => b._date - a._date)
-    
-    setHistory(merged)
-    setLoading(false)
+    try {
+      const [logsRes, ordersRes] = await Promise.all([logQuery, orderQuery])
+
+      if (logsRes.error) console.error('Carbon logs fetch error:', logsRes.error)
+      if (ordersRes.error) console.error('Orders fetch error:', ordersRes.error)
+
+      // Normalize and merge
+      const logs = (logsRes.data || []).map(l => ({ ...l, _type: 'log', _date: new Date(l.log_date) }))
+      const orders = (ordersRes.data || []).map(o => ({ ...o, _type: 'order', _date: new Date(o.created_at) }))
+      
+      const merged = [...logs, ...orders].sort((a, b) => b._date - a._date)
+      
+      setHistory(merged)
+    } catch (err) {
+      console.error('History fetch failed:', err)
+    } finally {
+      setLoading(false)
+    }
   }
+
 
   const totalSaved = history.reduce((acc, curr) => {
     if (curr._type === 'log') return acc + (curr.total_kg * 0.15 || 0)
