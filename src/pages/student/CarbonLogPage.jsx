@@ -142,6 +142,7 @@ export default function CarbonLogPage() {
   const ecoScore = calcEcoScore(totalKg, activeConfig.campus_budget_kg)
 
   const topCategory = getTopCategory(transportKg, foodKg, electricityKg, waterKg, wasteKg)
+  const maxCat = Math.max(transportKg, foodKg, electricityKg, waterKg, wasteKg, 0.01)
 
   const tipList = AI_TIPS[topCategory] || AI_TIPS.transport
   const aiTip = tipList[Math.floor((ecoScore * tipList.length) / 101) % tipList.length]
