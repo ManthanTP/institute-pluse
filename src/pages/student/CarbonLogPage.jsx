@@ -260,7 +260,6 @@ export default function CarbonLogPage() {
         total_kg: totalKg,
         eco_score: ecoScore,
         eco_points_earned: ecoPoints,
-        log_status: shouldQuarantine ? 'quarantined' : 'approved',
         transport_mode: form.transport[0]?.mode,
         transport_km: form.transport[0]?.km,
         transport_detail: form.transport,
@@ -289,7 +288,7 @@ export default function CarbonLogPage() {
             .select()
             .single()
           if (updateError) {
-            // If update also fails (e.g. RLS 2-hour window), do a raw upsert
+            // If update also fails (e.g. RLS restriction), do a raw upsert
             const { data: upsertData, error: upsertError } = await supabase
               .from('carbon_logs')
               .upsert({ ...logData }, { onConflict: 'student_id,log_date', ignoreDuplicates: false })
@@ -308,6 +307,16 @@ export default function CarbonLogPage() {
       }
 
       if (!savedLog) throw new Error('Log saved but could not confirm. Please check Carbon History.')
+
+      // Best-effort: update log_status if the anti-cheat column exists
+      // This silently succeeds or fails — never blocks the save
+      if (shouldQuarantine && savedLog?.id) {
+        supabase.from('carbon_logs')
+          .update({ log_status: 'quarantined', flagged: true })
+          .eq('id', savedLog.id)
+          .then(() => {}) // fire-and-forget
+      }
+
 
       if (!shouldQuarantine) {
         await supabase.from('profiles').update({
