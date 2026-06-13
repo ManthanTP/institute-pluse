@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, Flame, Leaf, TrendingUp, Star, Award, Zap, Compass, Search, MessageSquare, Info, ShieldAlert, ArrowRight, ChevronRight, Sparkles, LayoutGrid, Target, Waves, Wind, User, Megaphone, HelpCircle, BookOpen } from 'lucide-react'
+import { Bell, Flame, Leaf, TrendingUp, Star, Award, Zap, Compass, Search, MessageSquare, Info, ShieldAlert, ArrowRight, ChevronRight, Sparkles, LayoutGrid, Target, Waves, Wind, User, Megaphone, HelpCircle, BookOpen, TreePine } from 'lucide-react'
 import { useAuthStore, useCarbonStore, useNotifStore } from '../../store/index'
 import { supabase } from '../../lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
+import { calculateTotalAbsorption, calculateNetCarbon, getNetCarbonStatus } from '../../lib/greenCover'
 
 
 const MODULE_TILES = [
   { path: '/carbon/log', icon: Leaf, label: 'Carbon Log', color: '#22c55e' },
   { path: '/carbon/history', icon: TrendingUp, label: 'Analytics', color: '#0ea5e9' },
+  { path: '/carbon/balance', icon: TreePine, label: 'Carbon Balance', color: '#16a34a' },
   { path: '/leaderboard', icon: Award, label: 'Leaderboard', color: '#f59e0b' },
   { path: '/cafeteria', icon: Zap, label: 'Cafeteria', color: '#f97316' },
   { path: '/attendance', icon: Star, label: 'Attendance', color: '#14b8a6' },
@@ -28,6 +30,7 @@ export default function DashboardPage() {
   const { todayLog, fetchTodayLog } = useCarbonStore()
   const [activeSession, setActiveSession] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [greenBalance, setGreenBalance] = useState(null)
 
   useEffect(() => {
     if (!profile?.id) return
@@ -36,7 +39,8 @@ export default function DashboardPage() {
       try {
         await Promise.all([
           fetchTodayLog(profile.id),
-          fetchActiveSession()
+          fetchActiveSession(),
+          fetchGreenBalance(),
         ])
       } catch (err) {
         console.error(err)
@@ -87,6 +91,30 @@ export default function DashboardPage() {
       setActiveSession(data)
     } else {
       setActiveSession(null)
+    }
+  }
+
+  async function fetchGreenBalance() {
+    try {
+      const { data: items } = await supabase
+        .from('campus_green_cover')
+        .select('type, count, area_sqm')
+      const today = new Date().toISOString().split('T')[0]
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+      const { data: logs } = await supabase
+        .from('carbon_logs')
+        .select('total_kg')
+        .eq('log_date', today)
+      let studentCO2 = (logs || []).reduce((a, l) => a + Number(l.total_kg || 0), 0)
+      if (!studentCO2) {
+        const { data: yLogs } = await supabase.from('carbon_logs').select('total_kg').eq('log_date', yesterday)
+        studentCO2 = (yLogs || []).reduce((a, l) => a + Number(l.total_kg || 0), 0)
+      }
+      const totalAbsorbed = calculateTotalAbsorption(items || [])
+      const bal = calculateNetCarbon(studentCO2, totalAbsorbed)
+      setGreenBalance({ ...bal, absorbed: totalAbsorbed, items: items?.length || 0 })
+    } catch (e) {
+      // Green cover may not be set up yet
     }
   }
 
@@ -279,7 +307,6 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* CORE TELEMETRY */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
            {[
              { label: 'Ecosystem XP', val: (profile?.eco_points || 0).toLocaleString(), icon: Sparkles, color: 'text-yellow-500' },
@@ -301,6 +328,40 @@ export default function DashboardPage() {
                 <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest leading-none">{stat.label}</p>
              </motion.div>
            ))}
+           {/* Green Cover Stat Card */}
+           {greenBalance && (
+             <motion.div
+               initial={{ opacity: 0, y: 10 }}
+               animate={{ opacity: 1, y: 0 }}
+               transition={{ delay: 0.2 }}
+               onClick={() => navigate('/carbon/balance')}
+               className="bg-green-500/5 border border-green-500/20 rounded-[32px] p-6 backdrop-blur-xl hover:bg-green-500/10 hover:border-green-500/30 transition-all duration-300 group cursor-pointer col-span-2 md:col-span-4"
+             >
+               <div className="flex items-center justify-between">
+                 <div className="flex items-center gap-4">
+                   <div className="w-8 h-8 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500 group-hover:scale-110 transition-transform">
+                     <TreePine size={14} />
+                   </div>
+                   <div>
+                     <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest leading-none mb-1">Campus Green Cover</p>
+                     <p className="text-sm font-black text-white leading-none">Absorbing {greenBalance.absorbed?.toFixed(2)} kg CO2/day</p>
+                   </div>
+                 </div>
+                 <div className="flex items-center gap-3">
+                   <span className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${
+                     greenBalance.isNeutral
+                       ? 'bg-green-500/10 border-green-500/20 text-green-400'
+                       : greenBalance.net <= 20
+                         ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                         : 'bg-red-500/10 border-red-500/20 text-red-400'
+                   }`}>
+                     Net: {greenBalance.net >= 0 ? '+' : ''}{greenBalance.net?.toFixed(1)} kg {greenBalance.isNeutral ? '🌿' : ''}
+                   </span>
+                   <ChevronRight size={16} className="text-gray-500 group-hover:text-green-400 transition-colors" />
+                 </div>
+               </div>
+             </motion.div>
+           )}
         </div>
 
         {/* ECOSYSTEM NODES */}

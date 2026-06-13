@@ -18,6 +18,7 @@ const DashboardPage = lazy(() => import('./pages/student/DashboardPage'))
 const AnnouncementsPage = lazy(() => import('./pages/student/AnnouncementsPage'))
 const CarbonLogPage = lazy(() => import('./pages/student/CarbonLogPage'))
 const CarbonHistoryPage = lazy(() => import('./pages/student/CarbonHistoryPage'))
+const CarbonBalancePage = lazy(() => import('./pages/student/CarbonBalancePage'))
 const LeaderboardPage = lazy(() => import('./pages/student/LeaderboardPage'))
 const EventsPage = lazy(() => import('./pages/student/EventsPage'))
 const CafeteriaPage = lazy(() => import('./pages/student/CafeteriaPage'))
@@ -71,6 +72,7 @@ const AdminNavigationPage = lazy(() => import('./pages/admin/AdminNavigationPage
 const AdminProfilePage = lazy(() => import('./pages/admin/AdminProfilePage'))
 const AdminHelpPage = lazy(() => import('./pages/admin/AdminHelpPage'))
 const AdminStubPage = lazy(() => import('./pages/admin/AdminStubPage'))
+const AdminGreenCoverPage = lazy(() => import('./pages/admin/AdminGreenCoverPage'))
 const AdminLandingPage = lazy(() => import('./pages/admin/AdminLandingPage'))
 
 
@@ -168,6 +170,7 @@ function App() {
           <Route path="/announcements" element={<StudentPage component={AnnouncementsPage} title="Announcements" showBack hideChrome />} />
           <Route path="/carbon/log" element={<StudentPage component={CarbonLogPage} title="Carbon Tracker" showBack hideChrome />} />
           <Route path="/carbon/history" element={<StudentPage component={CarbonHistoryPage} title="Carbon Analytics" showBack hideChrome />} />
+          <Route path="/carbon/balance" element={<StudentPage component={CarbonBalancePage} title="Carbon Balance" showBack hideChrome />} />
           <Route path="/leaderboard" element={<StudentPage component={LeaderboardPage} title="Leaderboard" showBack hideChrome />} />
           <Route path="/events" element={<StudentPage component={EventsPage} title="Events" showBack hideChrome />} />
           <Route path="/cafeteria" element={<StudentPage component={CafeteriaPage} title="Eco-Cafeteria" showBack hideChrome />} />
@@ -220,6 +223,7 @@ function App() {
 
            <Route path="/12345678/admin/audit" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminAuditPage /></Suspense></AdminRoute>} />
            <Route path="/12345678/admin/navigation" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminNavigationPage /></Suspense></AdminRoute>} />
+           <Route path="/12345678/admin/green-cover" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminGreenCoverPage /></Suspense></AdminRoute>} />
            <Route path="/12345678/admin/profile" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminProfilePage /></Suspense></AdminRoute>} />
            <Route path="/12345678/admin/help" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminHelpPage /></Suspense></AdminRoute>} />
            <Route path="/12345678/admin/landing-editor" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminLandingPage /></Suspense></AdminRoute>} />

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
-import { Menu, X, LogOut, BarChart3, Users, UtensilsCrossed, GraduationCap, MessageSquare, Search, Bell, Map, LayoutDashboard, Shield, Target, CalendarDays, Megaphone, Settings, FileText, User, HelpCircle, Globe, BookOpen } from 'lucide-react'
+import { Menu, X, LogOut, BarChart3, Users, UtensilsCrossed, GraduationCap, MessageSquare, Search, Bell, Map, LayoutDashboard, Shield, Target, CalendarDays, Megaphone, Settings, FileText, User, HelpCircle, Globe, BookOpen, TreePine } from 'lucide-react'
 import { useAuthStore } from '../../store/index'
 import { motion, AnimatePresence } from 'framer-motion'
 import logo from '../../assets/logo.png'
@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { path: '/12345678/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/12345678/admin/users', icon: Users, label: 'User Management' },
   { path: '/12345678/admin/sustainability', icon: BarChart3, label: 'Sustainability' },
+  { path: '/12345678/admin/green-cover', icon: TreePine, label: 'Green Cover' },
   { path: '/12345678/admin/settings', icon: Settings, label: 'Carbon Settings' },
   { path: '/12345678/admin/events', icon: CalendarDays, label: 'Event Management' },
   { path: '/12345678/admin/resources', icon: BookOpen, label: 'Resource Hub' },

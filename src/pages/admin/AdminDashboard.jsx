@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Users, Leaf, Bus, TrendingDown, Award, ShoppingCart, AlertCircle, Zap, Clock, ShieldCheck, ShieldAlert, TrendingUp } from 'lucide-react'
+import { Users, Leaf, Bus, TrendingDown, Award, ShoppingCart, AlertCircle, Zap, Clock, ShieldCheck, ShieldAlert, TrendingUp, TreePine } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts'
 import { supabase } from '../../lib/supabase'
 import AdminLayout from './AdminLayout'
@@ -55,6 +55,7 @@ export default function AdminDashboard() {
   const [chartData, setChartData] = useState([])
   const [recentComplaints, setRecentComplaints] = useState([])
   const [loading, setLoading] = useState(true)
+  const [greenCoverStats, setGreenCoverStats] = useState(null)
 
   useEffect(() => {
     if (profile && profile.email === 'hubligojaincollege@gmail.com') {
@@ -115,6 +116,21 @@ export default function AdminDashboard() {
       })
 
       if (complaintsRes.data) setRecentComplaints(complaintsRes.data)
+
+      // Green Cover Stats
+      try {
+        const { data: greenItems } = await supabase.from('campus_green_cover').select('type, count, area_sqm')
+        if (greenItems && greenItems.length > 0) {
+          const { calculateTotalAbsorption, calculateNetCarbon } = await import('./../../lib/greenCover')
+          const absorbed = calculateTotalAbsorption(greenItems)
+          const today2 = new Date().toISOString().split('T')[0]
+          const { data: todayLogs2 } = await supabase.from('carbon_logs').select('total_kg').eq('log_date', today2)
+          const studentCO2 = (todayLogs2 || []).reduce((a, l) => a + Number(l.total_kg || 0), 0)
+          const bal = calculateNetCarbon(studentCO2, absorbed)
+          setGreenCoverStats({ absorbed, studentCO2, ...bal })
+        }
+      } catch (e) {/* green cover table may not exist yet */}
+
       setLoading(false)
     }
     fetchStats()
@@ -187,6 +203,32 @@ export default function AdminDashboard() {
             <StatCard icon={Award} label="Active Campaigns" value={stats.activeEvents} color="#b91c1c" delay={0.35} />
           </Link>
           <StatCard icon={ShieldAlert} label="System Security" value="Normal" color="#991b1b" delay={0.4} />
+          {greenCoverStats && (
+            <Link to="/12345678/admin/green-cover" className="block h-full sm:col-span-2">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.45 }}
+                className={`p-6 rounded-[32px] flex items-center gap-6 group hover:opacity-90 transition-all overflow-hidden relative backdrop-blur-xl border h-full ${
+                  greenCoverStats.isNeutral
+                    ? 'bg-green-500/10 border-green-500/20'
+                    : 'bg-amber-500/10 border-amber-500/20'
+                }`}
+              >
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 bg-white/5 border border-white/10 shadow-inner">
+                  <TreePine size={24} className={greenCoverStats.isNeutral ? 'text-green-400' : 'text-amber-400'} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-1">Green Cover Today</p>
+                  <p className="text-2xl font-black text-white tracking-tighter">{greenCoverStats.absorbed?.toFixed(2)} kg</p>
+                  <p className={`text-[10px] font-bold mt-1 uppercase tracking-widest ${greenCoverStats.isNeutral ? 'text-green-400' : 'text-amber-400'}`}>
+                    Net: {greenCoverStats.net >= 0 ? '+' : ''}{greenCoverStats.net?.toFixed(2)} kg
+                    {greenCoverStats.isNeutral ? ' 🌿 Carbon Neutral!' : ` ⚠️ ${greenCoverStats.treesNeededToNeutralize} trees needed`}
+                  </p>
+                </div>
+              </motion.div>
+            </Link>
+          )}
         </div>
 
         {/* CHARTS */}

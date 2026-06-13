@@ -11,6 +11,7 @@ export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
   const [maintenanceMode, setMaintenanceMode] = useState(false)
+  const [logoError, setLogoError] = useState(false)
 
   // Institution settings state
   const [settings, setSettings] = useState({
@@ -40,6 +41,7 @@ export default function AdminSettingsPage() {
           ...data,
           carbon_config: data.carbon_config || DEFAULT_CARBON_CONFIG
         })
+        setLogoError(false)
       }
     } catch (err) {
       console.error('Error fetching settings:', err)
@@ -81,6 +83,7 @@ export default function AdminSettingsPage() {
       const reader = new FileReader()
       reader.onloadend = () => {
         setSettings(prev => ({ ...prev, logo_url: reader.result }))
+        setLogoError(false)
         toast.success('Logo loaded in live preview')
       }
       reader.readAsDataURL(file)
@@ -275,10 +278,15 @@ export default function AdminSettingsPage() {
                       
                       <div className="border border-white/10 bg-white/2 rounded-[32px] p-6 text-center shadow-lg relative overflow-hidden group">
                         <div className="w-24 h-24 mx-auto rounded-full bg-[#020617] border-2 border-white/15 flex items-center justify-center overflow-hidden mb-6">
-                          {settings.logo_url ? (
-                            <img src={settings.logo_url} alt="Logo Preview" className="w-full h-full object-cover" />
+                          {settings.logo_url && !logoError ? (
+                            <img 
+                              src={settings.logo_url} 
+                              alt="Logo Preview" 
+                              className="w-full h-full object-cover" 
+                              onError={() => setLogoError(true)}
+                            />
                           ) : (
-                            <Building className="text-gray-600" size={32} />
+                            <Building className="text-gray-500" size={32} />
                           )}
                         </div>
                         <h3 className="text-md font-black text-white uppercase tracking-widest line-clamp-1 mb-2">
