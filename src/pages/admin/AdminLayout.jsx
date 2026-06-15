@@ -21,7 +21,7 @@ const NAV_ITEMS = [
   { path: '/12345678/admin/notifications', icon: Bell, label: 'Notifications' },
   { path: '/12345678/admin/audit', icon: FileText, label: 'Audit Logs' },
   { path: '/12345678/admin/navigation', icon: Map, label: 'Campus Locations' },
-  { path: '/12345678/admin/profile', icon: User, label: 'Admin Profile' },
+  { path: '/12345678/admin/profile', icon: Shield, label: 'System Settings' },
   { path: '/12345678/admin/landing-editor', icon: Globe, label: 'Landing Editor' },
   { path: '/12345678/admin/help', icon: HelpCircle, label: 'Help Editor' },
 ]

@@ -324,7 +324,16 @@ export default function CarbonHistoryPage() {
                       </div>
                    </div>
                 </div>
-                <ChevronRight size={18} className="text-gray-700 group-hover:text-white transition-colors" />
+                <div className="flex items-center gap-4">
+                  {item._type === 'log' && (
+                    item.status === 'rejected' ? (
+                      <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">0 XP</span>
+                    ) : (
+                      <span className="text-[10px] font-black text-yellow-500 uppercase tracking-widest">+{item.eco_points_earned || 0} XP</span>
+                    )
+                  )}
+                  <ChevronRight size={18} className="text-gray-700 group-hover:text-white transition-colors" />
+                </div>
               </motion.div>
             )})}
            </AnimatePresence>
@@ -396,21 +405,35 @@ export default function CarbonHistoryPage() {
                        </div>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 gap-4 mb-10">
-                        {[
-                          { icon: Bus, label: 'Transport', val: selectedItem.transport_kg, color: 'text-blue-500' },
-                          { icon: Wind, label: 'Electricity', val: selectedItem.electricity_kg, color: 'text-yellow-500' },
-                          { icon: Droplets, label: 'Water', val: selectedItem.water_kg, color: 'text-cyan-500' },
-                          { icon: Leaf, label: 'Food', val: selectedItem.food_kg, color: 'text-green-500' },
-                        ].map((item, i) => (
-                          <div key={i} className="bg-white/5 border border-white/5 rounded-3xl p-5 flex items-center gap-4">
-                            <div className={`p-2 rounded-xl bg-white/5 ${item.color}`}><item.icon size={16} /></div>
-                            <div>
-                                <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest leading-none mb-1">{item.label}</p>
-                                <p className="text-sm font-black text-white">{Number(item.val || 0).toFixed(2)} kg</p>
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-white/5 border border-white/5 rounded-3xl p-5 flex flex-col items-center">
+                          <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-2">Eco Score</p>
+                          <p className="text-xl font-black text-green-500">{selectedItem.eco_score}%</p>
+                        </div>
+                        <div className="bg-white/5 border border-white/5 rounded-3xl p-5 flex flex-col items-center">
+                          <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-2">XP Points Earned</p>
+                          <p className="text-xl font-black text-yellow-500">
+                            {selectedItem.status === 'rejected' ? '0 XP' : `+${selectedItem.eco_points_earned || 0} XP`}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 mb-10">
+                          {[
+                            { icon: Bus, label: 'Transport', val: selectedItem.transport_kg, color: 'text-blue-500' },
+                            { icon: Wind, label: 'Electricity', val: selectedItem.electricity_kg, color: 'text-yellow-500' },
+                            { icon: Droplets, label: 'Water', val: selectedItem.water_kg, color: 'text-cyan-500' },
+                            { icon: Leaf, label: 'Food', val: selectedItem.food_kg, color: 'text-green-500' },
+                          ].map((item, i) => (
+                            <div key={i} className="bg-white/5 border border-white/5 rounded-3xl p-5 flex items-center gap-4">
+                              <div className={`p-2 rounded-xl bg-white/5 ${item.color}`}><item.icon size={16} /></div>
+                              <div>
+                                  <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest leading-none mb-1">{item.label}</p>
+                                  <p className="text-sm font-black text-white">{Number(item.val || 0).toFixed(2)} kg</p>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                      </div>
                     </div>
                   )}
 

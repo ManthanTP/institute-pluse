@@ -78,15 +78,27 @@ export default function OwnerCafeteriaPage() {
     }
   }
 
-  function downloadOrdersPDF() {
-    if (orders.length === 0) {
+  async function downloadOrdersPDF() {
+    toast.loading('Fetching latest orders...', { id: 'pdf-fetch' })
+    const { data: latestOrders, error } = await supabase
+      .from('orders')
+      .select('*, profiles(full_name, role)')
+      .order('created_at', { ascending: false })
+
+    if (error || !latestOrders) {
+      toast.error('Failed to fetch latest orders', { id: 'pdf-fetch' })
+      return
+    }
+    toast.dismiss('pdf-fetch')
+
+    if (latestOrders.length === 0) {
       toast.error('No orders to download')
       return
     }
 
     const headers = ['Token', 'Customer', 'Role', 'Items', 'Total Price', 'Carbon Impact', 'Status', 'Payment', 'Date']
     
-    const rows = orders.map(order => {
+    const rows = latestOrders.map(order => {
       const customer = order.profiles?.full_name || 'Guest'
       const role = order.profiles?.role || 'Guest'
       const itemsStr = order.items?.map(it => `${it.quantity}x ${it.name}`).join(', ')
@@ -107,13 +119,13 @@ export default function OwnerCafeteriaPage() {
 
     exportTablePDF({
       title: "Cafeteria Orders Report",
-      subtitle: `CAMPUS DINING OVERVIEW • ${orders.length} ACTIVE ORDERS`,
+      subtitle: `CAMPUS DINING OVERVIEW • ${latestOrders.length} ACTIVE ORDERS`,
       headers,
       rows,
       filename: `cafeteria_orders_${new Date().getTime()}`,
       summaryCards: [
-        { label: "TOTAL ORDERS", value: orders.length.toString() },
-        { label: "TOTAL REVENUE", value: `₹${orders.reduce((sum, o) => sum + (Number(o.total_price) || 0), 0)}` }
+        { label: "TOTAL ORDERS", value: latestOrders.length.toString() },
+        { label: "TOTAL REVENUE", value: `₹${latestOrders.reduce((sum, o) => sum + (Number(o.total_price) || 0), 0)}` }
       ]
     })
     toast.success('Orders PDF report generated ✓')

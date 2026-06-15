@@ -266,6 +266,86 @@ export function calcEcoPoints({ eco_score, transport_entries, meals, is_first_lo
   return points
 }
 
+export function calcEcoPointsBreakdown({ eco_score, transport_entries, meals, is_first_log, streak }, pointsConfig) {
+  const cfg = pointsConfig || DEFAULT_CARBON_CONFIG.points_config
+  const breakdown = []
+
+  // Base logging points
+  const basePoints = cfg.base_points ?? 10
+  if (basePoints > 0) {
+    breakdown.push({ name: 'Base Logging', points: basePoints })
+  }
+
+  // Eco Score bonus
+  let scoreBonus = 0
+  let scoreName = ''
+  if (eco_score >= 100) {
+    scoreBonus = cfg.score_100_bonus ?? 60
+    scoreName = 'Perfect Eco Score (100) Bonus'
+  } else if (eco_score >= 90) {
+    scoreBonus = cfg.score_90_bonus ?? 40
+    scoreName = 'Excellent Eco Score (90+) Bonus'
+  } else if (eco_score >= 70) {
+    scoreBonus = cfg.score_70_bonus ?? 20
+    scoreName = 'Good Eco Score (70+) Bonus'
+  }
+  if (scoreBonus > 0) {
+    breakdown.push({ name: scoreName, points: scoreBonus })
+  }
+
+  // Transport bonus
+  const hasEcoTransport = transport_entries?.some(e =>
+    ['bicycle', 'walking'].includes(e.mode)
+  )
+  const hasBus = transport_entries?.some(e =>
+    ['college_bus'].includes(e.mode)
+  )
+  if (hasEcoTransport) {
+    breakdown.push({ name: 'Active Transit (Bicycle/Walking) Bonus', points: cfg.eco_transport_bonus ?? 15 })
+  }
+  if (hasBus) {
+    breakdown.push({ name: 'Public Transit (College Bus) Bonus', points: cfg.bus_bonus ?? 12 })
+  }
+
+  // Food bonus
+  if (meals) {
+    const values = Object.values(meals)
+    if (values.length > 0) {
+      const allVegetarian = values.every(m => m === 'vegan' || m === 'vegetarian' || m === 'skipped')
+      const allVegan = values.every(m => m === 'vegan' || m === 'skipped')
+      if (allVegan) {
+        breakdown.push({ name: 'All Vegan Meals Bonus', points: cfg.vegan_bonus ?? 15 })
+      } else if (allVegetarian) {
+        breakdown.push({ name: 'All Vegetarian Meals Bonus', points: cfg.vegetarian_bonus ?? 10 })
+      }
+    }
+  }
+
+  // Streak bonus
+  let streakBonus = 0
+  let streakName = ''
+  if (streak === 30) {
+    streakBonus = cfg.streak_30_bonus ?? 200
+    streakName = '30-Day Logging Streak Bonus'
+  } else if (streak === 7) {
+    streakBonus = cfg.streak_7_bonus ?? 75
+    streakName = '7-Day Logging Streak Bonus'
+  } else if (streak === 3) {
+    streakBonus = cfg.streak_3_bonus ?? 30
+    streakName = '3-Day Logging Streak Bonus'
+  }
+  if (streakBonus > 0) {
+    breakdown.push({ name: streakName, points: streakBonus })
+  }
+
+  // First log bonus
+  if (is_first_log) {
+    breakdown.push({ name: 'First Carbon Log Bonus', points: cfg.first_log_bonus ?? 50 })
+  }
+
+  return breakdown
+}
+
 export function checkCarbonLogValidation(form, config, lastLogs = []) {
   const limits = config?.validation_limits || DEFAULT_CARBON_CONFIG.validation_limits;
   const errors = [];

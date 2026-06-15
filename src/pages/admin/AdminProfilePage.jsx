@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { User, Shield, Key, Bell, Globe, Camera, Edit3, CheckCircle2, AlertCircle, LogOut, ShieldCheck, Mail, MapPin, Building, Lock, Zap } from 'lucide-react'
+import { User, Shield, Key, Bell, Globe, Camera, Edit3, CheckCircle2, AlertCircle, LogOut, ShieldCheck, Mail, MapPin, Building, Lock, Zap, Upload, Eye } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import AdminLayout from './AdminLayout'
 import { motion } from 'framer-motion'
@@ -15,6 +15,75 @@ export default function AdminProfilePage() {
     sector: 'Global Operations',
     clearance: 'Level 09'
   })
+
+  // Institution settings state
+  const [instSettings, setInstSettings] = useState({
+    name: 'InstitutePulse Academy',
+    logo_url: 'https://pulse-core.local/logo.png',
+    contact_email: 'contact@institutepulse.edu',
+    contact_phone: '+91 98765 43210',
+    address: '123 Cyberpunk Enclave, Bengaluru, India',
+    carbon_config: null
+  })
+  const [logoError, setLogoError] = useState(false)
+  const [instLoading, setInstLoading] = useState(false)
+
+  useEffect(() => {
+    fetchInstSettings()
+  }, [])
+
+  async function fetchInstSettings() {
+    try {
+      const { data, error } = await supabase
+        .from('institution_settings')
+        .select('*')
+        .eq('id', 1)
+        .single()
+      if (data) {
+        setInstSettings(data)
+      }
+    } catch (err) {
+      console.error('Error fetching institution settings:', err)
+    }
+  }
+
+  async function handleSaveInstitution(e) {
+    if (e) e.preventDefault()
+    setInstLoading(true)
+    try {
+      const { error } = await supabase
+        .from('institution_settings')
+        .update({
+          name: instSettings.name,
+          logo_url: instSettings.logo_url,
+          contact_email: instSettings.contact_email,
+          contact_phone: instSettings.contact_phone,
+          address: instSettings.address,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', 1)
+
+      if (error) throw error
+      toast.success('Institution settings synced successfully!')
+    } catch (err) {
+      toast.error('Sync failed: ' + err.message)
+    } finally {
+      setInstLoading(false)
+    }
+  }
+
+  const handleLogoChange = (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setInstSettings(prev => ({ ...prev, logo_url: reader.result }))
+        setLogoError(false)
+        toast.success('Logo loaded in live preview')
+      }
+      reader.readAsDataURL(file)
+    }
+  }
 
   async function handleResetPassword() {
     if (!profile?.email) return
@@ -124,6 +193,98 @@ export default function AdminProfilePage() {
                  >
                     {loading ? 'Synchronizing...' : 'Update Identity Protocol'}
                  </button>
+              </div>
+
+              {/* INSTITUTION SETTINGS FORM */}
+              <div className="bg-[#0f172a]/40 border border-white/10 rounded-[48px] p-12 space-y-10">
+                 <div className="flex items-center gap-4">
+                    <Building size={20} className="text-red-500" />
+                    <h4 className="text-[11px] font-black text-white uppercase tracking-[0.4em]">Institution Parameters</h4>
+                 </div>
+
+                 <form onSubmit={handleSaveInstitution} className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Institution Name</label>
+                      <div className="relative">
+                        <Building className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+                        <input
+                          type="text"
+                          value={instSettings.name}
+                          onChange={e => setInstSettings({ ...instSettings, name: e.target.value })}
+                          className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-red-500/50 transition-all uppercase tracking-widest font-black"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Contact Email</label>
+                        <div className="relative">
+                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+                          <input
+                            type="email"
+                            value={instSettings.contact_email}
+                            onChange={e => setInstSettings({ ...instSettings, contact_email: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-red-500/50 transition-all"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Contact Phone</label>
+                        <div className="relative">
+                          <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+                          <input
+                            type="text"
+                            value={instSettings.contact_phone}
+                            onChange={e => setInstSettings({ ...instSettings, contact_phone: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-red-500/50 transition-all"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Physical Location Address</label>
+                      <div className="relative">
+                        <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+                        <input
+                          type="text"
+                          value={instSettings.address}
+                          onChange={e => setInstSettings({ ...instSettings, address: e.target.value })}
+                          className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-red-500/50 transition-all"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Brand Logo Upload</label>
+                      <div className="flex items-center gap-4">
+                        <label className="flex-1 flex items-center justify-between bg-white/5 border border-white/10 hover:border-red-500/30 rounded-2xl p-4 cursor-pointer hover:bg-white/[0.08] transition-all">
+                          <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                            <Upload size={14} /> Choose Logo Image
+                          </span>
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            onChange={handleLogoChange} 
+                            className="hidden" 
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    <button 
+                      onClick={handleSaveInstitution}
+                      disabled={instLoading}
+                      className="px-10 py-5 bg-red-600 text-white rounded-[24px] text-[10px] font-black uppercase tracking-widest shadow-xl shadow-red-600/20 hover:scale-105 transition-all disabled:opacity-50"
+                    >
+                      {instLoading ? 'Synchronizing...' : 'Save Institution Sync'}
+                    </button>
+                 </form>
               </div>
 
               {/* SECURITY TERMINAL */}

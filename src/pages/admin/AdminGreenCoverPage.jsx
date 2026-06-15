@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { TreePine, Plus, Pencil, Trash2, Save, X, Download, MapPin, RefreshCw, Leaf } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createPortal } from 'react-dom'
+import { exportTablePDF } from '../../lib/pdfExport'
 import AdminLayout from './AdminLayout'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store/index'
@@ -361,26 +362,37 @@ export default function AdminGreenCoverPage() {
     await fetchAll()
   }
 
-  function handleExportCSV() {
+  function handleExportPDF() {
+    if (items.length === 0) {
+      toast.error('No registry items to download')
+      return
+    }
+
     const headers = ['Name', 'Type', 'Count/Area', 'Zone', 'CO2/day (kg)', 'Date Planted', 'Notes']
     const rows = items.map(item => [
       item.name,
       GREEN_COVER_LABELS[item.type] || item.type,
-      item.type === 'lawn' ? `${item.area_sqm} sqm` : item.count,
+      item.type === 'lawn' ? `${item.area_sqm} sqm` : (item.count || 0).toString(),
       item.zone,
-      calculateItemAbsorption(item).toFixed(3),
-      item.date_planted || '',
-      item.notes || '',
+      `${calculateItemAbsorption(item).toFixed(3)} kg`,
+      item.date_planted || 'N/A',
+      item.notes || 'N/A',
     ])
-    const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `green_cover_${new Date().toISOString().split('T')[0]}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
-    toast.success('CSV exported!')
+
+    exportTablePDF({
+      title: "Campus Green Cover Report",
+      subtitle: `CAMPUS ENVIRONMENTAL REGISTRY • ${items.length} ACTIVE REGISTERED ENTRIES`,
+      headers,
+      rows,
+      filename: `green_cover_${new Date().getTime()}`,
+      summaryCards: [
+        { label: "TOTAL TREES", value: (summary?.totalTrees ?? 0).toString() },
+        { label: "TOTAL PLANTS", value: (summary?.totalPlants ?? 0).toString() },
+        { label: "DAILY ABSORPTION", value: `${totalAbsorbed.toFixed(2)} kg` },
+        { label: "NET BALANCE", value: `${balance?.net >= 0 ? '+' : ''}${balance?.net?.toFixed(2)} kg` }
+      ]
+    })
+    toast.success('Green Cover PDF report generated ✓')
   }
 
   const sortedItems = [...items].sort((a, b) => {
@@ -410,10 +422,10 @@ export default function AdminGreenCoverPage() {
           </div>
           <div className="flex gap-3 flex-wrap">
             <button
-              onClick={handleExportCSV}
+              onClick={handleExportPDF}
               className="px-5 py-3 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:text-white transition-all flex items-center gap-2"
             >
-              <Download size={14} /> Export CSV
+              <Download size={14} /> Export PDF
             </button>
             <button
               onClick={fetchAll}

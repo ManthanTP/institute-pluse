@@ -367,6 +367,48 @@ export default function AdminSustainabilityPage() {
     fetchData()
   }, [])
 
+  // Realtime sync: auto-refresh when carbon_logs change
+  useEffect(() => {
+    const channel = supabase
+      .channel('admin_sustainability_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'carbon_logs' }, () => {
+        // Re-fetch all data when any carbon log changes
+        async function refetch() {
+          const { data: logsData } = await supabase
+            .from('carbon_logs')
+            .select('*, profiles(full_name, usn, department)')
+            .order('log_date', { ascending: false })
+
+          const { count: usersCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true })
+
+          if (logsData && logsData.length > 0) {
+            setLogs(logsData)
+            const totalCo2 = logsData.reduce((acc, curr) => acc + Number(curr.total_kg || 0), 0)
+            const totalSaved = (totalCo2 * 0.15)
+            setStats({
+              totalCo2: totalCo2.toFixed(1),
+              totalSaved: totalSaved.toFixed(1),
+              activeUsers: usersCount || 0,
+              avgEfficiency: ((totalSaved / (totalSaved + totalCo2)) * 100 || 0).toFixed(1)
+            })
+            const deptMap = {}
+            logsData.forEach(log => {
+              const dept = log.profiles?.department || 'General'
+              if (!deptMap[dept]) deptMap[dept] = { name: dept, value: 0 }
+              deptMap[dept].value += 1
+            })
+            setDeptData(Object.values(deptMap))
+          }
+        }
+        refetch()
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [])
+
   const handleGenerateReport = () => {
     exportReportPDF({
       title: 'Sustainability Impact Report',

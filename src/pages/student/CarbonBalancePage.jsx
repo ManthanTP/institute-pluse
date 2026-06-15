@@ -6,6 +6,7 @@ import {
   LineChart, Line, PieChart, Pie, Cell, Legend, ReferenceLine
 } from 'recharts'
 import { supabase } from '../../lib/supabase'
+import { useAuthStore } from '../../store/index'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   CO2_ABSORPTION_FACTORS,
@@ -49,6 +50,7 @@ function CustomTooltipBalance({ active, payload, label }) {
 
 export default function CarbonBalancePage() {
   const navigate = useNavigate()
+  const { profile } = useAuthStore()
   const [greenItems, setGreenItems] = useState([])
   const [summary, setSummary] = useState(null)
   const [balance, setBalance] = useState(null)
@@ -61,10 +63,13 @@ export default function CarbonBalancePage() {
   const [showPieDetail, setShowPieDetail] = useState(false)
 
   useEffect(() => {
-    fetchAll()
-  }, [])
+    if (profile?.id) {
+      fetchAll()
+    }
+  }, [profile?.id])
 
   async function fetchAll() {
+    if (!profile?.id) return
     setLoading(true)
     try {
       // 1. Fetch green cover items
@@ -81,28 +86,34 @@ export default function CarbonBalancePage() {
       const pie = buildPieData(safeItems)
       setPieData(pie)
 
-      // 2. Fetch today's student CO2 total
+      // 2. Fetch today's student CO2 total (filtered by student_id)
       const today = new Date().toISOString().split('T')[0]
       const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
 
       const { data: todayLogs } = await supabase
         .from('carbon_logs')
         .select('total_kg')
+        .eq('student_id', profile.id)
         .eq('log_date', today)
 
       let studentCO2 = 0
       let note = ''
       if (todayLogs && todayLogs.length > 0) {
         studentCO2 = todayLogs.reduce((a, l) => a + Number(l.total_kg || 0), 0)
-        note = `Based on ${todayLogs.length} student log(s) submitted today.`
+        note = `Based on your log submitted today.`
       } else {
         // Fallback to yesterday
         const { data: yestLogs } = await supabase
           .from('carbon_logs')
           .select('total_kg')
+          .eq('student_id', profile.id)
           .eq('log_date', yesterday)
         studentCO2 = (yestLogs || []).reduce((a, l) => a + Number(l.total_kg || 0), 0)
-        note = 'No logs today yet — showing yesterday\'s data.'
+        if (studentCO2 > 0) {
+          note = 'No log today yet — showing your yesterday\'s data.'
+        } else {
+          note = 'No logs submitted by you yet.'
+        }
       }
       setTodayStudentCO2(studentCO2)
       setDataNote(note)
@@ -112,43 +123,37 @@ export default function CarbonBalancePage() {
       setBalance(bal)
       setStatus(getNetCarbonStatus(bal.net))
 
-      // 3. Build 7-day chart data from snapshots (or generate from current data)
-      const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]
-      const { data: snapshots } = await supabase
-        .from('green_cover_snapshots')
-        .select('*')
-        .gte('snapshot_date', sevenDaysAgo)
-        .order('snapshot_date')
+      // 3. Build 7-day chart data from student's actual carbon logs
+      const sevenDaysAgoDate = new Date()
+      sevenDaysAgoDate.setDate(sevenDaysAgoDate.getDate() - 7)
+      const sevenDaysAgoStr = sevenDaysAgoDate.toISOString().split('T')[0]
 
-      let chart = []
-      if (snapshots && snapshots.length > 0) {
-        chart = snapshots.map(s => ({
-          date: new Date(s.snapshot_date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }),
-          absorbed: parseFloat(s.total_co2_absorbed_kg.toFixed(2)),
-          generated: parseFloat(s.total_student_co2_kg.toFixed(2)),
-        }))
-      } else {
-        // Generate mock 7-day data based on current absorption (trees are constant) + vary student CO2
-        const days = Array.from({ length: 7 }, (_, i) => {
-          const d = new Date(Date.now() - (6 - i) * 86400000)
-          const variance = (Math.random() - 0.5) * 0.4
-          const studentVariance = studentCO2 > 0 ? studentCO2 * (1 + variance) : totalAbsorbed * 1.5 * (1 + variance)
-          return {
-            date: d.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }),
-            absorbed: parseFloat(totalAbsorbed.toFixed(2)),
-            generated: parseFloat(Math.max(0, studentVariance).toFixed(2)),
-          }
+      const { data: recentLogs } = await supabase
+        .from('carbon_logs')
+        .select('log_date, total_kg')
+        .eq('student_id', profile.id)
+        .gte('log_date', sevenDaysAgoStr)
+        .order('log_date', { ascending: true })
+
+      const recentLogsMap = {}
+      if (recentLogs) {
+        recentLogs.forEach(l => {
+          recentLogsMap[l.log_date] = Number(l.total_kg || 0)
         })
-        // Last point = today's real data
-        if (days.length > 0) {
-          days[days.length - 1] = {
-            date: new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }),
-            absorbed: parseFloat(totalAbsorbed.toFixed(2)),
-            generated: parseFloat(studentCO2.toFixed(2)),
-          }
-        }
-        chart = days
       }
+
+      // Generate 7-day data ending today
+      const chart = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date()
+        d.setDate(d.getDate() - (6 - i))
+        const dateStr = d.toISOString().split('T')[0]
+        const generatedVal = recentLogsMap[dateStr] ?? 0
+        return {
+          date: d.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }),
+          absorbed: parseFloat(totalAbsorbed.toFixed(2)),
+          generated: parseFloat(generatedVal.toFixed(2)),
+        }
+      })
       setChartData(chart)
     } catch (err) {
       console.error('Green cover fetch error:', err)
@@ -295,7 +300,7 @@ export default function CarbonBalancePage() {
                 {balance?.generated?.toFixed(1) ?? '0.0'}
               </p>
               <p className="text-[7px] font-black text-gray-500 uppercase tracking-widest">kg Generated</p>
-              <p className="text-[7px] font-bold text-gray-600 mt-0.5">by students today</p>
+              <p className="text-[7px] font-bold text-gray-600 mt-0.5">by you today</p>
             </div>
           </div>
 
@@ -314,7 +319,7 @@ export default function CarbonBalancePage() {
               />
             </div>
             <p className="text-[8px] text-gray-600 font-bold mt-1">
-              Green cover offsets {balance?.percentageOffset ?? 0}% of student emissions
+              Green cover offsets {balance?.percentageOffset ?? 0}% of your emissions
             </p>
           </div>
         </motion.div>
@@ -390,14 +395,14 @@ export default function CarbonBalancePage() {
             </BarChart>
           </ResponsiveContainer>
           <div className="flex items-center justify-center gap-6 mt-3">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-sm bg-green-600" />
-              <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Trees Absorbed</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-sm bg-red-500" />
-              <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Students Generated</span>
-            </div>
+             <div className="flex items-center gap-2">
+               <div className="w-3 h-3 rounded-sm bg-green-600" />
+               <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Absorbed By Trees</span>
+             </div>
+             <div className="flex items-center gap-2">
+               <div className="w-3 h-3 rounded-sm bg-red-500" />
+               <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Generated By You</span>
+             </div>
           </div>
         </motion.div>
 
@@ -457,14 +462,14 @@ export default function CarbonBalancePage() {
               <p className="text-4xl font-black text-green-400 mb-2">0</p>
               <p className="text-[10px] font-black text-green-400 uppercase tracking-widest">More trees needed</p>
               <p className="text-[9px] text-gray-500 mt-2">Campus is carbon negative today! 🌿</p>
-              <p className="text-[8px] text-gray-600 mt-1">Trees absorb {Math.abs(balance.net).toFixed(2)} kg more than students generate.</p>
+              <p className="text-[8px] text-gray-600 mt-1">Trees absorb {Math.abs(balance.net).toFixed(2)} kg more than you generate.</p>
             </div>
           ) : (
             <div className="text-center py-4">
               <p className={`text-5xl font-black mb-2 ${status?.textClass}`}>{balance?.treesNeededToNeutralize}</p>
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">More medium trees needed</p>
               <p className="text-[9px] text-gray-500 mt-2">
-                To neutralize today's {balance?.generated?.toFixed(2)} kg student emissions
+                To neutralize today's {balance?.generated?.toFixed(2)} kg of your emissions
               </p>
               <p className="text-[8px] text-gray-600 mt-1 italic">Each medium tree absorbs {CO2_ABSORPTION_FACTORS.medium_tree} kg CO2/day</p>
             </div>
@@ -554,8 +559,8 @@ export default function CarbonBalancePage() {
           </p>
           <p className={`text-[11px] font-bold leading-relaxed mb-4 ${balance?.isNeutral ? 'text-green-100' : 'text-gray-300'}`}>
             {balance?.isNeutral
-              ? `🌍 Amazing! InstitutePulse campus absorbed ${Math.abs(balance.net).toFixed(2)} kg more CO2 than students generated today. Every tree counts!`
-              : `🌱 Every tree planted helps. The campus needs ${balance?.treesNeededToNeutralize} more trees. Raise a green suggestion in support!`}
+              ? `🌍 Amazing! The campus trees absorbed ${Math.abs(balance.net).toFixed(2)} kg more CO2 than you generated today. Every tree counts!`
+              : `🌱 Every tree planted helps. The campus needs ${balance?.treesNeededToNeutralize} more trees to offset your emissions. Raise a green suggestion in support!`}
           </p>
           <div className="flex gap-3">
             {balance?.isNeutral ? (

@@ -5,7 +5,7 @@ import {
   TRANSPORT_FACTORS, FOOD_TYPES, MEAL_SLOTS,
   DEVICE_FACTORS, WASTE_TYPES,
   calcTransportKg, calcFoodKg, calcElectricityKg, calcWaterKg, calcWasteKg,
-  calcTotalKg, calcEcoScore, calcEcoPoints, getScoreGrade, getCarbonConfig, checkCarbonLogValidation
+  calcTotalKg, calcEcoScore, calcEcoPoints, calcEcoPointsBreakdown, getScoreGrade, getCarbonConfig, checkCarbonLogValidation
 } from '../../lib/carbonCalc'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore, useCarbonStore } from '../../store/index'
@@ -149,6 +149,29 @@ export default function CarbonLogPage() {
   const tipList = AI_TIPS[topCategory] || AI_TIPS.transport
   const aiTip = tipList[Math.floor((ecoScore * tipList.length) / 101) % tipList.length]
 
+  const estimatedPoints = calcEcoPoints(
+    {
+      eco_score: ecoScore,
+      transport_entries: form.transport,
+      meals: form.meals,
+      is_first_log: !profile?.total_co2_kg,
+      streak: (profile?.logging_streak || 0) + 1,
+    },
+    activeConfig.points_config,
+    activeConfig.validation_limits.max_daily_xp_cap
+  )
+
+  const estimatedPointsBreakdown = calcEcoPointsBreakdown(
+    {
+      eco_score: ecoScore,
+      transport_entries: form.transport,
+      meals: form.meals,
+      is_first_log: !profile?.total_co2_kg,
+      streak: (profile?.logging_streak || 0) + 1,
+    },
+    activeConfig.points_config
+  )
+
   useEffect(() => {
     fetchCarbonConfig()
   }, [])
@@ -291,10 +314,21 @@ export default function CarbonLogPage() {
           transport_entries: form.transport,
           meals: form.meals,
           is_first_log: !profile.total_co2_kg,
-          streak: profile.logging_streak,
+          streak: (profile.logging_streak || 0) + 1,
         },
         activeConfig.points_config,
         activeConfig.validation_limits.max_daily_xp_cap
+      )
+
+      const ecoPointsBreakdown = calcEcoPointsBreakdown(
+        {
+          eco_score: ecoScore,
+          transport_entries: form.transport,
+          meals: form.meals,
+          is_first_log: !profile.total_co2_kg,
+          streak: (profile.logging_streak || 0) + 1,
+        },
+        activeConfig.points_config
       )
 
       const logData = {
@@ -379,6 +413,7 @@ export default function CarbonLogPage() {
       setSuccess({ 
         ecoScore, 
         ecoPoints: shouldQuarantine ? 0 : ecoPoints, 
+        ecoPointsBreakdown: shouldQuarantine ? [] : ecoPointsBreakdown,
         topCategory, 
         aiTip: shouldQuarantine 
           ? "⚠️ Telemetry values are flagged as suspicious or contradict your canteen orders. Log quarantined pending audit. No points credited yet."
@@ -974,6 +1009,28 @@ export default function CarbonLogPage() {
                     </div>
                   </div>
 
+                  {/* ESTIMATED XP BREAKDOWN */}
+                  <div className="bg-slate-900 rounded-[32px] p-6 border border-white/10 shadow-2xl relative overflow-hidden">
+                    <div className="absolute top-[-20%] right-[-10%] w-48 h-48 rounded-full bg-yellow-500/5 blur-[60px]" />
+                    <div className="flex items-center justify-between gap-6 relative z-10 mb-4 border-b border-white/5 pb-4">
+                      <div>
+                        <p className="text-[10px] font-black text-yellow-500 uppercase tracking-[0.3em] mb-1">Estimated Rewards</p>
+                        <h3 className="text-xl font-black text-white tracking-tight">+{estimatedPoints} XP</h3>
+                      </div>
+                      <span className="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
+                        ESTIMATED
+                      </span>
+                    </div>
+                    <div className="space-y-2.5 relative z-10">
+                      {estimatedPointsBreakdown.map((item, idx) => (
+                        <div key={idx} className="flex justify-between items-center text-[10px] font-black uppercase text-gray-400">
+                          <span>{item.name}</span>
+                          <span className="text-yellow-500">+{item.points} XP</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                   {/* AI TIP CARD */}
                   <motion.div
                     key={topCategory}
@@ -1035,7 +1092,7 @@ export default function CarbonLogPage() {
   )
 }
 
-function SuccessOverlay({ ecoScore, ecoPoints, topCategory, aiTip, onDone, onHistory, isQuarantined }) {
+function SuccessOverlay({ ecoScore, ecoPoints, ecoPointsBreakdown, topCategory, aiTip, onDone, onHistory, isQuarantined }) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -1087,6 +1144,21 @@ function SuccessOverlay({ ecoScore, ecoPoints, topCategory, aiTip, onDone, onHis
             </p>
           </div>
         </div>
+
+        {/* XP BREAKDOWN */}
+        {!isQuarantined && ecoPointsBreakdown && ecoPointsBreakdown.length > 0 && (
+          <div className="bg-white/5 border border-white/10 rounded-[24px] p-5 mb-6 text-left relative z-10">
+            <p className="text-[9px] font-black text-gray-500 uppercase tracking-[0.25em] mb-3 border-b border-white/5 pb-2">XP Breakdown</p>
+            <div className="space-y-2">
+              {ecoPointsBreakdown.map((item, idx) => (
+                <div key={idx} className="flex justify-between items-center text-[10px] font-black uppercase text-gray-400">
+                  <span>{item.name}</span>
+                  <span className="text-green-500">+{item.points} XP</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* AI Tip / Quarantine Msg */}
         <div className={`border rounded-[24px] p-5 mb-8 text-left ${

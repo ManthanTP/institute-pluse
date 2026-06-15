@@ -7,7 +7,7 @@ import { supabase } from '../../lib/supabase'
 import { DEFAULT_CARBON_CONFIG } from '../../lib/carbonCalc'
 
 export default function AdminSettingsPage() {
-  const [activeTab, setActiveTab] = useState('profile') // 'profile', 'carbon', 'system'
+  const [activeTab, setActiveTab] = useState('carbon') // 'carbon', 'system'
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
   const [maintenanceMode, setMaintenanceMode] = useState(false)
@@ -140,7 +140,6 @@ export default function AdminSettingsPage() {
         {/* TAB NAVIGATION */}
         <div className="flex border-b border-white/5 pb-2 gap-8 flex-wrap">
           {[
-            { id: 'profile', label: 'Identity Profile', icon: Building },
             { id: 'carbon', label: 'Carbon Protocols', icon: Leaf },
             { id: 'system', label: 'Security & System Ops', icon: Cpu }
           ].map(t => {
@@ -181,140 +180,6 @@ export default function AdminSettingsPage() {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.15 }}
             >
-              {/* TAB 1: IDENTITY PROFILE */}
-              {activeTab === 'profile' && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                  {/* PROFILE FORM */}
-                  <div className="lg:col-span-2 bg-slate-900/40 border border-white/10 rounded-[48px] p-12 space-y-8 backdrop-blur-xl">
-                    <div className="flex items-center gap-4">
-                      <Building size={24} className="text-red-500" />
-                      <h4 className="text-[11px] font-black text-white uppercase tracking-[0.4em]">Identity Parameters</h4>
-                    </div>
-
-                    <form onSubmit={handleSave} className="space-y-6">
-                      <div className="space-y-2">
-                        <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Institution Name</label>
-                        <div className="relative">
-                          <Building className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
-                          <input
-                            type="text"
-                            value={settings.name}
-                            onChange={e => setSettings({ ...settings, name: e.target.value })}
-                            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-red-500/50 transition-all uppercase tracking-widest font-black"
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Contact Email</label>
-                          <div className="relative">
-                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
-                            <input
-                              type="email"
-                              value={settings.contact_email}
-                              onChange={e => setSettings({ ...settings, contact_email: e.target.value })}
-                              className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-red-500/50 transition-all"
-                              required
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Contact Phone</label>
-                          <div className="relative">
-                            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
-                            <input
-                              type="text"
-                              value={settings.contact_phone}
-                              onChange={e => setSettings({ ...settings, contact_phone: e.target.value })}
-                              className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-red-500/50 transition-all"
-                              required
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Physical Location Address</label>
-                        <div className="relative">
-                          <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
-                          <input
-                            type="text"
-                            value={settings.address}
-                            onChange={e => setSettings({ ...settings, address: e.target.value })}
-                            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-red-500/50 transition-all"
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Brand Logo Upload</label>
-                        <div className="flex items-center gap-4">
-                          <label className="flex-1 flex items-center justify-between bg-white/5 border border-white/10 hover:border-red-500/30 rounded-2xl p-4 cursor-pointer hover:bg-white/[0.08] transition-all">
-                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                              <Upload size={14} /> Choose Logo Image
-                            </span>
-                            <input 
-                              type="file" 
-                              accept="image/*" 
-                              onChange={handleLogoChange} 
-                              className="hidden" 
-                            />
-                          </label>
-                        </div>
-                      </div>
-                    </form>
-                  </div>
-
-                  {/* LIVE BRAND PREVIEW */}
-                  <div className="bg-slate-900/40 border border-white/10 rounded-[48px] p-12 flex flex-col justify-between backdrop-blur-xl">
-                    <div>
-                      <div className="flex items-center gap-2 text-red-500 mb-6">
-                        <Eye size={16} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Live Brand Preview</span>
-                      </div>
-                      
-                      <div className="border border-white/10 bg-white/2 rounded-[32px] p-6 text-center shadow-lg relative overflow-hidden group">
-                        <div className="w-24 h-24 mx-auto rounded-full bg-[#020617] border-2 border-white/15 flex items-center justify-center overflow-hidden mb-6">
-                          {settings.logo_url && !logoError ? (
-                            <img 
-                              src={settings.logo_url} 
-                              alt="Logo Preview" 
-                              className="w-full h-full object-cover" 
-                              onError={() => setLogoError(true)}
-                            />
-                          ) : (
-                            <Building className="text-gray-500" size={32} />
-                          )}
-                        </div>
-                        <h3 className="text-md font-black text-white uppercase tracking-widest line-clamp-1 mb-2">
-                          {settings.name || 'INSTITUTEPULSE'}
-                        </h3>
-                        
-                        <div className="space-y-2 text-left pt-4 border-t border-white/5 text-[9px] font-bold text-gray-500 uppercase tracking-wider">
-                          <div className="flex items-center gap-2">
-                            <Mail size={12} className="text-gray-600" />
-                            <span className="truncate">{settings.contact_email}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Phone size={12} className="text-gray-600" />
-                            <span>{settings.contact_phone}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <MapPin size={12} className="text-gray-600" />
-                            <span className="truncate">{settings.address}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-[8px] font-black text-gray-600 uppercase tracking-widest text-center mt-6">
-                      LIVE IDENTITY PROTOCOL MATRIX
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* TAB 2: CARBON PROTOCOLS */}
               {activeTab === 'carbon' && (

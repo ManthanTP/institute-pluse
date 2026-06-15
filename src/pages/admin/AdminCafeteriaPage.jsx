@@ -122,14 +122,26 @@ export default function AdminCafeteriaPage() {
     revenue: orders.reduce((sum, o) => sum + (Number(o.total_price) || 0), 0)
   }
 
-  function downloadOrdersPDF() {
-    if (orders.length === 0) {
+  async function downloadOrdersPDF() {
+    toast.loading('Fetching latest orders...', { id: 'pdf-fetch' })
+    const { data: latestOrders, error } = await supabase
+      .from('orders')
+      .select('*, profiles(full_name, role)')
+      .order('created_at', { ascending: false })
+
+    if (error || !latestOrders) {
+      toast.error('Failed to fetch latest orders', { id: 'pdf-fetch' })
+      return
+    }
+    toast.dismiss('pdf-fetch')
+
+    if (latestOrders.length === 0) {
       toast.error('No orders to download')
       return
     }
 
     const headers = ['Token', 'Customer', 'Role', 'Items', 'Total Price', 'Carbon Impact', 'Status', 'Payment', 'Date']
-    const rows = orders.map(order => {
+    const rows = latestOrders.map(order => {
       const customer = order.profiles?.full_name || 'Guest'
       const role = order.profiles?.role || 'Guest'
       const itemsStr = order.items?.map(it => `${it.quantity}x ${it.name}`).join(', ')
@@ -148,15 +160,17 @@ export default function AdminCafeteriaPage() {
       ]
     })
 
+    const totalRevenue = latestOrders.reduce((sum, o) => sum + (Number(o.total_price) || 0), 0)
+
     exportTablePDF({
       title: "Cafeteria Operations Report",
-      subtitle: `CAMPUS OPERATIONAL OVERVIEW • ${orders.length} LOGGED ORDERS`,
+      subtitle: `CAMPUS OPERATIONAL OVERVIEW • ${latestOrders.length} LOGGED ORDERS`,
       headers,
       rows,
       filename: `admin_cafeteria_orders_${new Date().getTime()}`,
       summaryCards: [
-        { label: "TOTAL ORDERS", value: stats.total.toString() },
-        { label: "TOTAL REVENUE", value: `₹${stats.revenue}` }
+        { label: "TOTAL ORDERS", value: latestOrders.length.toString() },
+        { label: "TOTAL REVENUE", value: `₹${totalRevenue}` }
       ]
     })
     toast.success('Dining Operations PDF generated ✓')
