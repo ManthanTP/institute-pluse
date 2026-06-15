@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CheckCircle2, ArrowLeft, Bus, Utensils, Zap, Droplets, Trash2, Sparkles, Send, ArrowRight, Lightbulb, BarChart2 } from 'lucide-react'
+import { CheckCircle2, ArrowLeft, Bus, Utensils, Zap, Droplets, Trash2, Sparkles, Send, ArrowRight, Lightbulb, BarChart2, Lock, Clock, Shield } from 'lucide-react'
 import {
   TRANSPORT_FACTORS, FOOD_TYPES, MEAL_SLOTS,
   DEVICE_FACTORS, WASTE_TYPES,
@@ -130,6 +130,8 @@ export default function CarbonLogPage() {
   const [showChart, setShowChart] = useState(false)
   const [yesterdayOrders, setYesterdayOrders] = useState([])
   const [lastLogs, setLastLogs] = useState([])
+  const [alreadyLogged, setAlreadyLogged] = useState(null) // null = loading, false = not logged, object = logged
+  const [countdown, setCountdown] = useState('')
 
   const activeConfig = getCarbonConfig(carbonConfig)
 
@@ -151,11 +153,57 @@ export default function CarbonLogPage() {
     fetchCarbonConfig()
   }, [])
 
+  // Check if already logged for yesterday
+  useEffect(() => {
+    if (!profile?.id) return
+    async function checkExistingLog() {
+      const now = new Date()
+      const yesterdayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)
+      const yyyy = yesterdayLocal.getFullYear()
+      const mm = String(yesterdayLocal.getMonth() + 1).padStart(2, '0')
+      const dd = String(yesterdayLocal.getDate()).padStart(2, '0')
+      const yesterday = `${yyyy}-${mm}-${dd}`
+
+      const { data } = await supabase
+        .from('carbon_logs')
+        .select('*')
+        .eq('student_id', profile.id)
+        .eq('log_date', yesterday)
+        .maybeSingle()
+
+      setAlreadyLogged(data || false)
+    }
+    checkExistingLog()
+  }, [profile?.id])
+
+  // Countdown timer to midnight (when page unlocks)
+  useEffect(() => {
+    if (!alreadyLogged) return
+    function updateCountdown() {
+      const now = new Date()
+      const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0)
+      const diff = midnight - now
+      if (diff <= 0) {
+        setAlreadyLogged(false) // unlock!
+        setCountdown('')
+        return
+      }
+      const h = Math.floor(diff / 3600000)
+      const m = Math.floor((diff % 3600000) / 60000)
+      const s = Math.floor((diff % 60000) / 1000)
+      setCountdown(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`)
+    }
+    updateCountdown()
+    const interval = setInterval(updateCountdown, 1000)
+    return () => clearInterval(interval)
+  }, [alreadyLogged])
+
   useEffect(() => {
     if (profile?.id) {
       fetchVerificationTelemetry()
     }
   }, [profile])
+
 
   async function fetchVerificationTelemetry() {
     try {
@@ -378,6 +426,122 @@ export default function CarbonLogPage() {
 
   if (success) {
     return <SuccessOverlay {...success} onDone={() => navigate('/dashboard')} onHistory={() => navigate('/carbon/history')} />
+  }
+
+  // Loading state while checking existing log
+  if (alreadyLogged === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-16 h-16">
+            <div className="absolute inset-0 border-4 border-green-500/20 rounded-full" />
+            <div className="absolute inset-0 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+          <p className="text-[10px] font-black text-white uppercase tracking-[0.3em] animate-pulse">Verifying Log Status...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // LOCKED OVERLAY — student already logged for yesterday
+  if (alreadyLogged && typeof alreadyLogged === 'object') {
+    const loggedScore = alreadyLogged.eco_score || 0
+    const loggedTotal = alreadyLogged.total_kg || 0
+    const loggedPoints = alreadyLogged.eco_points_earned || 0
+    return (
+      <div className="min-h-[100dvh] bg-slate-950 relative overflow-hidden flex items-center justify-center">
+        {/* Background Effects */}
+        <div className="fixed inset-0 pointer-events-none z-0">
+          <div className="absolute top-0 right-0 w-[50%] h-[40%] rounded-full bg-green-500/5 blur-[120px]" />
+          <div className="absolute bottom-0 left-0 w-[50%] h-[40%] rounded-full bg-blue-500/5 blur-[120px]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40%] h-[40%] rounded-full bg-emerald-500/3 blur-[100px]" />
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+          className="relative z-10 max-w-md mx-auto px-6 text-center"
+        >
+          {/* Lock Icon */}
+          <motion.div
+            animate={{ y: [0, -6, 0] }}
+            transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
+            className="mx-auto mb-8 w-24 h-24 rounded-[32px] bg-gradient-to-br from-green-600/20 to-emerald-600/10 border border-green-500/30 flex items-center justify-center shadow-[0_0_40px_rgba(34,197,94,0.15)]"
+          >
+            <Shield size={40} className="text-green-500" />
+          </motion.div>
+
+          {/* Status Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20 mb-6">
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            <span className="text-[9px] font-black text-green-400 uppercase tracking-[0.3em]">Log Synced Successfully</span>
+          </div>
+
+          {/* Title */}
+          <h1 className="text-2xl font-black text-white uppercase tracking-tight mb-2">Daily Log Complete</h1>
+          <p className="text-sm text-gray-400 mb-8">Yesterday's carbon footprint has already been recorded. This page is locked until the next logging window opens.</p>
+
+          {/* Logged Data Summary */}
+          <div className="bg-white/5 border border-white/10 rounded-[32px] p-6 mb-6 backdrop-blur-xl">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-2">Total CO₂</p>
+                <p className="text-2xl font-black text-white">{loggedTotal.toFixed(1)}<span className="text-xs text-gray-500 ml-1">kg</span></p>
+              </div>
+              <div>
+                <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-2">Eco Score</p>
+                <p className="text-2xl font-black text-green-400">{loggedScore}<span className="text-xs text-green-500 ml-1">%</span></p>
+              </div>
+              <div>
+                <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-2">XP Earned</p>
+                <p className="text-2xl font-black text-yellow-400">+{loggedPoints}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Countdown Timer */}
+          <div className="bg-white/5 border border-white/10 rounded-[28px] p-5 mb-8 backdrop-blur-xl">
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <Clock size={16} className="text-gray-400" />
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em]">Unlocks In</p>
+            </div>
+            <div className="flex items-center justify-center gap-2">
+              {countdown.split(':').map((segment, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <div className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 min-w-[60px]">
+                    <span className="text-2xl font-black text-white font-mono">{segment}</span>
+                    <p className="text-[7px] font-black text-gray-500 uppercase tracking-widest mt-1">
+                      {['Hours', 'Mins', 'Secs'][i]}
+                    </p>
+                  </div>
+                  {i < 2 && <span className="text-xl font-black text-gray-600">:</span>}
+                </div>
+              ))}
+            </div>
+            <p className="text-[9px] text-gray-500 mt-3">Next logging window opens at midnight</p>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col gap-3">
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={() => navigate('/carbon/history')}
+              className="w-full py-4 rounded-2xl bg-green-600 text-white font-black text-[10px] uppercase tracking-[0.3em] shadow-xl shadow-green-600/20 hover:bg-green-500 transition-all flex items-center justify-center gap-3"
+            >
+              View Carbon History <ArrowRight size={14} />
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={() => navigate('/dashboard')}
+              className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-gray-400 font-black text-[10px] uppercase tracking-[0.3em] hover:bg-white/10 hover:text-white transition-all flex items-center justify-center gap-3"
+            >
+              <ArrowLeft size={14} /> Back to Dashboard
+            </motion.button>
+          </div>
+        </motion.div>
+      </div>
+    )
   }
 
   const StepIcon = STEP_DATA[currentStep].icon
