@@ -10,7 +10,6 @@
  */
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import QRCode from 'qrcode'
 
 // ── Existing Color Palette (Default Cyber Intelligence) ──
 export const COLORS = {
@@ -748,14 +747,18 @@ export async function exportTablePDF({ title, subtitle, headers, rows, filename,
         doc.text(val, x + w / 2, y + h / 2 + 2, { align: 'center' })
       }
     },
-    didDrawPage: (data) => {
+    willDrawPage: (data) => {
       doc.setGState(new doc.GState({ opacity: 1.0 }))
       if (data.pageNumber > 1) {
         drawHeader(doc, title, docId, studentName, colors)
       }
+    },
+    didDrawPage: (data) => {
+      doc.setGState(new doc.GState({ opacity: 1.0 }))
       // Rounded table container border
-      const startY = data.settings.startY
-      const finalY = doc.lastAutoTable?.finalY || data.cursor?.y || startY + 10
+      const isFirstPage = data.pageNumber === 1
+      const startY = isFirstPage ? data.settings.startY : data.settings.margin.top
+      const finalY = data.cursor?.y || (startY + 10)
       const tableHeight = finalY - startY
       doc.setDrawColor(...colors.border)
       doc.setLineWidth(0.3)
