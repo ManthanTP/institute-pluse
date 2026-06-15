@@ -219,35 +219,23 @@ export default function StudentLayout({ children, title, showBack = false, hideC
 
       {/* MAIN CONTENT */}
       <main className="flex-1 lg:ml-72 flex flex-col min-h-screen relative min-w-0 w-full overflow-x-hidden">
-        {/* MOBILE HEADER — Full header when chrome is visible */}
-        {!hideChrome && (
-          <header className="lg:hidden sticky top-0 z-30 px-6 py-5 backdrop-blur-xl bg-slate-950/80 border-b border-white/5 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-colors">
-                <Menu size={20} />
-              </button>
-              <img src={logo} alt="Logo" className="w-8 h-8 object-contain drop-shadow-[0_0_10px_rgba(34,197,94,0.2)]" />
-              <div>
-                <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest leading-none mb-1">{greeting}, {firstName} ✨</p>
-                <h1 className="text-sm font-black text-white uppercase tracking-[0.15em]">{activeLabel}</h1>
-              </div>
-            </div>
-            <button onClick={() => navigate('/notifications')} className="relative p-2 rounded-xl bg-white/5 border border-white/10 text-gray-400">
-              <Bell size={20} />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full border-2 border-slate-950 shadow-[0_0_6px_rgba(34,197,94,0.6)]" />
+        {/* MOBILE HEADER — Always visible on mobile for sidebar access */}
+        <header className="lg:hidden sticky top-0 z-30 px-6 py-5 backdrop-blur-xl bg-slate-950/80 border-b border-white/5 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-colors">
+              <Menu size={20} />
             </button>
-          </header>
-        )}
-
-        {/* MOBILE SIDEBAR TOGGLE — Floating button when chrome is hidden (custom-header pages) */}
-        {hideChrome && (
-          <button 
-            onClick={() => setSidebarOpen(true)} 
-            className="lg:hidden fixed top-5 left-5 z-50 p-2.5 rounded-2xl bg-slate-900/80 backdrop-blur-xl border border-white/10 text-gray-400 hover:text-white hover:bg-slate-800/80 transition-all shadow-lg shadow-black/20"
-          >
-            <Menu size={20} />
+            <img src={logo} alt="Logo" className="w-8 h-8 object-contain drop-shadow-[0_0_10px_rgba(34,197,94,0.2)]" />
+            <div>
+              <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest leading-none mb-1">{greeting}, {firstName} ✨</p>
+              <h1 className="text-sm font-black text-white uppercase tracking-[0.15em]">{activeLabel}</h1>
+            </div>
+          </div>
+          <button onClick={() => navigate('/notifications')} className="relative p-2 rounded-xl bg-white/5 border border-white/10 text-gray-400">
+            <Bell size={20} />
+            <span className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full border-2 border-slate-950 shadow-[0_0_6px_rgba(34,197,94,0.6)]" />
           </button>
-        )}
+        </header>
 
 
         {/* DESKTOP HEADER */}
