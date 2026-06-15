@@ -145,7 +145,7 @@ export default function StudentLayout({ children, title, showBack = false, hideC
       {/* SIDEBAR (Desktop) - Always show on desktop unless extreme hideChrome */}
       <aside className={`fixed inset-y-0 left-0 z-[70] w-72 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] transform lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      } ${hideChrome ? 'hidden lg:block' : ''}`}>
+      }`}>
         <div className="h-full bg-slate-950/40 backdrop-blur-3xl border-r border-white/5 flex flex-col">
           {/* Logo */}
           <div className="px-8 py-8 flex items-center gap-4 border-b border-white/5">
@@ -219,7 +219,7 @@ export default function StudentLayout({ children, title, showBack = false, hideC
 
       {/* MAIN CONTENT */}
       <main className="flex-1 lg:ml-72 flex flex-col min-h-screen relative min-w-0 w-full overflow-x-hidden">
-        {/* MOBILE HEADER */}
+        {/* MOBILE HEADER — Full header when chrome is visible */}
         {!hideChrome && (
           <header className="lg:hidden sticky top-0 z-30 px-6 py-5 backdrop-blur-xl bg-slate-950/80 border-b border-white/5 flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -238,6 +238,17 @@ export default function StudentLayout({ children, title, showBack = false, hideC
             </button>
           </header>
         )}
+
+        {/* MOBILE SIDEBAR TOGGLE — Floating button when chrome is hidden (custom-header pages) */}
+        {hideChrome && (
+          <button 
+            onClick={() => setSidebarOpen(true)} 
+            className="lg:hidden fixed top-5 left-5 z-50 p-2.5 rounded-2xl bg-slate-900/80 backdrop-blur-xl border border-white/10 text-gray-400 hover:text-white hover:bg-slate-800/80 transition-all shadow-lg shadow-black/20"
+          >
+            <Menu size={20} />
+          </button>
+        )}
+
 
         {/* DESKTOP HEADER */}
         {!hideChrome && (
