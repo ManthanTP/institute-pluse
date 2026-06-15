@@ -276,3 +276,95 @@ export const useCartStore = create((set, get) => ({
 
   clearCart: () => set({ items: [], total: 0, totalCarbon: 0 }),
 }))
+
+export const useFacultyNotifStore = create((set, get) => ({
+  notifications: [],
+  unreadCount: 0,
+
+  fetchNotifications: async (userId) => {
+    const { data } = await supabase
+      .from('notifications')
+      .select('*, sender:profiles!sender_id(full_name, role)')
+      .or(`user_id.eq.${userId},user_id.is.null`)
+      .order('created_at', { ascending: false })
+      .limit(50)
+
+    if (data) {
+      set({
+        notifications: data,
+        unreadCount: data.filter(n => !n.is_read).length
+      })
+    }
+  },
+
+  markAllRead: async (userId) => {
+    await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('user_id', userId)
+      .eq('is_read', false)
+
+    await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .is('user_id', null)
+      .eq('is_read', false)
+
+    set(state => ({
+      notifications: state.notifications.map(n => ({ ...n, is_read: true })),
+      unreadCount: 0
+    }))
+  },
+
+  markRead: async (notifId) => {
+    await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('id', notifId)
+
+    set(state => ({
+      notifications: state.notifications.map(n =>
+        n.id === notifId ? { ...n, is_read: true } : n
+      ),
+      unreadCount: Math.max(0, state.unreadCount - 1)
+    }))
+  },
+
+  addNotification: (notif) => set(state => ({
+    notifications: [notif, ...state.notifications],
+    unreadCount: state.unreadCount + (notif.is_read ? 0 : 1)
+  })),
+
+  subscribeToNotifications: (userId) => {
+    const channelName = `faculty_notifs_${userId}`
+    const existing = supabase.getChannels().find(c => c.name === channelName)
+    if (existing) {
+      supabase.removeChannel(existing)
+    }
+
+    return supabase
+      .channel(channelName)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications'
+      }, async (payload) => {
+        if (!payload.new.user_id || payload.new.user_id === userId) {
+          let fullNotif = { ...payload.new }
+          if (payload.new.sender_id) {
+            const { data: senderProfile } = await supabase
+              .from('profiles')
+              .select('full_name, role')
+              .eq('id', payload.new.sender_id)
+              .single()
+            if (senderProfile) {
+              fullNotif.sender = senderProfile
+            }
+          }
+          get().addNotification(fullNotif)
+        }
+      })
+      .subscribe()
+  }
+}))
+

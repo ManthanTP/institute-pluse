@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { Menu, X, LogOut, Home, Leaf, Bus, UtensilsCrossed, GraduationCap, User, Sparkles, Trophy, MessageSquare, Bell, ChevronLeft, TrendingUp, Target, CalendarDays, Search, MapPin, Beaker, BookOpen, Bot, ShieldAlert, Megaphone, HelpCircle } from 'lucide-react'
-import { useAuthStore } from '../store/index'
+import { useAuthStore, useNotifStore } from '../store/index'
 import { motion, AnimatePresence } from 'framer-motion'
 import BottomTabBar from './BottomTabBar'
 import logo from '../assets/logo.png'
@@ -30,9 +30,23 @@ export default function StudentLayout({ children, title, showBack = false, hideC
   const navigate = useNavigate()
   const location = useLocation()
   const { profile, signOut } = useAuthStore()
+  const { unreadCount, fetchNotifications, subscribeToNotifications } = useNotifStore()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [greeting, setGreeting] = useState('Welcome')
   const [time, setTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
+
+  // Fetch notifications and subscribe to real-time updates
+  useEffect(() => {
+    if (!profile?.id) return
+    fetchNotifications(profile.id)
+    const channel = subscribeToNotifications(profile.id)
+    return () => {
+      if (channel) {
+        const { supabase } = require('../lib/supabase')
+        supabase.removeChannel(channel)
+      }
+    }
+  }, [profile?.id])
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -167,14 +181,21 @@ export default function StudentLayout({ children, title, showBack = false, hideC
                     key={item.path}
                     to={item.path}
                     onClick={() => setSidebarOpen(false)}
-                    className={`flex items-center gap-4 px-4 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
+                    className={`flex items-center justify-between gap-4 px-4 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
                       isActive 
                         ? 'bg-green-600 text-white shadow-lg shadow-green-600/20' 
                         : 'text-gray-500 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    <Icon size={18} />
-                    <span>{item.label}</span>
+                    <div className="flex items-center gap-4">
+                      <Icon size={18} />
+                      <span>{item.label}</span>
+                    </div>
+                    {item.path === '/notifications' && unreadCount > 0 && (
+                      <span className="px-2 py-0.5 rounded-full bg-green-500 text-slate-950 text-[9px] font-black leading-none animate-pulse">
+                        {unreadCount}
+                      </span>
+                    )}
                   </Link>
                 )
               })}
@@ -233,7 +254,9 @@ export default function StudentLayout({ children, title, showBack = false, hideC
           </div>
           <button onClick={() => navigate('/notifications')} className="relative p-2 rounded-xl bg-white/5 border border-white/10 text-gray-400">
             <Bell size={20} />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full border-2 border-slate-950 shadow-[0_0_6px_rgba(34,197,94,0.6)]" />
+            {unreadCount > 0 && (
+              <span className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full border-2 border-slate-950 shadow-[0_0_6px_rgba(34,197,94,0.6)]" />
+            )}
           </button>
         </header>
 

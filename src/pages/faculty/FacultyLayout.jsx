@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { Menu, X, LogOut, Home, CalendarDays, Users, BarChart3, Leaf, Target, Bus, UtensilsCrossed, GraduationCap, MessageSquare, Megaphone, Bell, User, Shield, Clock, BookOpen, HelpCircle } from 'lucide-react'
-import { useAuthStore } from '../../store/index'
+import { useAuthStore, useFacultyNotifStore } from '../../store/index'
+import { supabase } from '../../lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
 import FacultyBottomNav from '../../components/FacultyBottomNav'
 
@@ -25,7 +26,20 @@ export default function FacultyLayout({ children }) {
   const navigate = useNavigate()
   const location = useLocation()
   const { profile, signOut } = useAuthStore()
+  const { unreadCount, fetchNotifications, subscribeToNotifications } = useFacultyNotifStore()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // Fetch notifications and subscribe to real-time updates
+  useEffect(() => {
+    if (!profile?.id) return
+    fetchNotifications(profile.id)
+    const channel = subscribeToNotifications(profile.id)
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel)
+      }
+    }
+  }, [profile?.id])
 
   async function handleLogout() {
     await signOut()
@@ -72,14 +86,21 @@ export default function FacultyLayout({ children }) {
                     key={item.path}
                     to={item.path}
                     onClick={() => setSidebarOpen(false)}
-                    className={`flex items-center gap-4 px-5 py-4 lg:py-3 rounded-2xl text-[10px] lg:text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
+                    className={`flex items-center justify-between gap-4 px-5 py-4 lg:py-3 rounded-2xl text-[10px] lg:text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
                       isActive 
                         ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' 
                         : 'text-gray-500 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    <Icon size={18} />
-                    <span>{item.label}</span>
+                    <div className="flex items-center gap-4">
+                      <Icon size={18} />
+                      <span>{item.label}</span>
+                    </div>
+                    {item.path === '/faculty/notifications' && unreadCount > 0 && (
+                      <span className="px-2 py-0.5 rounded-full bg-blue-600 text-slate-950 text-[9px] font-black leading-none animate-pulse">
+                        {unreadCount}
+                      </span>
+                    )}
                   </Link>
                 )
               })}
@@ -133,6 +154,12 @@ export default function FacultyLayout({ children }) {
             </h1>
           </div>
           <div className="flex items-center gap-3">
+             <button onClick={() => navigate('/faculty/notifications')} className="relative p-2 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-colors">
+               <Bell size={20} />
+               {unreadCount > 0 && (
+                 <span className="absolute top-2 right-2 w-2 h-2 bg-blue-500 rounded-full border-2 border-slate-950 shadow-[0_0_6px_rgba(59,130,246,0.6)]" />
+               )}
+             </button>
              <div className="px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center gap-2">
                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
                <span className="text-[8px] font-black text-blue-500 uppercase tracking-widest hidden sm:inline">Active</span>
