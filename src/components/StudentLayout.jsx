@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { Menu, X, LogOut, Home, Leaf, Bus, UtensilsCrossed, GraduationCap, User, Sparkles, Trophy, MessageSquare, Bell, ChevronLeft, TrendingUp, Target, CalendarDays, Search, MapPin, Beaker, BookOpen, Bot, ShieldAlert, Megaphone, HelpCircle } from 'lucide-react'
 import { useAuthStore, useNotifStore } from '../store/index'
+import { supabase } from '../lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
 import BottomTabBar from './BottomTabBar'
 import logo from '../assets/logo.png'
@@ -42,7 +43,6 @@ export default function StudentLayout({ children, title, showBack = false, hideC
     const channel = subscribeToNotifications(profile.id)
     return () => {
       if (channel) {
-        const { supabase } = require('../lib/supabase')
         supabase.removeChannel(channel)
       }
     }

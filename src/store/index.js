@@ -137,11 +137,8 @@ export const useNotifStore = create((set, get) => ({
   })),
 
   subscribeToNotifications: (userId) => {
-    const channelName = `student_notifs_${userId}`
-    const existing = supabase.getChannels().find(c => c.name === channelName)
-    if (existing) {
-      supabase.removeChannel(existing)
-    }
+    const uniqueId = Math.random().toString(36).substring(2, 9)
+    const channelName = `student_notifs_${userId}_${uniqueId}`
 
     return supabase
       .channel(channelName)
@@ -336,11 +333,8 @@ export const useFacultyNotifStore = create((set, get) => ({
   })),
 
   subscribeToNotifications: (userId) => {
-    const channelName = `faculty_notifs_${userId}`
-    const existing = supabase.getChannels().find(c => c.name === channelName)
-    if (existing) {
-      supabase.removeChannel(existing)
-    }
+    const uniqueId = Math.random().toString(36).substring(2, 9)
+    const channelName = `faculty_notifs_${userId}_${uniqueId}`
 
     return supabase
       .channel(channelName)
