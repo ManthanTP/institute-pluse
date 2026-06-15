@@ -40,7 +40,7 @@ export default function FacultySustainabilityPage() {
 
       const { error: logErr } = await supabase
         .from('carbon_logs')
-        .update({ status: 'approved' })
+        .update({ status: 'approved', log_status: 'approved', flagged: false })
         .eq('id', log.id)
 
       if (logErr) throw logErr;
@@ -54,7 +54,7 @@ export default function FacultySustainabilityPage() {
       });
 
       toast.success('Log entry approved and student points credited!');
-      setLogs(prev => prev.map(l => l.id === log.id ? { ...l, status: 'approved' } : l));
+      setLogs(prev => prev.map(l => l.id === log.id ? { ...l, status: 'approved', log_status: 'approved' } : l));
       setSelectedLog(null);
     } catch (err) {
       console.error('Approve error:', err);
@@ -67,7 +67,7 @@ export default function FacultySustainabilityPage() {
     try {
       const { error: logErr } = await supabase
         .from('carbon_logs')
-        .update({ status: 'rejected' })
+        .update({ status: 'rejected', log_status: 'rejected' })
         .eq('id', log.id)
 
       if (logErr) throw logErr;
@@ -97,7 +97,11 @@ export default function FacultySustainabilityPage() {
       if ((rejectedCount || 0) >= maxBans) {
         await supabase
           .from('profiles')
-          .update({ sustainability_restricted: true })
+          .update({ 
+            sustainability_restricted: true,
+            restriction_reason: 'Exceeded maximum allowable carbon log rejections.',
+            restricted_at: new Date().toISOString()
+          })
           .eq('id', log.student_id);
         banAlert = ' Student has been suspended from leaderboards.';
       }
@@ -111,7 +115,7 @@ export default function FacultySustainabilityPage() {
       });
 
       toast.success(`Log entry rejected. Streak penalized.${banAlert}`);
-      setLogs(prev => prev.map(l => l.id === log.id ? { ...l, status: 'rejected' } : l));
+      setLogs(prev => prev.map(l => l.id === log.id ? { ...l, status: 'rejected', log_status: 'rejected' } : l));
       setSelectedLog(null);
     } catch (err) {
       console.error('Reject error:', err);
@@ -146,7 +150,7 @@ export default function FacultySustainabilityPage() {
 
       const { error: logErr } = await supabase
         .from('carbon_logs')
-        .update({ status: 'rejected' })
+        .update({ status: 'rejected', log_status: 'rejected' })
         .eq('id', log.id)
 
       if (logErr) throw logErr;
@@ -169,7 +173,11 @@ export default function FacultySustainabilityPage() {
       if ((rejectedCount || 0) >= maxBans) {
         await supabase
           .from('profiles')
-          .update({ sustainability_restricted: true })
+          .update({ 
+            sustainability_restricted: true,
+            restriction_reason: 'Exceeded maximum allowable carbon log rejections.',
+            restricted_at: new Date().toISOString()
+          })
           .eq('id', log.student_id);
         banAlert = ' Student has been suspended from leaderboards.';
       }
@@ -183,11 +191,137 @@ export default function FacultySustainabilityPage() {
       });
 
       toast.success(`Log entry invalidated. Points reverted and streak penalized.${banAlert}`);
-      setLogs(prev => prev.map(l => l.id === log.id ? { ...l, status: 'rejected' } : l));
+      setLogs(prev => prev.map(l => l.id === log.id ? { ...l, status: 'rejected', log_status: 'rejected' } : l));
       setSelectedLog(null);
     } catch (err) {
       console.error('Invalidate error:', err);
       toast.error('Failed to invalidate log: ' + err.message);
+    }
+  }
+
+  const handleUnrejectLog = async (log) => {
+    if (!window.confirm("Do you want to unreject and approve this entry? This will restore the student's points and total offset calculations.")) return;
+    try {
+      const { data: prof, error: profErr } = await supabase
+        .from('profiles')
+        .select('eco_points, total_co2_kg')
+        .eq('id', log.student_id)
+        .single()
+      
+      if (profErr) throw profErr;
+
+      const { error: updErr } = await supabase
+        .from('profiles')
+        .update({
+          eco_points: (prof.eco_points || 0) + (log.eco_points_earned || 0),
+          total_co2_kg: (prof.total_co2_kg || 0) + Number(log.total_kg || 0)
+        })
+        .eq('id', log.student_id)
+
+      if (updErr) throw updErr;
+
+      const { error: logErr } = await supabase
+        .from('carbon_logs')
+        .update({ status: 'approved', log_status: 'approved', flagged: false })
+        .eq('id', log.id)
+
+      if (logErr) throw logErr;
+
+      const { count: rejectedCount } = await supabase
+        .from('carbon_logs')
+        .select('*', { count: 'exact', head: true })
+        .eq('student_id', log.student_id)
+        .eq('status', 'rejected')
+
+      const { data: instData } = await supabase
+        .from('institution_settings')
+        .select('carbon_config')
+        .eq('id', 1)
+        .single();
+      const config = getCarbonConfig(instData?.carbon_config);
+      const maxBans = config.validation_limits.max_rejections_before_ban ?? 2;
+
+      let unbanAlert = '';
+      if ((rejectedCount || 0) < maxBans) {
+        await supabase
+          .from('profiles')
+          .update({ 
+            sustainability_restricted: false,
+            restriction_reason: null,
+            restricted_at: null
+          })
+          .eq('id', log.student_id);
+        unbanAlert = ' Student has been reinstated on leaderboards.';
+      }
+
+      await supabase.from('student_notifications').insert({
+        student_id: log.student_id,
+        title: 'Carbon Log Approved (Audit Restored)',
+        message: `Your carbon log for ${new Date(log.log_date).toLocaleDateString()} was reconsidered and approved. Points restored!`,
+        type: 'success',
+        is_read: false
+      });
+
+      toast.success(`Log entry approved. Student points credited successfully.${unbanAlert}`);
+      setLogs(prev => prev.map(l => l.id === log.id ? { ...l, status: 'approved', log_status: 'approved' } : l));
+      setSelectedLog(null);
+    } catch (err) {
+      console.error('Unreject error:', err);
+      toast.error('Failed to unreject log: ' + err.message);
+    }
+  }
+
+  const handleResetToPendingLog = async (log) => {
+    if (!window.confirm("Move this entry back to Pending Review? This will remove its rejected state but will not credit points yet.")) return;
+    try {
+      const { error: logErr } = await supabase
+        .from('carbon_logs')
+        .update({ status: 'pending', log_status: 'quarantined', flagged: true })
+        .eq('id', log.id)
+
+      if (logErr) throw logErr;
+
+      const { count: rejectedCount } = await supabase
+        .from('carbon_logs')
+        .select('*', { count: 'exact', head: true })
+        .eq('student_id', log.student_id)
+        .eq('status', 'rejected')
+
+      const { data: instData } = await supabase
+        .from('institution_settings')
+        .select('carbon_config')
+        .eq('id', 1)
+        .single();
+      const config = getCarbonConfig(instData?.carbon_config);
+      const maxBans = config.validation_limits.max_rejections_before_ban ?? 2;
+
+      let unbanAlert = '';
+      if ((rejectedCount || 0) < maxBans) {
+        await supabase
+          .from('profiles')
+          .update({ 
+            sustainability_restricted: false,
+            restriction_reason: null,
+            restricted_at: null
+          })
+          .eq('id', log.student_id);
+        unbanAlert = ' Student has been reinstated on leaderboards.';
+      }
+
+      await supabase.from('student_notifications').insert({
+        student_id: log.student_id,
+        title: 'Carbon Log Reconsidered',
+        message: `Your carbon log for ${new Date(log.log_date).toLocaleDateString()} was moved back to pending verification.`,
+        type: 'info',
+        is_read: false
+      });
+
+      toast.success(`Log entry set back to pending review.${unbanAlert}`);
+      setLogs(prev => prev.map(l => l.id === log.id ? { ...l, status: 'pending', log_status: 'quarantined' } : l));
+      setSelectedLog(null);
+    } catch (err) {
+      console.error('Reset to pending error:', err);
+      toast.error('Failed to reset log: ' + err.message);
     }
   }
 
@@ -684,6 +818,22 @@ export default function FacultySustainabilityPage() {
                     className="px-6 py-2.5 bg-red-500/10 border border-red-500/25 hover:bg-red-500 hover:text-white text-red-400 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer"
                   >
                     Retroactively Invalidate Log
+                  </button>
+                </div>
+              )}
+              {selectedLog.status === 'rejected' && (
+                <div className="pt-4 border-t border-white/5 flex-shrink-0 flex gap-4 relative z-[99999] pointer-events-auto">
+                  <button
+                    onClick={() => handleUnrejectLog(selectedLog)}
+                    className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg transition-all cursor-pointer"
+                  >
+                    Unreject & Approve Log
+                  </button>
+                  <button
+                    onClick={() => handleResetToPendingLog(selectedLog)}
+                    className="flex-1 py-3 bg-white/5 border border-white/10 text-gray-400 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer"
+                  >
+                    Reset to Pending Review
                   </button>
                 </div>
               )}

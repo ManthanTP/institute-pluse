@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { TrendingDown, TrendingUp, Calendar, Leaf, Wind, Droplets, Zap, ChevronRight, Share2, Download, Info, Bus, UtensilsCrossed, ArrowLeft } from 'lucide-react'
+import { TrendingDown, TrendingUp, Calendar, Leaf, Wind, Droplets, Zap, ChevronRight, Share2, Download, Info, Bus, UtensilsCrossed, ArrowLeft, AlertTriangle, ShieldOff } from 'lucide-react'
 import { exportTablePDF } from '../../lib/pdfExport'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store/index'
@@ -272,13 +272,19 @@ export default function CarbonHistoryPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
                 onClick={() => { setSelectedItem(item); setSelectedType(item._type); }}
-                className="bg-white/5 border border-white/10 rounded-[28px] p-6 backdrop-blur-xl flex items-center justify-between group hover:bg-white/10 transition-all duration-300 cursor-pointer"
+                className={`rounded-[28px] p-6 backdrop-blur-xl flex items-center justify-between group hover:bg-white/10 transition-all duration-300 cursor-pointer ${
+                  item.status === 'rejected'
+                    ? 'bg-red-500/5 border border-red-500/15'
+                    : 'bg-white/5 border border-white/10'
+                }`}
               >
                 <div className="flex items-center gap-5">
                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${
-                     item._type === 'order' 
-                      ? 'bg-orange-500/10 border-orange-500/10 text-orange-500' 
-                      : 'bg-green-500/20 border-green-500/10 text-green-500'
+                     item.status === 'rejected'
+                       ? 'bg-red-500/10 border-red-500/10 text-red-400'
+                       : item._type === 'order' 
+                       ? 'bg-orange-500/10 border-orange-500/10 text-orange-500' 
+                       : 'bg-green-500/20 border-green-500/10 text-green-500'
                    }`}>
                       {item._type === 'order' ? <UtensilsCrossed size={20} /> : <Calendar size={20} />}
                    </div>
@@ -292,9 +298,14 @@ export default function CarbonHistoryPage() {
                         }`}>
                           {item._type === 'order' ? 'Cafeteria Node' : 'Daily Manifest'}
                         </span>
-                        {item.log_status === 'quarantined' && (
-                          <span className="px-2 py-0.5 rounded-md text-[7px] font-black uppercase tracking-widest bg-yellow-500/10 text-yellow-400">
-                            Under Review
+                        {item.log_status === 'quarantined' && item.status !== 'rejected' && (
+                          <span className="px-2 py-0.5 rounded-md text-[7px] font-black uppercase tracking-widest bg-yellow-500/10 text-yellow-400 flex items-center gap-1">
+                            <AlertTriangle size={8} /> Under Review
+                          </span>
+                        )}
+                        {item.status === 'rejected' && (
+                          <span className="px-2 py-0.5 rounded-md text-[7px] font-black uppercase tracking-widest bg-red-500/10 text-red-400 flex items-center gap-1">
+                            <ShieldOff size={8} /> Rejected
                           </span>
                         )}
                       </div>
@@ -338,9 +349,33 @@ export default function CarbonHistoryPage() {
                   <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-4">
                     {selectedType === 'order' ? 'Nutrition Manifest' : 'Log Manifest'}
                   </h2>
-                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-10">
+                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">
                     ID: {selectedItem.id.slice(0, 12).toUpperCase()} • {selectedItem._date.toLocaleString()}
                   </p>
+
+                  {/* Audit Status Banner */}
+                  {selectedItem.status === 'rejected' && (
+                    <div className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                        <ShieldOff size={18} className="text-red-400" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-1">Log Rejected</p>
+                        <p className="text-[10px] text-red-300/70 leading-relaxed">This entry was flagged and rejected during audit. No XP was credited. If you believe this was an error, contact faculty.</p>
+                      </div>
+                    </div>
+                  )}
+                  {selectedItem.log_status === 'quarantined' && selectedItem.status !== 'rejected' && (
+                    <div className="mb-6 p-4 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
+                        <AlertTriangle size={18} className="text-yellow-400" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-yellow-400 uppercase tracking-widest mb-1">Under Review</p>
+                        <p className="text-[10px] text-yellow-300/70 leading-relaxed">This entry is pending faculty verification. XP will be credited once approved.</p>
+                      </div>
+                    </div>
+                  )}
                   
                   {selectedType === 'order' ? (
                     <div className="space-y-4 mb-10">

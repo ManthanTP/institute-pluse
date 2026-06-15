@@ -448,13 +448,15 @@ export default function CarbonLogPage() {
     const loggedScore = alreadyLogged.eco_score || 0
     const loggedTotal = alreadyLogged.total_kg || 0
     const loggedPoints = alreadyLogged.eco_points_earned || 0
+    const isRejected = alreadyLogged.status === 'rejected'
+    const isQuarantined = alreadyLogged.log_status === 'quarantined' && !isRejected
     return (
       <div className="min-h-[100dvh] bg-slate-950 relative overflow-hidden flex items-center justify-center">
         {/* Background Effects */}
         <div className="fixed inset-0 pointer-events-none z-0">
-          <div className="absolute top-0 right-0 w-[50%] h-[40%] rounded-full bg-green-500/5 blur-[120px]" />
+          <div className={`absolute top-0 right-0 w-[50%] h-[40%] rounded-full blur-[120px] ${isRejected ? 'bg-red-500/5' : isQuarantined ? 'bg-amber-500/5' : 'bg-green-500/5'}`} />
           <div className="absolute bottom-0 left-0 w-[50%] h-[40%] rounded-full bg-blue-500/5 blur-[120px]" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40%] h-[40%] rounded-full bg-emerald-500/3 blur-[100px]" />
+          <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40%] h-[40%] rounded-full blur-[100px] ${isRejected ? 'bg-red-500/3' : 'bg-emerald-500/3'}`} />
         </div>
 
         <motion.div
@@ -467,23 +469,51 @@ export default function CarbonLogPage() {
           <motion.div
             animate={{ y: [0, -6, 0] }}
             transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
-            className="mx-auto mb-8 w-24 h-24 rounded-[32px] bg-gradient-to-br from-green-600/20 to-emerald-600/10 border border-green-500/30 flex items-center justify-center shadow-[0_0_40px_rgba(34,197,94,0.15)]"
+            className={`mx-auto mb-8 w-24 h-24 rounded-[32px] bg-gradient-to-br flex items-center justify-center ${
+              isRejected
+                ? 'from-red-600/20 to-red-600/10 border border-red-500/30 shadow-[0_0_40px_rgba(239,68,68,0.15)]'
+                : isQuarantined
+                ? 'from-amber-600/20 to-amber-600/10 border border-amber-500/30 shadow-[0_0_40px_rgba(245,158,11,0.15)]'
+                : 'from-green-600/20 to-emerald-600/10 border border-green-500/30 shadow-[0_0_40px_rgba(34,197,94,0.15)]'
+            }`}
           >
-            <Shield size={40} className="text-green-500" />
+            <Shield size={40} className={isRejected ? 'text-red-500' : isQuarantined ? 'text-amber-500' : 'text-green-500'} />
           </motion.div>
 
           {/* Status Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20 mb-6">
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-[9px] font-black text-green-400 uppercase tracking-[0.3em]">Log Synced Successfully</span>
-          </div>
+          {isRejected ? (
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/20 mb-6">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-[9px] font-black text-red-400 uppercase tracking-[0.3em]">Log Rejected</span>
+            </div>
+          ) : isQuarantined ? (
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 mb-6">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+              <span className="text-[9px] font-black text-amber-400 uppercase tracking-[0.3em]">Under Review</span>
+            </div>
+          ) : (
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20 mb-6">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-[9px] font-black text-green-400 uppercase tracking-[0.3em]">Log Synced Successfully</span>
+            </div>
+          )}
 
           {/* Title */}
-          <h1 className="text-2xl font-black text-white uppercase tracking-tight mb-2">Daily Log Complete</h1>
-          <p className="text-sm text-gray-400 mb-8">Yesterday's carbon footprint has already been recorded. This page is locked until the next logging window opens.</p>
+          <h1 className="text-2xl font-black text-white uppercase tracking-tight mb-2">
+            {isRejected ? 'Log Rejected' : 'Daily Log Complete'}
+          </h1>
+          <p className="text-sm text-gray-400 mb-8">
+            {isRejected 
+              ? "Your carbon log was audited and rejected due to discrepancies. No XP was credited. If you believe this was an error, please contact faculty." 
+              : isQuarantined
+              ? "Your log is under audit review. XP will be credited once approved."
+              : "Yesterday's carbon footprint has already been recorded. This page is locked until the next logging window opens."}
+          </p>
 
           {/* Logged Data Summary */}
-          <div className="bg-white/5 border border-white/10 rounded-[32px] p-6 mb-6 backdrop-blur-xl">
+          <div className={`border rounded-[32px] p-6 mb-6 backdrop-blur-xl ${
+            isRejected ? 'bg-red-500/5 border-red-500/10' : 'bg-white/5 border-white/10'
+          }`}>
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-2">Total CO₂</p>
@@ -491,11 +521,13 @@ export default function CarbonLogPage() {
               </div>
               <div>
                 <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-2">Eco Score</p>
-                <p className="text-2xl font-black text-green-400">{loggedScore}<span className="text-xs text-green-500 ml-1">%</span></p>
+                <p className={`text-2xl font-black ${isRejected ? 'text-red-400' : 'text-green-400'}`}>{loggedScore}<span className={`text-xs ml-1 ${isRejected ? 'text-red-500' : 'text-green-500'}`}>%</span></p>
               </div>
               <div>
-                <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-2">XP Earned</p>
-                <p className="text-2xl font-black text-yellow-400">+{loggedPoints}</p>
+                <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-2">{isRejected ? 'XP' : 'XP Earned'}</p>
+                <p className={`text-2xl font-black ${isRejected ? 'text-red-400' : 'text-yellow-400'}`}>
+                  {isRejected ? '0' : `+${loggedPoints}`}
+                </p>
               </div>
             </div>
           </div>
