@@ -17,6 +17,111 @@ export default function AdminSustainabilityPage() {
   const [stats, setStats] = useState({ totalCo2: 0, totalSaved: 0, activeUsers: 0, avgEfficiency: 0 })
   const [deptData, setDeptData] = useState([])
   const [selectedLog, setSelectedLog] = useState(null)
+  const [carbonConfig, setCarbonConfig] = useState(null)
+
+  const getPointsBreakdown = (log) => {
+    if (!log) return []
+    const cfg = carbonConfig || {
+      base_points: 10,
+      score_100_bonus: 60,
+      score_90_bonus: 40,
+      score_70_bonus: 20,
+      eco_transport_bonus: 15,
+      bus_bonus: 12,
+      vegan_bonus: 15,
+      vegetarian_bonus: 10,
+      streak_30_bonus: 200,
+      streak_7_bonus: 75,
+      streak_3_bonus: 30,
+      first_log_bonus: 50
+    }
+
+    const breakdown = []
+    
+    // 1. Base Logging
+    const basePoints = cfg.base_points ?? 10
+    if (basePoints > 0) {
+      breakdown.push({ name: 'Base Logging Reward', points: basePoints })
+    }
+
+    // 2. Eco Score Bonus
+    let scoreBonus = 0
+    let scoreName = ''
+    if (log.eco_score >= 100) {
+      scoreBonus = cfg.score_100_bonus ?? 60
+      scoreName = 'Perfect Eco Score (100) Bonus'
+    } else if (log.eco_score >= 90) {
+      scoreBonus = cfg.score_90_bonus ?? 40
+      scoreName = 'Excellent Eco Score (90+) Bonus'
+    } else if (log.eco_score >= 70) {
+      scoreBonus = cfg.score_70_bonus ?? 20
+      scoreName = 'Good Eco Score (70+) Bonus'
+    }
+    if (scoreBonus > 0) {
+      breakdown.push({ name: scoreName, points: scoreBonus })
+    }
+
+    // 3. Transport Bonus
+    const hasEcoTransport = log.transport_detail?.some(e =>
+      ['bicycle', 'walking'].includes(e.mode)
+    )
+    const hasBus = log.transport_detail?.some(e =>
+      ['college_bus'].includes(e.mode)
+    )
+    if (hasEcoTransport) {
+      breakdown.push({ name: 'Active Transit (Bicycle/Walking) Bonus', points: cfg.eco_transport_bonus ?? 15 })
+    }
+    if (hasBus) {
+      breakdown.push({ name: 'Public Transit (College Bus) Bonus', points: cfg.bus_bonus ?? 12 })
+    }
+
+    // 4. Food Bonus
+    if (log.meals_detail && log.meals_detail.length > 0) {
+      const meals = {}
+      log.meals_detail.forEach(m => {
+        meals[m.slot] = m.type
+      })
+      const values = Object.values(meals)
+      if (values.length > 0) {
+        const allVegetarian = values.every(m => m === 'vegan' || m === 'vegetarian' || m === 'skipped')
+        const allVegan = values.every(m => m === 'vegan' || m === 'skipped')
+        if (allVegan) {
+          breakdown.push({ name: 'All Vegan Meals Bonus', points: cfg.vegan_bonus ?? 15 })
+        } else if (allVegetarian) {
+          breakdown.push({ name: 'All Vegetarian Meals Bonus', points: cfg.vegetarian_bonus ?? 10 })
+        }
+      }
+    }
+
+    // Calculate difference to identify streaks/first log
+    const calculatedSum = breakdown.reduce((sum, item) => sum + item.points, 0)
+    const diff = (log.eco_points_earned || 0) - calculatedSum
+
+    if (diff > 0) {
+      if (diff === (cfg.first_log_bonus ?? 50)) {
+        breakdown.push({ name: 'First Ever Log Bonus', points: diff })
+      } else if (diff === (cfg.streak_3_bonus ?? 30)) {
+        breakdown.push({ name: '3-Day Streak Bonus', points: diff })
+      } else if (diff === (cfg.streak_7_bonus ?? 75)) {
+        breakdown.push({ name: '7-Day Streak Bonus', points: diff })
+      } else if (diff === (cfg.streak_30_bonus ?? 200)) {
+        breakdown.push({ name: '30-Day Streak Bonus', points: diff })
+      } else if (diff === ((cfg.first_log_bonus ?? 50) + (cfg.streak_3_bonus ?? 30))) {
+        breakdown.push({ name: 'First Log Bonus', points: cfg.first_log_bonus ?? 50 })
+        breakdown.push({ name: '3-Day Streak Bonus', points: cfg.streak_3_bonus ?? 30 })
+      } else if (diff === ((cfg.first_log_bonus ?? 50) + (cfg.streak_7_bonus ?? 75))) {
+        breakdown.push({ name: 'First Log Bonus', points: cfg.first_log_bonus ?? 50 })
+        breakdown.push({ name: '7-Day Streak Bonus', points: cfg.streak_7_bonus ?? 75 })
+      } else if (diff === ((cfg.first_log_bonus ?? 50) + (cfg.streak_30_bonus ?? 200))) {
+        breakdown.push({ name: 'First Log Bonus', points: cfg.first_log_bonus ?? 50 })
+        breakdown.push({ name: '30-Day Streak Bonus', points: cfg.streak_30_bonus ?? 200 })
+      } else {
+        breakdown.push({ name: 'Streak / Special Eco Bonus', points: diff })
+      }
+    }
+
+    return breakdown
+  }
 
   const handleApproveLog = async (log) => {
     try {
@@ -336,6 +441,19 @@ export default function AdminSustainabilityPage() {
         .order('log_date', { ascending: false })
 
       const { count: usersCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true })
+
+      try {
+        const { data: instData } = await supabase
+          .from('institution_settings')
+          .select('carbon_config')
+          .eq('id', 1)
+          .single()
+        if (instData) {
+          setCarbonConfig(getCarbonConfig(instData.carbon_config))
+        }
+      } catch (e) {
+        console.error('Failed to load carbon config:', e)
+      }
       
       if (logsData && logsData.length > 0) {
         setLogs(logsData)
@@ -725,6 +843,22 @@ export default function AdminSustainabilityPage() {
                   <div className="text-center">
                     <span className="block text-[8px] font-bold text-gray-500 uppercase tracking-widest">Points</span>
                     <span className="text-sm lg:text-base font-black text-yellow-500">+{selectedLog.eco_points_earned || 0} XP</span>
+                  </div>
+                </div>
+
+                {/* Points Breakdown Panel */}
+                <div className="bg-amber-500/5 border border-amber-500/10 rounded-2xl p-4">
+                  <span className="block text-[8px] font-black text-amber-500 uppercase tracking-widest mb-3">Eco-Points Allocation Breakdown</span>
+                  <div className="space-y-2">
+                    {getPointsBreakdown(selectedLog).map((item, idx) => (
+                      <div key={idx} className="flex justify-between items-center text-[10px] uppercase tracking-wider">
+                        <span className="text-gray-400 font-bold">{item.name}</span>
+                        <span className="text-green-400 font-black">+{item.points} XP</span>
+                      </div>
+                    ))}
+                    {getPointsBreakdown(selectedLog).length === 0 && (
+                      <div className="text-[10px] text-gray-500 italic uppercase tracking-widest text-center py-1">No points allocated</div>
+                    )}
                   </div>
                 </div>
 
