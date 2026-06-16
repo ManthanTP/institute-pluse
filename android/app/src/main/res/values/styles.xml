@@ -14,15 +14,15 @@
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
         
-        <!-- Standard Mode: Status Bar & Navigation Bar do not overlay app content -->
+        <!-- Hide Status Bar -->
+        <item name="android:windowFullscreen">true</item>
+        
+        <!-- Standard Mode for Navigation Bar: visible and does not overlay app content -->
         <item name="android:fitsSystemWindows">true</item>
-        <item name="android:windowTranslucentStatus">false</item>
         <item name="android:windowTranslucentNavigation">false</item>
         
-        <!-- Premium UI: Match status and navigation bars to app theme color (#020617) -->
-        <item name="android:statusBarColor">#020617</item>
+        <!-- Premium UI: Match navigation bar to app theme color (#020617) -->
         <item name="android:navigationBarColor">#020617</item>
-        <item name="android:windowLightStatusBar">false</item>
     </style>
 
 
