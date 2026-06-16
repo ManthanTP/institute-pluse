@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { QrCode, CheckCircle, AlertCircle, ChevronLeft, Home, LayoutGrid, CalendarDays, Coffee, User, Activity, ShieldCheck, Zap, X, Clock, MapPin, Loader2, Bell } from 'lucide-react'
 import { useAuthStore } from '../../store/index'
 import { supabase } from '../../lib/supabase'
 import toast from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Html5QrcodeScanner } from 'html5-qrcode'
+import { Html5Qrcode } from 'html5-qrcode'
 
 export default function AttendancePage() {
   const navigate = useNavigate()
@@ -18,6 +18,7 @@ export default function AttendancePage() {
   const [loading, setLoading] = useState(true)
   const [currentClass, setCurrentClass] = useState(null)
   const [notifications, setNotifications] = useState([])
+  const scannerRef = useRef(null)
   
   useEffect(() => {
     fetchAttendanceData()
@@ -122,39 +123,80 @@ export default function AttendancePage() {
 
 
 
+  useEffect(() => {
+    if (scanning) {
+      startScanner()
+    } else {
+      stopScanner()
+    }
+    return () => stopScanner()
+  }, [scanning])
+
   const startScanner = async () => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
        toast.error('Terminal Hardware Not Detected')
+       setScanning(false)
        return
     }
 
     if (!window.isSecureContext && window.location.hostname !== 'localhost') {
        toast.error('Secure Environment (HTTPS) Required')
+       setScanning(false)
        return
     }
 
-    setScanning(true)
-    setTimeout(() => {
+    if (scannerRef.current) {
+      await stopScanner()
+    }
+
+    setTimeout(async () => {
+      const element = document.getElementById("reader")
+      if (!element) return
+
       try {
-        const scanner = new Html5QrcodeScanner("reader", { 
-          fps: 10, 
+        const html5QrCode = new Html5Qrcode("reader")
+        scannerRef.current = html5QrCode
+        
+        const config = { 
+          fps: 15, 
           qrbox: { width: 250, height: 250 },
           aspectRatio: 1.0,
           showTorchButtonIfSupported: true
-        })
+        }
         
-        scanner.render(async (decodedText) => {
-          await scanner.clear()
-          setScanning(false)
-          await markAttendance(decodedText)
-        }, (error) => {
-          // Silent scan errors
-        })
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          config,
+          async (decodedText) => {
+            await stopScanner()
+            setScanning(false)
+            await markAttendance(decodedText)
+          },
+          () => {} // Silent scan errors
+        )
       } catch (err) {
-        toast.error('Optical Interface Initialization Failed')
-        setScanning(false)
+        console.error("Scanner Start Error:", err)
+        if (!err.toString().includes("is already running")) {
+          toast.error("Camera access failed. Check permissions.")
+          setScanning(false)
+        }
       }
-    }, 100)
+    }, 400)
+  }
+
+  const stopScanner = async () => {
+    if (scannerRef.current) {
+      try {
+        if (scannerRef.current.isScanning) {
+          await scannerRef.current.stop()
+        }
+        scannerRef.current = null
+        const element = document.getElementById("reader")
+        if (element) element.innerHTML = ""
+      } catch (err) {
+        console.error("Scanner Stop Error:", err)
+      }
+    }
   }
 
   async function markAttendance(inputCode) {
@@ -397,14 +439,57 @@ export default function AttendancePage() {
            {scanning && (
              <motion.div 
                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-               className="fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-center p-10"
+               className="fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-center p-6 sm:p-10"
              >
-                <div className="flex items-center justify-between w-full mb-10">
-                   <h3 className="text-xl font-black text-white uppercase tracking-tighter italic">Optical Matrix</h3>
-                   <button onClick={() => setScanning(false)} className="p-3 rounded-xl bg-white/5 text-gray-500"><X size={20} /></button>
+                {/* Background Mesh */}
+                <div className="fixed inset-0 pointer-events-none">
+                  <div className="absolute top-[-10%] left-[-10%] w-[80%] h-[60%] rounded-full bg-blue-600/5 blur-[120px]" />
+                  <div className="absolute bottom-[-10%] right-[-10%] w-[80%] h-[60%] rounded-full bg-indigo-900/5 blur-[120px]" />
                 </div>
-                <div id="reader" className="w-full max-w-sm rounded-2xl md:rounded-[40px] overflow-hidden border-2 border-blue-500/30" />
-                <p className="mt-10 text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] text-center">Center Beacon in Grid</p>
+
+                <div className="relative z-10 flex flex-col items-center w-full max-w-sm">
+                  {/* Header Area */}
+                  <div className="flex items-center justify-between w-full mb-10">
+                    <div>
+                      <h3 className="text-xl font-black text-white uppercase tracking-tighter italic">Optical Matrix</h3>
+                      <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em] mt-1 italic">Attendance Verification Protocol</p>
+                    </div>
+                    <button 
+                      onClick={() => setScanning(false)} 
+                      className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 hover:text-white transition-all shadow-xl"
+                    >
+                      <X size={22} />
+                    </button>
+                  </div>
+                  
+                  {/* Scanner Container */}
+                  <div className="relative w-full aspect-square overflow-hidden rounded-[40px] border-2 border-blue-500/30 bg-black shadow-2xl shadow-blue-900/20">
+                    <div id="reader" className="w-full h-full scale-[1.01]" />
+                    
+                    {/* Dimmed Overlay with Viewfinder Hole */}
+                    <div className="absolute inset-0 z-10 pointer-events-none">
+                      <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[1px]" style={{
+                          clipPath: 'polygon(0% 0%, 0% 100%, 50% 100%, 50% 18%, 82% 18%, 82% 82%, 18% 82%, 18% 18%, 50% 18%, 50% 100%, 100% 100%, 100% 0%)'
+                      }} />
+
+                      <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-[64%] h-[64%] border-2 border-blue-500/20 rounded-3xl relative">
+                              <div className="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-blue-500 rounded-tl-xl" />
+                              <div className="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-blue-500 rounded-tr-xl" />
+                              <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-blue-500 rounded-bl-xl" />
+                              <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-blue-500 rounded-br-xl" />
+                              
+                              <motion.div 
+                                animate={{ top: ['0%', '100%', '0%'] }}
+                                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                                className="absolute left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-blue-500 to-transparent shadow-[0_0_15px_rgba(59,130,246,0.6)]"
+                              />
+                          </div>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="mt-10 text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] text-center italic">Center Beacon in Grid</p>
+                </div>
              </motion.div>
            )}
         </AnimatePresence>
