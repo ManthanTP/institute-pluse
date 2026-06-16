@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react'
 import { TreePine, Plus, Pencil, Trash2, Save, X, Download, MapPin, RefreshCw, Leaf, Award, TrendingUp } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createPortal } from 'react-dom'
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart as RBarChart, Bar } from 'recharts'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart as RBarChart, Bar, ReferenceLine } from 'recharts'
 import { exportTablePDF } from '../../lib/pdfExport'
 import AdminLayout from './AdminLayout'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store/index'
+import { getCarbonConfig } from '../../lib/carbonCalc'
 import {
   CO2_ABSORPTION_FACTORS,
   GREEN_COVER_LABELS,
@@ -305,6 +306,8 @@ export default function AdminGreenCoverPage() {
   const [greenScore, setGreenScore] = useState(null)
   const [greenTier, setGreenTier] = useState(null)
   const [trendData, setTrendData] = useState([])
+  const [comparisonChartData, setComparisonChartData] = useState([])
+  const [dataLabel, setDataLabel] = useState('')
 
   useEffect(() => {
     fetchAll()
@@ -326,19 +329,85 @@ export default function AdminGreenCoverPage() {
       const zoneGroups = groupByZone(safeItems)
       setZones(zoneGroups)
 
-      // Get today's student CO2
+      // Fetch institution config for campus-only CO2 calculation
+      const { data: instData } = await supabase
+        .from('institution_settings')
+        .select('carbon_config')
+        .eq('id', 1)
+        .maybeSingle()
+      const carbonCfg = getCarbonConfig(instData?.carbon_config)
+      const foodFactors = carbonCfg?.food_factors || {
+        vegan: 0.30, vegetarian: 0.50, egg: 0.80,
+        non_veg_chicken: 1.50, non_veg_beef: 3.50, skipped: 0.00,
+      }
+
+      const getCampusCO2 = (log) => {
+        if (!log) return 0
+        const transport = Number(log.transport_kg || 0)
+        const lunchEntry = log.meals_detail?.find(m => m.slot === 'lunch')
+        const lunchType = lunchEntry?.type || 'skipped'
+        const lunch = Number(foodFactors[lunchType] ?? 0)
+        return transport + lunch
+      }
+
+      // Fetch last 7 days of ALL students' campus CO2
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+      const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0]
       const today = new Date().toISOString().split('T')[0]
-      const { data: todayLogs } = await supabase
+
+      const { data: recentLogs } = await supabase
         .from('carbon_logs')
-        .select('total_kg')
-        .eq('log_date', today)
-      const studentCO2 = (todayLogs || []).reduce((a, l) => a + Number(l.total_kg || 0), 0)
+        .select('log_date, transport_kg, meals_detail')
+        .gte('log_date', sevenDaysAgoStr)
+        .order('log_date', { ascending: true })
+
+      // Aggregate CO2 per day across all students
+      const dailyMap = {}
+      if (recentLogs) {
+        recentLogs.forEach(l => {
+          if (!dailyMap[l.log_date]) dailyMap[l.log_date] = 0
+          dailyMap[l.log_date] += getCampusCO2(l)
+        })
+      }
+
+      // Get today's total, fallback to most recent day
+      let studentCO2 = dailyMap[today] ?? 0
+      let label = ''
+      if (studentCO2 > 0) {
+        label = `All students' campus CO2 today (Transport + Lunch)`
+      } else {
+        // Find most recent day with data
+        const sortedDates = Object.keys(dailyMap).sort().reverse()
+        const latestDate = sortedDates[0]
+        if (latestDate && dailyMap[latestDate] > 0) {
+          studentCO2 = dailyMap[latestDate]
+          const d = new Date(latestDate + 'T00:00:00')
+          label = `No logs today — showing ${d.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} (most recent)`
+        } else {
+          label = 'No student carbon logs found yet'
+        }
+      }
       setTodayStudentCO2(studentCO2)
+      setDataLabel(label)
 
       const totalAbsorbed = calculateTotalAbsorption(safeItems)
       const bal = calculateNetCarbon(studentCO2, totalAbsorbed)
       setBalance(bal)
       setStatus(getNetCarbonStatus(bal.net))
+
+      // Build 7-day comparison chart
+      const chart = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date()
+        d.setDate(d.getDate() - (6 - i))
+        const dateStr = d.toISOString().split('T')[0]
+        return {
+          date: d.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }),
+          absorbed: parseFloat(totalAbsorbed.toFixed(2)),
+          generated: parseFloat((dailyMap[dateStr] ?? 0).toFixed(2)),
+        }
+      })
+      setComparisonChartData(chart)
 
       // Campus Green Score
       const scoreResult = calculateCampusGreenScore(safeItems, studentCO2)
@@ -614,8 +683,9 @@ export default function AdminGreenCoverPage() {
               <p className="text-xl font-black text-green-400">{totalAbsorbed.toFixed(2)} kg</p>
             </div>
             <div>
-              <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">Student CO2 Today</p>
+              <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">All Students Campus CO2</p>
               <p className="text-xl font-black text-red-400">{todayStudentCO2.toFixed(2)} kg</p>
+              {dataLabel && <p className="text-[7px] text-gray-600 font-bold mt-0.5">{dataLabel}</p>}
             </div>
             <div>
               <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">Net Balance</p>
@@ -631,7 +701,47 @@ export default function AdminGreenCoverPage() {
               </p>
             </div>
           </div>
+          {dataLabel && (
+            <p className="text-[7px] text-gray-500 font-bold uppercase tracking-widest mt-3 text-center">{dataLabel}</p>
+          )}
         </motion.div>
+
+        {/* ── 7-DAY COMPARISON CHART ── */}
+        {comparisonChartData.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white/5 border border-white/10 rounded-[40px] p-6 backdrop-blur-xl"
+          >
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h3 className="text-[10px] font-black text-white uppercase tracking-widest">7-Day Campus CO2 vs Absorption</h3>
+                <p className="text-[8px] text-gray-500 font-bold mt-0.5">All students' transport + lunch emissions vs campus tree absorption</p>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={220}>
+              <RBarChart data={comparisonChartData} barGap={2}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} unit=" kg" />
+                <Tooltip contentStyle={TOOLTIP_STYLE} />
+                <ReferenceLine y={0} stroke="rgba(255,255,255,0.1)" />
+                <Bar dataKey="absorbed" name="Absorbed by Trees" fill="#16a34a" radius={[4, 4, 0, 0]} barSize={16} />
+                <Bar dataKey="generated" name="Student Campus CO2" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={16} />
+              </RBarChart>
+            </ResponsiveContainer>
+            <div className="flex items-center justify-center gap-6 mt-3">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-sm bg-green-600" />
+                <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Absorbed By Trees</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-sm bg-red-500" />
+                <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">All Students Campus CO2</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* ── STAT CARDS ── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
