@@ -10,6 +10,7 @@
  */
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { toDataURL } from 'qrcode'
 
 // ── Existing Color Palette (Default Cyber Intelligence) ──
 export const COLORS = {
@@ -524,7 +525,7 @@ export async function drawVerificationPage(doc, docId, dateStr, studentName, col
 
   try {
     const verificationUrl = `https://institute-pluse.vercel.app/verify/${docId}`
-    const qrDataUrl = await QRCode.toDataURL(verificationUrl, {
+    const qrDataUrl = await toDataURL(verificationUrl, {
       margin: 1,
       width: 150,
       color: {

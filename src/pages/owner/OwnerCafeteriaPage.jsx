@@ -109,7 +109,7 @@ export default function OwnerCafeteriaPage() {
         customer,
         role,
         itemsStr || 'N/A',
-        `₹${order.total_price}`,
+        `$${order.total_price}`,
         `${order.total_carbon_kg || 0} kg CO2`,
         order.status,
         `${order.payment_status} (${order.payment_method || 'N/A'})`,
@@ -125,7 +125,7 @@ export default function OwnerCafeteriaPage() {
       filename: `cafeteria_orders_${new Date().getTime()}`,
       summaryCards: [
         { label: "TOTAL ORDERS", value: latestOrders.length.toString() },
-        { label: "TOTAL REVENUE", value: `₹${latestOrders.reduce((sum, o) => sum + (Number(o.total_price) || 0), 0)}` }
+        { label: "TOTAL REVENUE", value: `$${latestOrders.reduce((sum, o) => sum + (Number(o.total_price) || 0), 0)}` }
       ]
     })
     toast.success('Orders PDF report generated ✓')

@@ -7,6 +7,7 @@ import {
 } from 'recharts'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store/index'
+import { getCarbonConfig } from '../../lib/carbonCalc'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   CO2_ABSORPTION_FACTORS,
@@ -86,31 +87,56 @@ export default function CarbonBalancePage() {
       const pie = buildPieData(safeItems)
       setPieData(pie)
 
+      // Fetch institution config for carbon factors
+      const { data: instData } = await supabase
+        .from('institution_settings')
+        .select('carbon_config')
+        .eq('id', 1)
+        .maybeSingle()
+      const carbonCfg = getCarbonConfig(instData?.carbon_config)
+      const foodFactors = carbonCfg?.food_factors || {
+        vegan: 0.30,
+        vegetarian: 0.50,
+        egg: 0.80,
+        non_veg_chicken: 1.50,
+        non_veg_beef: 3.50,
+        skipped: 0.00,
+      }
+
+      const getCollegeCO2 = (log) => {
+        if (!log) return 0
+        const transport = Number(log.transport_kg || 0)
+        const lunchEntry = log.meals_detail?.find(m => m.slot === 'lunch')
+        const lunchType = lunchEntry?.type || 'skipped'
+        const lunch = Number(foodFactors[lunchType] ?? 0)
+        return transport + lunch
+      }
+
       // 2. Fetch today's student CO2 total (filtered by student_id)
       const today = new Date().toISOString().split('T')[0]
       const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
 
       const { data: todayLogs } = await supabase
         .from('carbon_logs')
-        .select('total_kg')
+        .select('transport_kg, meals_detail')
         .eq('student_id', profile.id)
         .eq('log_date', today)
 
       let studentCO2 = 0
       let note = ''
       if (todayLogs && todayLogs.length > 0) {
-        studentCO2 = todayLogs.reduce((a, l) => a + Number(l.total_kg || 0), 0)
-        note = `Based on your log submitted today.`
+        studentCO2 = todayLogs.reduce((a, l) => a + getCollegeCO2(l), 0)
+        note = `Based on your log submitted today (Transport + Lunch college footprint only).`
       } else {
         // Fallback to yesterday
         const { data: yestLogs } = await supabase
           .from('carbon_logs')
-          .select('total_kg')
+          .select('transport_kg, meals_detail')
           .eq('student_id', profile.id)
           .eq('log_date', yesterday)
-        studentCO2 = (yestLogs || []).reduce((a, l) => a + Number(l.total_kg || 0), 0)
+        studentCO2 = (yestLogs || []).reduce((a, l) => a + getCollegeCO2(l), 0)
         if (studentCO2 > 0) {
-          note = 'No log today yet — showing your yesterday\'s data.'
+          note = 'No log today yet — showing yesterday\'s college footprint (Transport + Lunch).'
         } else {
           note = 'No logs submitted by you yet.'
         }
@@ -130,7 +156,7 @@ export default function CarbonBalancePage() {
 
       const { data: recentLogs } = await supabase
         .from('carbon_logs')
-        .select('log_date, total_kg')
+        .select('log_date, transport_kg, meals_detail')
         .eq('student_id', profile.id)
         .gte('log_date', sevenDaysAgoStr)
         .order('log_date', { ascending: true })
@@ -138,7 +164,7 @@ export default function CarbonBalancePage() {
       const recentLogsMap = {}
       if (recentLogs) {
         recentLogs.forEach(l => {
-          recentLogsMap[l.log_date] = Number(l.total_kg || 0)
+          recentLogsMap[l.log_date] = getCollegeCO2(l)
         })
       }
 

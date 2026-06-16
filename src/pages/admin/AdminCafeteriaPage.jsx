@@ -152,7 +152,7 @@ export default function AdminCafeteriaPage() {
         customer,
         role,
         itemsStr || 'N/A',
-        `₹${order.total_price}`,
+        `$${order.total_price}`,
         `${order.total_carbon_kg || 0} kg CO2`,
         order.status,
         `${order.payment_status} (${order.payment_method || 'N/A'})`,
@@ -170,7 +170,7 @@ export default function AdminCafeteriaPage() {
       filename: `admin_cafeteria_orders_${new Date().getTime()}`,
       summaryCards: [
         { label: "TOTAL ORDERS", value: latestOrders.length.toString() },
-        { label: "TOTAL REVENUE", value: `₹${totalRevenue}` }
+        { label: "TOTAL REVENUE", value: `$${totalRevenue}` }
       ]
     })
     toast.success('Dining Operations PDF generated ✓')
