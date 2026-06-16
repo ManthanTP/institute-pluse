@@ -183,3 +183,87 @@ export function buildPieData(items) {
     value: parseFloat(d.value.toFixed(3)),
   }))
 }
+
+// ══════════════════════════════════════════════════════════════
+// CAMPUS GREEN SCORE — Composite 0-100 scoring system
+// Uses logarithmic scaling so even modest green cover earns
+// a meaningful score without requiring impossible absorption.
+// ══════════════════════════════════════════════════════════════
+
+export const GREEN_SCORE_TIERS = [
+  { min: 85, label: 'Platinum Campus', emoji: '💎', color: '#a78bfa', textClass: 'text-violet-400', bgClass: 'bg-violet-500/10', borderClass: 'border-violet-500/20' },
+  { min: 70, label: 'Gold Campus', emoji: '🥇', color: '#f59e0b', textClass: 'text-amber-400', bgClass: 'bg-amber-500/10', borderClass: 'border-amber-500/20' },
+  { min: 50, label: 'Silver Campus', emoji: '🥈', color: '#94a3b8', textClass: 'text-slate-400', bgClass: 'bg-slate-500/10', borderClass: 'border-slate-500/20' },
+  { min: 30, label: 'Bronze Campus', emoji: '🥉', color: '#d97706', textClass: 'text-yellow-600', bgClass: 'bg-yellow-600/10', borderClass: 'border-yellow-600/20' },
+  { min: 0,  label: 'Seedling Campus', emoji: '🌱', color: '#22c55e', textClass: 'text-green-400', bgClass: 'bg-green-500/10', borderClass: 'border-green-500/20' },
+]
+
+/**
+ * Calculate Campus Green Score (0-100)
+ *
+ * Pillars (weighted):
+ *   1. Carbon Offset Ratio  (40%) — log-scaled absorption-to-emission ratio
+ *   2. Biodiversity          (20%) — variety of green cover types registered
+ *   3. Coverage Density      (20%) — total green items relative to benchmark
+ *   4. Zone Coverage         (20%) — geographical spread of green cover
+ *
+ * The logarithmic offset ratio means even 1% real offset earns ~30/40 points,
+ * and reaching 10% earns ~36/40. This keeps the campus "green" in score
+ * even though raw kg absorption is tiny compared to student emissions.
+ */
+export function calculateCampusGreenScore(items, studentCO2 = 0) {
+  if (!items || items.length === 0) return { score: 0, pillars: {} }
+
+  const totalAbsorption = calculateTotalAbsorption(items)
+
+  // ── Pillar 1: Carbon Offset Ratio (40 pts) ──
+  // Uses log1p scaling: even small ratios earn meaningful points
+  let offsetScore = 0
+  if (studentCO2 > 0 && totalAbsorption > 0) {
+    const ratio = totalAbsorption / studentCO2 // e.g. 0.01 = 1%
+    // log1p(ratio * 100) maps: 1% → ~4.6, 10% → ~6.2, 100% → ~6.9
+    // Normalize to 0-40 range with a cap
+    offsetScore = Math.min(40, (Math.log1p(ratio * 100) / Math.log1p(100)) * 40)
+  } else if (totalAbsorption > 0 && studentCO2 === 0) {
+    offsetScore = 40 // No emissions = full marks
+  }
+
+  // ── Pillar 2: Biodiversity (20 pts) ──
+  // Score based on how many unique types are represented
+  const uniqueTypes = new Set(items.map(i => i.type))
+  const maxTypes = Object.keys(CO2_ABSORPTION_FACTORS).length // 7
+  const bioScore = Math.min(20, (uniqueTypes.size / maxTypes) * 20)
+
+  // ── Pillar 3: Coverage Density (20 pts) ──
+  // Total items relative to a benchmark of 200 total items/plants/trees
+  const BENCHMARK_ITEMS = 200
+  const summary = getGreenCoverSummary(items)
+  const totalCount = summary.totalTrees + summary.totalPlants + Math.floor(summary.totalLawnSqm / 50)
+  const densityScore = Math.min(20, (totalCount / BENCHMARK_ITEMS) * 20)
+
+  // ── Pillar 4: Zone Coverage (20 pts) ──
+  // More zones = better geographical spread
+  const zones = groupByZone(items)
+  const BENCHMARK_ZONES = 6
+  const zoneScore = Math.min(20, (zones.length / BENCHMARK_ZONES) * 20)
+
+  const totalScore = Math.round(offsetScore + bioScore + densityScore + zoneScore)
+  const score = Math.min(100, Math.max(0, totalScore))
+
+  return {
+    score,
+    pillars: {
+      offset:      { score: Math.round(offsetScore),  max: 40, label: 'Carbon Offset' },
+      biodiversity:{ score: Math.round(bioScore),      max: 20, label: 'Biodiversity' },
+      density:     { score: Math.round(densityScore),  max: 20, label: 'Coverage Density' },
+      zones:       { score: Math.round(zoneScore),     max: 20, label: 'Zone Coverage' },
+    },
+  }
+}
+
+/**
+ * Get the tier for a given Campus Green Score
+ */
+export function getGreenScoreTier(score) {
+  return GREEN_SCORE_TIERS.find(t => score >= t.min) || GREEN_SCORE_TIERS[GREEN_SCORE_TIERS.length - 1]
+}

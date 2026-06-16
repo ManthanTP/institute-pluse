@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { TreePine, Plus, Pencil, Trash2, Save, X, Download, MapPin, RefreshCw, Leaf } from 'lucide-react'
+import { TreePine, Plus, Pencil, Trash2, Save, X, Download, MapPin, RefreshCw, Leaf, Award, TrendingUp } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createPortal } from 'react-dom'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart as RBarChart, Bar } from 'recharts'
 import { exportTablePDF } from '../../lib/pdfExport'
 import AdminLayout from './AdminLayout'
 import { supabase } from '../../lib/supabase'
@@ -16,8 +17,18 @@ import {
   getNetCarbonStatus,
   getGreenCoverSummary,
   groupByZone,
+  calculateCampusGreenScore,
+  getGreenScoreTier,
 } from '../../lib/greenCover'
 import toast from 'react-hot-toast'
+
+const TOOLTIP_STYLE = {
+  background: '#0f172a',
+  border: '1px solid rgba(255,255,255,0.1)',
+  borderRadius: '12px',
+  fontSize: '10px',
+  color: '#fff',
+}
 
 const EMPTY_FORM = {
   name: '',
@@ -291,6 +302,9 @@ export default function AdminGreenCoverPage() {
   const [editingEntry, setEditingEntry] = useState(null)
   const [sortBy, setSortBy] = useState('zone')
   const [todayStudentCO2, setTodayStudentCO2] = useState(0)
+  const [greenScore, setGreenScore] = useState(null)
+  const [greenTier, setGreenTier] = useState(null)
+  const [trendData, setTrendData] = useState([])
 
   useEffect(() => {
     fetchAll()
@@ -325,11 +339,84 @@ export default function AdminGreenCoverPage() {
       const bal = calculateNetCarbon(studentCO2, totalAbsorbed)
       setBalance(bal)
       setStatus(getNetCarbonStatus(bal.net))
+
+      // Campus Green Score
+      const scoreResult = calculateCampusGreenScore(safeItems, studentCO2)
+      setGreenScore(scoreResult)
+      setGreenTier(getGreenScoreTier(scoreResult.score))
+
+      // Historical Trend — build monthly data from date_planted field
+      buildTrendData(safeItems)
     } catch (err) {
       toast.error('Failed to load green cover data')
     } finally {
       setLoading(false)
     }
+  }
+
+  function buildTrendData(items) {
+    // Group items by month based on date_planted or created_at
+    const monthMap = {}
+    const now = new Date()
+    // Generate last 12 months
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+      const label = d.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' })
+      monthMap[key] = { month: label, key, entriesAdded: 0, cumulativeItems: 0, cumulativeCO2: 0 }
+    }
+
+    // Assign items to months based on date_planted
+    const sortedItems = [...items].sort((a, b) => {
+      const da = a.date_planted || a.created_at || '2024-01-01'
+      const db = b.date_planted || b.created_at || '2024-01-01'
+      return da.localeCompare(db)
+    })
+
+    let runningTotal = 0
+    let runningCO2 = 0
+    const allKeys = Object.keys(monthMap).sort()
+
+    sortedItems.forEach(item => {
+      const dateStr = item.date_planted || item.created_at || ''
+      const itemMonth = dateStr.substring(0, 7) // YYYY-MM
+      if (monthMap[itemMonth]) {
+        const count = item.type === 'lawn' ? 1 : (item.count || 1)
+        monthMap[itemMonth].entriesAdded += count
+      }
+    })
+
+    // Calculate cumulative totals per month
+    // Start with items planted BEFORE the 12-month window
+    let priorItems = 0
+    let priorCO2 = 0
+    sortedItems.forEach(item => {
+      const dateStr = item.date_planted || item.created_at || ''
+      const itemMonth = dateStr.substring(0, 7)
+      if (itemMonth < allKeys[0]) {
+        priorItems += item.type === 'lawn' ? 1 : (item.count || 1)
+        priorCO2 += calculateItemAbsorption(item)
+      }
+    })
+
+    runningTotal = priorItems
+    runningCO2 = priorCO2
+
+    allKeys.forEach(key => {
+      // Add entries from each month to running totals
+      const monthItems = sortedItems.filter(item => {
+        const d = item.date_planted || item.created_at || ''
+        return d.substring(0, 7) === key
+      })
+      monthItems.forEach(item => {
+        runningTotal += item.type === 'lawn' ? 1 : (item.count || 1)
+        runningCO2 += calculateItemAbsorption(item)
+      })
+      monthMap[key].cumulativeItems = runningTotal
+      monthMap[key].cumulativeCO2 = parseFloat(runningCO2.toFixed(2))
+    })
+
+    setTrendData(allKeys.map(k => monthMap[k]))
   }
 
   async function handleSave(id, payload) {
@@ -441,6 +528,75 @@ export default function AdminGreenCoverPage() {
             </button>
           </div>
         </div>
+
+        {/* ── CAMPUS GREEN SCORE ── */}
+        {greenScore && greenTier && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`rounded-[32px] p-6 border ${greenTier.bgClass} ${greenTier.borderClass} relative overflow-hidden`}
+          >
+            <div className="absolute top-0 right-0 p-6 opacity-[0.04] pointer-events-none">
+              <Award size={140} />
+            </div>
+            <div className="flex items-center gap-2 mb-4">
+              <Award size={16} className={greenTier.textClass} />
+              <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Campus Green Score</h3>
+            </div>
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              {/* Ring Gauge */}
+              <div className="relative w-36 h-36 flex-shrink-0">
+                <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="10" />
+                  <motion.circle
+                    cx="60" cy="60" r="50"
+                    fill="none"
+                    stroke={greenTier.color}
+                    strokeWidth="10"
+                    strokeLinecap="round"
+                    strokeDasharray={`${(greenScore.score / 100) * 314.16} 314.16`}
+                    initial={{ strokeDasharray: '0 314.16' }}
+                    animate={{ strokeDasharray: `${(greenScore.score / 100) * 314.16} 314.16` }}
+                    transition={{ duration: 1.5, ease: 'easeOut' }}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-3xl font-black text-white">{greenScore.score}</span>
+                  <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">/100</span>
+                </div>
+              </div>
+              {/* Tier & Pillars */}
+              <div className="flex-1 w-full">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-2xl">{greenTier.emoji}</span>
+                  <div>
+                    <p className={`text-sm font-black ${greenTier.textClass}`}>{greenTier.label}</p>
+                    <p className="text-[8px] text-gray-500 font-bold">Based on offset ratio, biodiversity, coverage & zone spread</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {Object.values(greenScore.pillars).map(p => (
+                    <div key={p.label}>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">{p.label}</span>
+                        <span className="text-[8px] font-black text-white">{p.score}/{p.max}</span>
+                      </div>
+                      <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${(p.score / p.max) * 100}%` }}
+                          transition={{ duration: 1, ease: 'circOut' }}
+                          className="h-full rounded-full"
+                          style={{ backgroundColor: greenTier.color }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* ── CARBON BALANCE SUMMARY BAR ── */}
         <motion.div
@@ -638,6 +794,55 @@ export default function AdminGreenCoverPage() {
             )}
           </div>
         </div>
+
+        {/* ── HISTORICAL GREEN COVER TREND ── */}
+        {trendData.length > 0 && (
+          <div className="bg-white/5 border border-white/10 rounded-[40px] p-6 backdrop-blur-xl">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <TrendingUp size={16} className="text-green-500" />
+                <div>
+                  <h3 className="text-[10px] font-black text-white uppercase tracking-widest">Green Cover Growth</h3>
+                  <p className="text-[8px] text-gray-500 font-bold mt-0.5">12-month historical trend of cumulative campus green cover</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Cumulative CO2 Absorption Area Chart */}
+            <div className="mb-6">
+              <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-3 ml-1">Cumulative Daily Absorption Capacity (kg CO2/day)</p>
+              <ResponsiveContainer width="100%" height={200}>
+                <AreaChart data={trendData}>
+                  <defs>
+                    <linearGradient id="greenGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#16a34a" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} unit=" kg" />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(val) => [`${val} kg/day`, 'Absorption']} />
+                  <Area type="monotone" dataKey="cumulativeCO2" stroke="#16a34a" strokeWidth={2.5} fill="url(#greenGrad)" name="CO2 Absorbed" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Monthly New Entries Bar Chart */}
+            <div>
+              <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-3 ml-1">New Trees & Plants Added Per Month</p>
+              <ResponsiveContainer width="100%" height={160}>
+                <RBarChart data={trendData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(val) => [val, 'Items Added']} />
+                  <Bar dataKey="entriesAdded" fill="#22c55e" radius={[4, 4, 0, 0]} barSize={20} name="New Entries" />
+                </RBarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
 
         {/* ── ZONE SUMMARY ── */}
         {zones.length > 0 && (

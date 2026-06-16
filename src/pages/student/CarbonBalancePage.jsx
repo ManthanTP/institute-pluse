@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, TreePine, Wind, Scale, TreeDeciduous, Leaf, TrendingUp, TrendingDown, Share2, MessageSquare, Info, ChevronDown, ChevronUp } from 'lucide-react'
+import { ArrowLeft, TreePine, Wind, Scale, TreeDeciduous, Leaf, TrendingUp, TrendingDown, Share2, MessageSquare, Info, ChevronDown, ChevronUp, Award } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell, Legend, ReferenceLine
@@ -19,6 +19,8 @@ import {
   getNetCarbonStatus,
   getGreenCoverSummary,
   buildPieData,
+  calculateCampusGreenScore,
+  getGreenScoreTier,
 } from '../../lib/greenCover'
 import toast from 'react-hot-toast'
 
@@ -62,6 +64,8 @@ export default function CarbonBalancePage() {
   const [todayStudentCO2, setTodayStudentCO2] = useState(0)
   const [dataNote, setDataNote] = useState('')
   const [showPieDetail, setShowPieDetail] = useState(false)
+  const [greenScore, setGreenScore] = useState(null)
+  const [greenTier, setGreenTier] = useState(null)
 
   useEffect(() => {
     if (profile?.id) {
@@ -148,6 +152,11 @@ export default function CarbonBalancePage() {
       const bal = calculateNetCarbon(studentCO2, totalAbsorbed)
       setBalance(bal)
       setStatus(getNetCarbonStatus(bal.net))
+
+      // Campus Green Score
+      const scoreResult = calculateCampusGreenScore(safeItems, studentCO2)
+      setGreenScore(scoreResult)
+      setGreenTier(getGreenScoreTier(scoreResult.score))
 
       // 3. Build 7-day chart data from student's actual carbon logs
       const sevenDaysAgoDate = new Date()
@@ -283,6 +292,66 @@ export default function CarbonBalancePage() {
             <p className="text-[8px] text-gray-600 font-bold uppercase tracking-widest mt-3 ml-10">{dataNote}</p>
           )}
         </motion.div>
+
+        {/* ── CAMPUS GREEN SCORE ── */}
+        {greenScore && greenTier && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`rounded-[28px] p-5 mb-6 border ${greenTier.bgClass} ${greenTier.borderClass} relative overflow-hidden`}
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <Award size={14} className={greenTier.textClass} />
+              <h3 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em]">Campus Green Score</h3>
+            </div>
+            <div className="flex items-center gap-5">
+              {/* Compact Ring */}
+              <div className="relative w-20 h-20 flex-shrink-0">
+                <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="12" />
+                  <motion.circle
+                    cx="60" cy="60" r="50"
+                    fill="none"
+                    stroke={greenTier.color}
+                    strokeWidth="12"
+                    strokeLinecap="round"
+                    strokeDasharray={`${(greenScore.score / 100) * 314.16} 314.16`}
+                    initial={{ strokeDasharray: '0 314.16' }}
+                    animate={{ strokeDasharray: `${(greenScore.score / 100) * 314.16} 314.16` }}
+                    transition={{ duration: 1.5, ease: 'easeOut' }}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-lg font-black text-white">{greenScore.score}</span>
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <span className="text-lg">{greenTier.emoji}</span>
+                  <p className={`text-[11px] font-black ${greenTier.textClass}`}>{greenTier.label}</p>
+                </div>
+                {/* Mini pillar bars */}
+                <div className="space-y-1.5">
+                  {Object.values(greenScore.pillars).map(p => (
+                    <div key={p.label} className="flex items-center gap-2">
+                      <span className="text-[7px] font-black text-gray-500 uppercase tracking-widest w-16 truncate">{p.label}</span>
+                      <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${(p.score / p.max) * 100}%` }}
+                          transition={{ duration: 1, ease: 'circOut' }}
+                          className="h-full rounded-full"
+                          style={{ backgroundColor: greenTier.color }}
+                        />
+                      </div>
+                      <span className="text-[7px] font-black text-gray-500">{p.score}/{p.max}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* ── NET BALANCE HERO CARD ── */}
         <motion.div
