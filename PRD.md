@@ -29,7 +29,7 @@ Fetch User Role from profiles table
 Redirect Based on Role
    ├── Student  → /dashboard
    ├── Faculty  → /faculty/dashboard
-   ├── Driver   → /driver/dashboard
+   ├── Owner    → /owner/dashboard
    └── Admin    → /12345678/admin/dashboard
 ```
 
@@ -39,7 +39,7 @@ Redirect Based on Role
 |------|-------------|-----------|-------------|
 | `student` | Standard | `/dashboard` | Campus sustainability tracking, events, services |
 | `faculty` | Elevated | `/faculty/dashboard` | Event management, analytics, student oversight |
-| `driver` | Specialized | `/driver/dashboard` | GPS sharing, route management, trip tracking |
+| `owner` | Elevated | `/owner/dashboard` | Menu CRUD, order management, QR verification |
 | `admin` | Root | `/12345678/admin/dashboard` | Full platform control (obfuscated path) |
 
 ---
@@ -75,12 +75,9 @@ Every role-based dashboard includes:
 | 📊 | `/carbon/history` | Carbon Analytics |
 | 🏆 | `/leaderboard` | Leaderboard |
 | 📅 | `/events` | Events |
-| 🚌 | `/bus-tracking` | Bus Tracking |
 | 🍽 | `/cafeteria` | Cafeteria |
 | 🎓 | `/attendance` | Attendance |
-| 🤖 | `/chatbot` | AI Assistant |
 | 📖 | `/study-planner` | Study Planner |
-| 🧪 | `/lab-assistant` | Lab Assistant |
 | 📍 | `/navigation` | Campus Navigation |
 | 🔍 | `/lost-found` | Lost & Found |
 | 🧾 | `/complaints` | Complaints |
@@ -93,7 +90,6 @@ Every role-based dashboard includes:
 - Weekly Streak Tracker
 - Sustainability Rank
 - Upcoming Events
-- Bus ETA
 - Attendance %
 - Recent Notifications
 
@@ -122,7 +118,6 @@ Browse Events → Filter by Category → View Details → Register → QR Pass G
 ### Navigation Tabs
 - 🏆 Campus Ranking
 - 🏫 Department Ranking
-- 🎯 Challenge Ranking
 - 📈 Monthly Leaders
 - 🏅 My Achievements
 
@@ -144,8 +139,6 @@ Browse Events → Filter by Category → View Details → Register → QR Pass G
 | 👥 | `/faculty/participants` | Event Participants |
 | 📊 | `/faculty/analytics` | Analytics |
 | 🌱 | `/faculty/sustainability` | Sustainability Reports |
-| 🎯 | `/faculty/challenges` | Green Challenges |
-| 🚌 | `/faculty/transport` | Transport Monitoring |
 | 🍽 | `/faculty/cafeteria` | Cafeteria Monitoring |
 | 🎓 | `/faculty/attendance` | Attendance Management |
 | 🧾 | `/faculty/complaints` | Complaints Review |
@@ -162,27 +155,7 @@ Browse Events → Filter by Category → View Details → Register → QR Pass G
 Faculty creates event → Students notified → Registrations open → QR attendance → Reports generated
 ```
 
----
 
-## 8. Driver Dashboard (`/driver/dashboard`)
-
-### Sidebar Navigation
-| Icon | Route | Label |
-|------|-------|-------|
-| 🏠 | `/driver/dashboard` | Dashboard |
-| 📍 | `/driver/gps` | Live GPS |
-| 🚌 | `/driver/route` | Assigned Route |
-| 🚨 | `/driver/emergency` | Emergency Alerts |
-| 📊 | `/driver/stats` | Trip Statistics |
-| 🔔 | `/driver/notifications` | Notifications |
-| 👤 | `/driver/profile` | Profile |
-
-### Workflow
-```text
-Driver Login → Start GPS Sharing → Realtime Location Updates → Students Track Bus → Admin Monitors Routes
-```
-
----
 
 ## 9. Admin Dashboard (`/12345678/admin/dashboard`)
 
@@ -195,8 +168,6 @@ Driver Login → Start GPS Sharing → Realtime Location Updates → Students Tr
 | 👥 | `/12345678/admin/users` | User Management |
 | 📊 | `/12345678/admin/sustainability` | Sustainability Analytics |
 | 📅 | `/12345678/admin/events` | Event Management |
-| 🎯 | `/12345678/admin/challenges` | Challenge Management |
-| 🚌 | `/12345678/admin/buses` | Bus Management |
 | 🍽 | `/12345678/admin/cafeteria` | Cafeteria Management |
 | 🎓 | `/12345678/admin/attendance` | Attendance System |
 | 🧾 | `/12345678/admin/complaints` | Complaints Management |
@@ -221,7 +192,7 @@ Driver Login → Start GPS Sharing → Realtime Location Updates → Students Tr
 - **Base:** Slate-950 dark mode with glassmorphic cards
 - **Student Accent:** Green (#16a34a, #22c55e)
 - **Faculty Accent:** Blue (#3b82f6, #6366f1)
-- **Driver Accent:** Yellow/Orange (#f59e0b, #f97316)
+- **Owner Accent:** Orange (#f59e0b, #f97316)
 - **Admin Accent:** Green with Red for security elements
 
 ### UI Principles
@@ -257,10 +228,6 @@ Driver Login → Start GPS Sharing → Realtime Location Updates → Students Tr
 - `profiles` — User identity (id, full_name, email, role, department, eco_points, etc.)
 - `carbon_logs` — Daily carbon tracking entries
 - `eco_badges` — Achievement badges earned
-- `green_challenges` — Sustainability challenges
-- `challenge_participants` — Challenge participation tracking
-- `buses` — Bus fleet information
-- `bus_locations` — Realtime GPS coordinates
 - `menu_items` — Cafeteria menu
 - `orders` — Cafeteria orders
 - `attendance_sessions` — QR-based attendance sessions
@@ -278,7 +245,6 @@ All tables have RLS enabled with appropriate policies.
 ## 13. Realtime Features
 
 Realtime subscriptions exist across all dashboards:
-- Live bus GPS tracking
 - Event registrations
 - Notification push
 - Leaderboard updates
@@ -292,7 +258,7 @@ Realtime subscriptions exist across all dashboards:
 
 - Email + Password authentication (Supabase Auth)
 - Email confirmation required for new accounts
-- Role-based route guards (`ProtectedRoute`, `AdminRoute`, `FacultyRoute`, `DriverRoute`)
+- Role-based route guards (`ProtectedRoute`, `AdminRoute`, `FacultyRoute`, `OwnerRoute`)
 - Admin portal hidden behind obfuscated path
 - 2FA access key for admin login
 - Brute-force lockout (3 attempts → 60s)
