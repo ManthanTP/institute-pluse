@@ -133,18 +133,6 @@ export default function AttendancePage() {
   }, [scanning])
 
   const startScanner = async () => {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-       toast.error('Terminal Hardware Not Detected')
-       setScanning(false)
-       return
-    }
-
-    if (!window.isSecureContext && window.location.hostname !== 'localhost') {
-       toast.error('Secure Environment (HTTPS) Required')
-       setScanning(false)
-       return
-    }
-
     if (scannerRef.current) {
       await stopScanner()
     }
@@ -383,7 +371,7 @@ export default function AttendancePage() {
             <div className="relative z-10 flex flex-col items-center text-center">
               <motion.button
                 whileTap={{ scale: 0.9 }}
-                onClick={startScanner}
+                onClick={() => setScanning(true)}
                 disabled={scanning || currentClass?.status === 'cancelled'}
                 className={`w-24 h-24 md:w-28 md:h-28 rounded-2xl md:rounded-[36px] mb-8 flex items-center justify-center transition-all duration-500 ${
                   scanSuccess 
