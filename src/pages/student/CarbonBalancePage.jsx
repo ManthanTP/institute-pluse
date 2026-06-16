@@ -1,80 +1,34 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, TreePine, Wind, Scale, TreeDeciduous, Leaf, TrendingUp, TrendingDown, Share2, MessageSquare, Info, ChevronDown, ChevronUp, Award } from 'lucide-react'
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell, Legend, ReferenceLine
-} from 'recharts'
+import { ArrowLeft, TreePine, Leaf, Share2, MessageSquare, Award } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store/index'
-import { getCarbonConfig } from '../../lib/carbonCalc'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import {
-  CO2_ABSORPTION_FACTORS,
-  GREEN_COVER_LABELS,
-  GREEN_COVER_COLORS,
-  GREEN_COVER_EMOJIS,
   calculateTotalAbsorption,
-  calculateNetCarbon,
-  getNetCarbonStatus,
   getGreenCoverSummary,
-  buildPieData,
   calculateCampusGreenScore,
   getGreenScoreTier,
+  GREEN_SCORE_TIERS,
 } from '../../lib/greenCover'
 import toast from 'react-hot-toast'
-
-const PIE_COLORS = ['#14532d', '#166534', '#15803d', '#16a34a', '#22c55e', '#4ade80', '#86efac']
-
-const TOOLTIP_STYLE = {
-  background: '#0f172a',
-  border: '1px solid rgba(255,255,255,0.1)',
-  borderRadius: '12px',
-  fontSize: '10px',
-  color: '#fff',
-}
-
-function CustomTooltipBalance({ active, payload, label }) {
-  if (!active || !payload?.length) return null
-  const absorbed = payload.find(p => p.dataKey === 'absorbed')?.value ?? 0
-  const generated = payload.find(p => p.dataKey === 'generated')?.value ?? 0
-  const net = parseFloat((generated - absorbed).toFixed(2))
-  return (
-    <div style={TOOLTIP_STYLE} className="p-3 space-y-1.5">
-      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{label}</p>
-      <p className="text-[10px] font-black text-green-400">🌳 Absorbed: {absorbed.toFixed(2)} kg</p>
-      <p className="text-[10px] font-black text-red-400">👤 Generated: {generated.toFixed(2)} kg</p>
-      <p className={`text-[10px] font-black ${net <= 0 ? 'text-green-400' : 'text-amber-400'}`}>
-        ⚖️ Net: {net >= 0 ? '+' : ''}{net} kg
-      </p>
-    </div>
-  )
-}
 
 export default function CarbonBalancePage() {
   const navigate = useNavigate()
   const { profile } = useAuthStore()
-  const [greenItems, setGreenItems] = useState([])
   const [summary, setSummary] = useState(null)
-  const [balance, setBalance] = useState(null)
-  const [status, setStatus] = useState(null)
-  const [chartData, setChartData] = useState([])
-  const [pieData, setPieData] = useState([])
   const [loading, setLoading] = useState(true)
-  const [todayStudentCO2, setTodayStudentCO2] = useState(0)
-  const [dataNote, setDataNote] = useState('')
-  const [showPieDetail, setShowPieDetail] = useState(false)
   const [greenScore, setGreenScore] = useState(null)
   const [greenTier, setGreenTier] = useState(null)
+  const [totalAbsorbed, setTotalAbsorbed] = useState(0)
+  const [totalStudentCO2, setTotalStudentCO2] = useState(0)
+  const [isGreen, setIsGreen] = useState(false)
 
   useEffect(() => {
-    if (profile?.id) {
-      fetchAll()
-    }
-  }, [profile?.id])
+    fetchAll()
+  }, [])
 
   async function fetchAll() {
-    if (!profile?.id) return
     setLoading(true)
     try {
       // 1. Fetch green cover items
@@ -84,112 +38,37 @@ export default function CarbonBalancePage() {
         .order('zone')
 
       const safeItems = items || []
-      setGreenItems(safeItems)
-
       const summ = getGreenCoverSummary(safeItems)
       setSummary(summ)
-      const pie = buildPieData(safeItems)
-      setPieData(pie)
 
-      // Fetch institution config for carbon factors
-      const { data: instData } = await supabase
-        .from('institution_settings')
-        .select('carbon_config')
-        .eq('id', 1)
-        .maybeSingle()
-      const carbonCfg = getCarbonConfig(instData?.carbon_config)
-      const foodFactors = carbonCfg?.food_factors || {
-        vegan: 0.30,
-        vegetarian: 0.50,
-        egg: 0.80,
-        non_veg_chicken: 1.50,
-        non_veg_beef: 3.50,
-        skipped: 0.00,
-      }
+      const absorbed = calculateTotalAbsorption(safeItems)
+      setTotalAbsorbed(absorbed)
 
-      const getCollegeCO2 = (log) => {
-        if (!log) return 0
-        const transport = Number(log.transport_kg || 0)
-        const lunchEntry = log.meals_detail?.find(m => m.slot === 'lunch')
-        const lunchType = lunchEntry?.type || 'skipped'
-        const lunch = Number(foodFactors[lunchType] ?? 0)
-        return transport + lunch
-      }
-
-      // 2. Fetch today's student CO2 total (filtered by student_id)
+      // 2. Fetch today's ALL students CO2 for green status check
       const today = new Date().toISOString().split('T')[0]
       const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
 
       const { data: todayLogs } = await supabase
         .from('carbon_logs')
-        .select('transport_kg, meals_detail')
-        .eq('student_id', profile.id)
+        .select('total_kg')
         .eq('log_date', today)
 
-      let studentCO2 = 0
-      let note = ''
-      if (todayLogs && todayLogs.length > 0) {
-        studentCO2 = todayLogs.reduce((a, l) => a + getCollegeCO2(l), 0)
-        note = `Based on your log submitted today (Transport + Lunch college footprint only).`
-      } else {
-        // Fallback to yesterday
+      let studentCO2 = (todayLogs || []).reduce((a, l) => a + Number(l.total_kg || 0), 0)
+
+      if (studentCO2 === 0) {
         const { data: yestLogs } = await supabase
           .from('carbon_logs')
-          .select('transport_kg, meals_detail')
-          .eq('student_id', profile.id)
+          .select('total_kg')
           .eq('log_date', yesterday)
-        studentCO2 = (yestLogs || []).reduce((a, l) => a + getCollegeCO2(l), 0)
-        if (studentCO2 > 0) {
-          note = 'No log today yet — showing yesterday\'s college footprint (Transport + Lunch).'
-        } else {
-          note = 'No logs submitted by you yet.'
-        }
+        studentCO2 = (yestLogs || []).reduce((a, l) => a + Number(l.total_kg || 0), 0)
       }
-      setTodayStudentCO2(studentCO2)
-      setDataNote(note)
+      setTotalStudentCO2(studentCO2)
+      setIsGreen(absorbed >= studentCO2 || studentCO2 === 0)
 
-      const totalAbsorbed = calculateTotalAbsorption(safeItems)
-      const bal = calculateNetCarbon(studentCO2, totalAbsorbed)
-      setBalance(bal)
-      setStatus(getNetCarbonStatus(bal.net))
-
-      // Campus Green Score
+      // 3. Campus Green Score
       const scoreResult = calculateCampusGreenScore(safeItems, studentCO2)
       setGreenScore(scoreResult)
       setGreenTier(getGreenScoreTier(scoreResult.score))
-
-      // 3. Build 7-day chart data from student's actual carbon logs
-      const sevenDaysAgoDate = new Date()
-      sevenDaysAgoDate.setDate(sevenDaysAgoDate.getDate() - 7)
-      const sevenDaysAgoStr = sevenDaysAgoDate.toISOString().split('T')[0]
-
-      const { data: recentLogs } = await supabase
-        .from('carbon_logs')
-        .select('log_date, transport_kg, meals_detail')
-        .eq('student_id', profile.id)
-        .gte('log_date', sevenDaysAgoStr)
-        .order('log_date', { ascending: true })
-
-      const recentLogsMap = {}
-      if (recentLogs) {
-        recentLogs.forEach(l => {
-          recentLogsMap[l.log_date] = getCollegeCO2(l)
-        })
-      }
-
-      // Generate 7-day data ending today
-      const chart = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date()
-        d.setDate(d.getDate() - (6 - i))
-        const dateStr = d.toISOString().split('T')[0]
-        const generatedVal = recentLogsMap[dateStr] ?? 0
-        return {
-          date: d.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }),
-          absorbed: parseFloat(totalAbsorbed.toFixed(2)),
-          generated: parseFloat(generatedVal.toFixed(2)),
-        }
-      })
-      setChartData(chart)
     } catch (err) {
       console.error('Green cover fetch error:', err)
       toast.error('Failed to load green cover data')
@@ -199,11 +78,11 @@ export default function CarbonBalancePage() {
   }
 
   const handleShare = async () => {
-    const text = balance?.isNeutral
-      ? `🌍 Our campus is Carbon Neutral today! Trees absorbed ${balance.absorbed} kg CO2. Join InstitutePulse!`
-      : `🌱 Campus needs ${balance?.treesNeededToNeutralize} more trees to be carbon neutral. Track your footprint on InstitutePulse!`
+    const text = greenTier
+      ? `🌍 Our campus has a Green Score of ${greenScore?.score}/100 — ${greenTier.label}! Track sustainability on InstitutePulse!`
+      : '🌱 Track campus sustainability on InstitutePulse!'
     try {
-      await navigator.share({ title: 'Campus Carbon Balance', text, url: window.location.href })
+      await navigator.share({ title: 'Campus Green Score', text, url: window.location.href })
     } catch {
       navigator.clipboard.writeText(text)
       toast.success('Stats copied to clipboard!')
@@ -223,8 +102,6 @@ export default function CarbonBalancePage() {
       </div>
     )
   }
-
-  const netLabel = balance?.net >= 0 ? `+${balance?.net?.toFixed(2)}` : balance?.net?.toFixed(2)
 
   return (
     <div className="min-h-[100dvh] bg-slate-950 pb-28 relative overflow-hidden">
@@ -247,7 +124,7 @@ export default function CarbonBalancePage() {
             </button>
             <div>
               <p className="text-[9px] font-black text-gray-500 uppercase tracking-[0.3em] mb-0.5">Campus Sustainability</p>
-              <h1 className="text-xl font-black text-white uppercase tracking-tight leading-none">Carbon Balance</h1>
+              <h1 className="text-xl font-black text-white uppercase tracking-tight leading-none">Green Campus</h1>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -263,34 +140,31 @@ export default function CarbonBalancePage() {
           </div>
         </header>
 
-        {/* ── CARBON NEUTRAL STATUS BANNER ── */}
+        {/* ── CAMPUS GREEN STATUS BANNER ── */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           className={`rounded-[28px] p-5 mb-6 border ${
-            balance?.isNeutral
+            isGreen
               ? 'bg-green-500/10 border-green-500/20'
               : 'bg-amber-500/10 border-amber-500/20'
           }`}
         >
           <div className="flex items-center gap-3">
-            <span className="text-2xl">{status?.icon}</span>
+            <span className="text-3xl">{isGreen ? '🌍' : '⚠️'}</span>
             <div>
-              <p className={`text-[11px] font-black uppercase tracking-widest ${balance?.isNeutral ? 'text-green-400' : 'text-amber-400'}`}>
-                {balance?.isNeutral
-                  ? '🌍 Our campus is Carbon Neutral today!'
-                  : `⚠️ Campus needs ${balance?.treesNeededToNeutralize} more trees to be carbon neutral`}
+              <p className={`text-[12px] font-black uppercase tracking-widest ${isGreen ? 'text-green-400' : 'text-amber-400'}`}>
+                {isGreen
+                  ? 'Our Campus is Green! 🌿'
+                  : 'Campus Needs More Green Cover'}
               </p>
               <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mt-1">
-                {balance?.isNeutral
-                  ? 'The campus trees absorbed more CO2 than all students generated.'
-                  : `Plant ${balance?.treesNeededToNeutralize} medium trees to offset the difference.`}
+                {isGreen
+                  ? 'The campus greenery is keeping our environment healthy and sustainable.'
+                  : 'We need to plant more trees and add green cover to improve campus sustainability.'}
               </p>
             </div>
           </div>
-          {dataNote && (
-            <p className="text-[8px] text-gray-600 font-bold uppercase tracking-widest mt-3 ml-10">{dataNote}</p>
-          )}
         </motion.div>
 
         {/* ── CAMPUS GREEN SCORE ── */}
@@ -298,22 +172,27 @@ export default function CarbonBalancePage() {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`rounded-[28px] p-5 mb-6 border ${greenTier.bgClass} ${greenTier.borderClass} relative overflow-hidden`}
+            className={`rounded-[40px] p-6 mb-6 border ${greenTier.bgClass} ${greenTier.borderClass} relative overflow-hidden backdrop-blur-xl`}
           >
-            <div className="flex items-center gap-2 mb-3">
-              <Award size={14} className={greenTier.textClass} />
+            <div className="absolute top-0 right-0 p-6 opacity-[0.04] pointer-events-none">
+              <Award size={140} />
+            </div>
+
+            <div className="flex items-center gap-2 mb-5">
+              <Award size={16} className={greenTier.textClass} />
               <h3 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em]">Campus Green Score</h3>
             </div>
-            <div className="flex items-center gap-5">
-              {/* Compact Ring */}
-              <div className="relative w-20 h-20 flex-shrink-0">
+
+            <div className="flex flex-col items-center gap-5">
+              {/* Large Ring Gauge */}
+              <div className="relative w-40 h-40">
                 <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
-                  <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="12" />
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="10" />
                   <motion.circle
                     cx="60" cy="60" r="50"
                     fill="none"
                     stroke={greenTier.color}
-                    strokeWidth="12"
+                    strokeWidth="10"
                     strokeLinecap="round"
                     strokeDasharray={`${(greenScore.score / 100) * 314.16} 314.16`}
                     initial={{ strokeDasharray: '0 314.16' }}
@@ -322,102 +201,63 @@ export default function CarbonBalancePage() {
                   />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-lg font-black text-white">{greenScore.score}</span>
+                  <span className="text-4xl font-black text-white">{greenScore.score}</span>
+                  <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">/100</span>
                 </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-2">
-                  <span className="text-lg">{greenTier.emoji}</span>
-                  <p className={`text-[11px] font-black ${greenTier.textClass}`}>{greenTier.label}</p>
-                </div>
-                {/* Mini pillar bars */}
-                <div className="space-y-1.5">
-                  {Object.values(greenScore.pillars).map(p => (
-                    <div key={p.label} className="flex items-center gap-2">
-                      <span className="text-[7px] font-black text-gray-500 uppercase tracking-widest w-16 truncate">{p.label}</span>
-                      <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${(p.score / p.max) * 100}%` }}
-                          transition={{ duration: 1, ease: 'circOut' }}
-                          className="h-full rounded-full"
-                          style={{ backgroundColor: greenTier.color }}
-                        />
-                      </div>
-                      <span className="text-[7px] font-black text-gray-500">{p.score}/{p.max}</span>
+
+              {/* Tier Label */}
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">{greenTier.emoji}</span>
+                <p className={`text-base font-black ${greenTier.textClass}`}>{greenTier.label}</p>
+              </div>
+
+              {/* Pillar Breakdown */}
+              <div className="w-full space-y-3">
+                {Object.values(greenScore.pillars).map(p => (
+                  <div key={p.label}>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">{p.label}</span>
+                      <span className="text-[8px] font-black text-white">{p.score}/{p.max}</span>
                     </div>
-                  ))}
-                </div>
+                    <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${(p.score / p.max) * 100}%` }}
+                        transition={{ duration: 1, ease: 'circOut' }}
+                        className="h-full rounded-full"
+                        style={{ backgroundColor: greenTier.color }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Tier Scale */}
+            <div className="mt-6 pt-4 border-t border-white/5">
+              <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-3 text-center">Score Tiers</p>
+              <div className="flex justify-between gap-1">
+                {GREEN_SCORE_TIERS.slice().reverse().map(t => (
+                  <div
+                    key={t.label}
+                    className={`flex-1 text-center py-2 rounded-xl border transition-all ${
+                      greenTier.label === t.label
+                        ? `${t.bgClass} ${t.borderClass} scale-105`
+                        : 'bg-white/[0.02] border-white/5 opacity-50'
+                    }`}
+                  >
+                    <span className="text-sm block">{t.emoji}</span>
+                    <p className={`text-[6px] font-black uppercase tracking-wider mt-0.5 ${greenTier.label === t.label ? t.textClass : 'text-gray-600'}`}>
+                      {t.label.replace(' Campus', '')}
+                    </p>
+                    <p className="text-[6px] text-gray-600">{t.min}+</p>
+                  </div>
+                ))}
               </div>
             </div>
           </motion.div>
         )}
-
-        {/* ── NET BALANCE HERO CARD ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white/5 border border-white/10 rounded-[40px] p-6 mb-6 relative overflow-hidden backdrop-blur-xl"
-        >
-          <div className="absolute top-0 right-0 p-6 opacity-[0.04] pointer-events-none">
-            <Scale size={120} />
-          </div>
-          <p className="text-[9px] font-black text-gray-500 uppercase tracking-[0.3em] mb-5">Today's Carbon Balance</p>
-          <div className="grid grid-cols-3 gap-3">
-            {/* Absorbed */}
-            <div className="text-center">
-              <div className="w-10 h-10 rounded-2xl bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-500 mx-auto mb-3">
-                <TreeDeciduous size={18} />
-              </div>
-              <p className="text-xl font-black text-green-400 leading-none mb-1">
-                {balance?.absorbed?.toFixed(1) ?? '0.0'}
-              </p>
-              <p className="text-[7px] font-black text-gray-500 uppercase tracking-widest">kg Absorbed</p>
-              <p className="text-[7px] font-bold text-gray-600 mt-0.5">by campus trees</p>
-            </div>
-
-            {/* Net */}
-            <div className="text-center border-x border-white/5">
-              <div className={`w-10 h-10 rounded-2xl ${status?.bgClass} border ${status?.borderClass} flex items-center justify-center mx-auto mb-3`}>
-                <Scale size={18} className={status?.textClass} />
-              </div>
-              <p className={`text-xl font-black leading-none mb-1 ${status?.textClass}`}>{netLabel ?? '0.0'}</p>
-              <p className="text-[7px] font-black text-gray-500 uppercase tracking-widest">kg Net</p>
-              <p className={`text-[7px] font-black mt-0.5 ${status?.textClass}`}>{status?.shortLabel}</p>
-            </div>
-
-            {/* Generated */}
-            <div className="text-center">
-              <div className="w-10 h-10 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 mx-auto mb-3">
-                <Wind size={18} />
-              </div>
-              <p className="text-xl font-black text-red-400 leading-none mb-1">
-                {balance?.generated?.toFixed(1) ?? '0.0'}
-              </p>
-              <p className="text-[7px] font-black text-gray-500 uppercase tracking-widest">kg Generated</p>
-              <p className="text-[7px] font-bold text-gray-600 mt-0.5">by you today</p>
-            </div>
-          </div>
-
-          {/* Offset progress bar */}
-          <div className="mt-5 pt-4 border-t border-white/5">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Offset Progress</span>
-              <span className={`text-[9px] font-black ${status?.textClass}`}>{balance?.percentageOffset ?? 0}%</span>
-            </div>
-            <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${Math.min(100, balance?.percentageOffset ?? 0)}%` }}
-                transition={{ duration: 1, ease: 'circOut' }}
-                className="h-full rounded-full bg-gradient-to-r from-green-600 to-emerald-400"
-              />
-            </div>
-            <p className="text-[8px] text-gray-600 font-bold mt-1">
-              Green cover offsets {balance?.percentageOffset ?? 0}% of your emissions
-            </p>
-          </div>
-        </motion.div>
 
         {/* ── GREEN COVER SUMMARY ── */}
         <motion.div
@@ -459,206 +299,32 @@ export default function CarbonBalancePage() {
             </div>
             <div className="text-right">
               <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Daily Absorption</p>
-              <p className="text-sm font-black text-green-400">{summary?.totalCO2Absorbed?.toFixed(2)} kg CO2/day</p>
+              <p className="text-sm font-black text-green-400">{totalAbsorbed.toFixed(2)} kg CO2/day</p>
             </div>
           </div>
         </motion.div>
 
-        {/* ── 7-DAY COMPARISON BAR CHART ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="bg-white/5 border border-white/10 rounded-[40px] p-6 mb-6 backdrop-blur-xl"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-[9px] font-black text-gray-500 uppercase tracking-[0.3em]">7-Day CO2 Comparison</h3>
-              <p className="text-[8px] text-gray-600 mt-0.5">Green = absorbed | Red = generated</p>
-            </div>
-            <BarChart className="text-green-500 w-4 h-4" />
-          </div>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={chartData} barGap={2}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
-              <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} unit=" kg" />
-              <Tooltip content={<CustomTooltipBalance />} />
-              <ReferenceLine y={0} stroke="rgba(255,255,255,0.1)" />
-              <Bar dataKey="absorbed" name="Absorbed" fill="#16a34a" radius={[4, 4, 0, 0]} barSize={16} />
-              <Bar dataKey="generated" name="Generated" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={16} />
-            </BarChart>
-          </ResponsiveContainer>
-          <div className="flex items-center justify-center gap-6 mt-3">
-             <div className="flex items-center gap-2">
-               <div className="w-3 h-3 rounded-sm bg-green-600" />
-               <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Absorbed By Trees</span>
-             </div>
-             <div className="flex items-center gap-2">
-               <div className="w-3 h-3 rounded-sm bg-red-500" />
-               <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Generated By You</span>
-             </div>
-          </div>
-        </motion.div>
-
-        {/* ── MONTHLY TREND LINE CHART ── */}
+        {/* ── MOTIVATION CARD ── */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white/5 border border-white/10 rounded-[40px] p-6 mb-6 backdrop-blur-xl"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-[9px] font-black text-gray-500 uppercase tracking-[0.3em]">Emission Trend</h3>
-              <p className="text-[8px] text-gray-600 mt-0.5">Green line should fall below absorbed line = neutral</p>
-            </div>
-            <TrendingDown size={16} className="text-green-500" />
-          </div>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={chartData}>
-              <defs>
-                <linearGradient id="absorbedGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#16a34a" stopOpacity={0.15} />
-                  <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="generatedGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f97316" stopOpacity={0.15} />
-                  <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
-              <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} unit=" kg" />
-              <Tooltip content={<CustomTooltipBalance />} />
-              <Line type="monotone" dataKey="absorbed" stroke="#16a34a" strokeWidth={2.5} dot={false} name="Absorbed" />
-              <Line type="monotone" dataKey="generated" stroke="#f97316" strokeWidth={2.5} dot={false} name="Generated" />
-            </LineChart>
-          </ResponsiveContainer>
-        </motion.div>
-
-        {/* ── TREES NEEDED CALCULATOR ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
           className={`rounded-[40px] p-6 mb-6 border ${
-            balance?.isNeutral
-              ? 'bg-green-500/5 border-green-500/20'
-              : 'bg-amber-500/5 border-amber-500/20'
-          }`}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-[9px] font-black text-gray-500 uppercase tracking-[0.3em]">Trees Needed Calculator</h3>
-            <TreePine size={16} className={balance?.isNeutral ? 'text-green-500' : 'text-amber-400'} />
-          </div>
-          {balance?.isNeutral ? (
-            <div className="text-center py-4">
-              <p className="text-4xl font-black text-green-400 mb-2">0</p>
-              <p className="text-[10px] font-black text-green-400 uppercase tracking-widest">More trees needed</p>
-              <p className="text-[9px] text-gray-500 mt-2">Campus is carbon negative today! 🌿</p>
-              <p className="text-[8px] text-gray-600 mt-1">Trees absorb {Math.abs(balance.net).toFixed(2)} kg more than you generate.</p>
-            </div>
-          ) : (
-            <div className="text-center py-4">
-              <p className={`text-5xl font-black mb-2 ${status?.textClass}`}>{balance?.treesNeededToNeutralize}</p>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">More medium trees needed</p>
-              <p className="text-[9px] text-gray-500 mt-2">
-                To neutralize today's {balance?.generated?.toFixed(2)} kg of your emissions
-              </p>
-              <p className="text-[8px] text-gray-600 mt-1 italic">Each medium tree absorbs {CO2_ABSORPTION_FACTORS.medium_tree} kg CO2/day</p>
-            </div>
-          )}
-        </motion.div>
-
-        {/* ── PIE CHART ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-white/5 border border-white/10 rounded-[40px] p-6 mb-6 backdrop-blur-xl"
-        >
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="text-[9px] font-black text-gray-500 uppercase tracking-[0.3em]">Green Cover Breakdown</h3>
-            <button
-              onClick={() => setShowPieDetail(p => !p)}
-              className="flex items-center gap-1 text-[8px] font-black text-gray-500 uppercase tracking-widest"
-            >
-              Details {showPieDetail ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-            </button>
-          </div>
-          {pieData.length > 0 ? (
-            <>
-              <ResponsiveContainer width="100%" height={220}>
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={4}
-                    dataKey="value"
-                  >
-                    {pieData.map((entry, idx) => (
-                      <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={TOOLTIP_STYLE}
-                    formatter={(val) => [`${val.toFixed(3)} kg CO2/day`, 'Absorption']}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              <AnimatePresence>
-                {showPieDetail && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="mt-4 space-y-2"
-                  >
-                    {pieData.map((entry, idx) => (
-                      <div key={idx} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: PIE_COLORS[idx % PIE_COLORS.length] }} />
-                          <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{entry.name}</span>
-                        </div>
-                        <span className="text-[9px] font-black text-white">{entry.value.toFixed(3)} kg/day</span>
-                      </div>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </>
-          ) : (
-            <div className="py-10 text-center text-gray-600 text-[9px] font-black uppercase tracking-widest">
-              No green cover data registered yet
-            </div>
-          )}
-        </motion.div>
-
-        {/* ── ECO MOTIVATION CARD ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
-          className={`rounded-[40px] p-6 mb-6 border ${
-            balance?.isNeutral
+            isGreen
               ? 'bg-green-500/10 border-green-500/20'
               : 'bg-white/5 border-white/10'
           }`}
         >
-          <p className={`text-[9px] font-black uppercase tracking-[0.3em] mb-3 ${balance?.isNeutral ? 'text-green-500' : 'text-gray-500'}`}>
-            {balance?.isNeutral ? 'Campus Achievement' : 'Make a Difference'}
+          <p className={`text-[9px] font-black uppercase tracking-[0.3em] mb-3 ${isGreen ? 'text-green-500' : 'text-gray-500'}`}>
+            {isGreen ? 'Campus Achievement' : 'Make a Difference'}
           </p>
-          <p className={`text-[11px] font-bold leading-relaxed mb-4 ${balance?.isNeutral ? 'text-green-100' : 'text-gray-300'}`}>
-            {balance?.isNeutral
-              ? `🌍 Amazing! The campus trees absorbed ${Math.abs(balance.net).toFixed(2)} kg more CO2 than you generated today. Every tree counts!`
-              : `🌱 Every tree planted helps. The campus needs ${balance?.treesNeededToNeutralize} more trees to offset your emissions. Raise a green suggestion in support!`}
+          <p className={`text-[11px] font-bold leading-relaxed mb-4 ${isGreen ? 'text-green-100' : 'text-gray-300'}`}>
+            {isGreen
+              ? `🌍 Amazing! Our campus greenery is thriving with ${summary?.totalTrees ?? 0} trees and ${summary?.totalPlants ?? 0} plants absorbing ${totalAbsorbed.toFixed(2)} kg CO2 every day!`
+              : `🌱 Every tree planted helps. Support campus sustainability by raising a green suggestion for more trees and plants!`}
           </p>
           <div className="flex gap-3">
-            {balance?.isNeutral ? (
+            {isGreen ? (
               <button
                 onClick={handleShare}
                 className="flex-1 py-3 bg-green-600 hover:bg-green-500 text-white rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
