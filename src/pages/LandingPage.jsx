@@ -12,12 +12,12 @@ import { useLandingContent } from '../hooks/useLandingContent'
 // Feature detail data for modal popups
 const FEATURE_DETAILS = [
   { title: 'Smart Attendance', icon: QrCode, color: '#22c55e', gradient: 'from-green-500/20 to-emerald-500/5', bullets: ['Time-restricted QR codes for fraud prevention', 'Auto-syncs with your class timetable', 'Real-time attendance analytics for faculty', 'Location verification for campus validation'] },
-  { title: 'Eco Track', icon: Target, color: '#8b5cf6', gradient: 'from-purple-500/20 to-violet-500/5', bullets: ['Log daily transport, meals & energy usage', 'Personal CO₂ footprint dashboard', 'Earn leaderboard points for green choices', 'Track weekly/monthly sustainability trends'] },
+  { title: 'Green Campus', icon: Target, color: '#8b5cf6', gradient: 'from-purple-500/20 to-violet-500/5', bullets: ['Log daily transport, meals & energy usage', 'Campus Green Score & Green Status levels', 'Earn leaderboard points for green choices', 'Track weekly/monthly sustainability trends'] },
   { title: 'Study Planner', icon: BookOpen, color: '#f59e0b', gradient: 'from-yellow-500/20 to-amber-500/5', bullets: ['Study timer with subject tracking', 'Custom study alarms & scheduling', 'Subject-wise revision partitioning', 'Peer coordination and group study logs'] },
   { title: 'Floor Maps', icon: MapPin, color: '#ef4444', gradient: 'from-red-500/20 to-rose-500/5', bullets: ['Interactive multi-floor building navigation', 'Filter by labs, classrooms, and offices', 'Real-time room availability status', 'Fastest route pathfinding between blocks'] },
   { title: 'Events', icon: Award, color: '#06b6d4', gradient: 'from-cyan-500/20 to-sky-500/5', bullets: ['Join campus-wide eco campaigns', 'Earn achievement badges and certificates', 'Track campaign progress in real-time', 'Department vs department competitions'] },
   { title: 'Smart Cafeteria', icon: Utensils, color: '#f97316', gradient: 'from-orange-500/20 to-amber-500/5', bullets: ['Browse full digital menu with prices', 'Pre-order meals to skip the queue', 'Nutritional info & calorie tracking', 'Real-time item availability updates'] },
-  { title: 'Carbon Analytics', icon: BarChart3, color: '#22c55e', gradient: 'from-green-500/20 to-teal-500/5', bullets: ['Interactive emission breakdown charts', 'Transport, food, energy & waste categories', 'Monthly trend reports with comparisons', 'Campus-wide vs individual analytics'] },
+  { title: 'Green Analytics', icon: BarChart3, color: '#22c55e', gradient: 'from-green-500/20 to-teal-500/5', bullets: ['Interactive Campus Green Score progression charts', 'Active transit, vegan meals & energy efficiency logs', 'Monthly department-level green comparison reports', 'Real-time campus sustainability statistics'] },
   { title: 'Leaderboards', icon: Trophy, color: '#f59e0b', gradient: 'from-yellow-500/20 to-orange-500/5', bullets: ['Real-time XP-based ranking system', 'Weekly and all-time leaderboard views', 'Department and class-level competitions', 'Green badge tier system with rewards'] },
   { title: 'Grievance Hub', icon: MessageSquare, color: '#ef4444', gradient: 'from-red-500/20 to-pink-500/5', bullets: ['Submit complaints with category tagging', 'Track resolution status in real-time', 'Priority escalation for urgent issues', 'Admin response notifications'] },
   { title: 'Lost & Found', icon: Compass, color: '#06b6d4', gradient: 'from-cyan-500/20 to-teal-500/5', bullets: ['Report lost items with descriptions', 'Browse found items catalog with photos', 'Automated matching notifications', 'Claim verification system'] },
@@ -126,11 +126,49 @@ export default function LandingPage() {
   // Dynamic landing page content from Supabase
   const { content: cms } = useLandingContent()
   const hero = cms?.hero || {}
-  const featuresContent = cms?.features || {}
+  const rawFeaturesContent = cms?.features || {}
+  const featuresContent = {
+    ...rawFeaturesContent,
+    cards: rawFeaturesContent.cards?.map((card, idx) => {
+      if (idx === 1 && (card.title === 'Eco Track' || card.title === 'Eco Tracker')) {
+        return {
+          ...card,
+          title: 'Green Campus',
+          description: 'Log daily choices, track Campus Green Score levels, and earn leaderboard points to climb the campus sustainability scoreboards.',
+          bullets: ['Log daily transport, meals & energy usage', 'Campus Green Score & Green Status levels', 'Earn leaderboard points for green choices', 'Track weekly/monthly sustainability trends']
+        }
+      }
+      if (idx === 6 && (card.title === 'Carbon Analytics' || card.title === 'Carbon Footprint')) {
+        return {
+          ...card,
+          title: 'Green Analytics',
+          description: 'Visualize dynamic Campus Green Score progression charts and sustainability trends by transport, food, energy, and waste categories.',
+          bullets: ['Interactive Campus Green Score progression charts', 'Active transit, vegan meals & energy efficiency logs', 'Monthly department-level green comparison reports', 'Real-time campus sustainability statistics']
+        }
+      }
+      return card
+    })
+  }
   const impactContent = cms?.impact || {}
   const techContent = cms?.tech_stack || {}
   const milestonesContent = cms?.milestones || {}
-  const faqContent = cms?.faq || {}
+  const rawFaqContent = cms?.faq || {}
+  const faqContent = {
+    ...rawFaqContent,
+    items: rawFaqContent.items?.map(item => {
+      const isPointsQuestion = item.question === 'What are Eco Points and how are they calculated?' || item.q === 'What are Eco Points and how are they calculated?'
+      if (isPointsQuestion) {
+        return {
+          ...item,
+          question: 'What are Eco Points and how are they calculated?',
+          q: 'What are Eco Points and how are they calculated?',
+          answer: 'Eco Points are rewarded for sustainable campus actions. Points include: Base Logging (+10 XP), Eco Score tier bonuses (+20/40/60 XP), Active Transit (+15 XP walking/cycling, +12 XP college bus), Canteen vegetarian/vegan selections (+10/15 XP), consistent logging streaks (+30 XP for 3 days, +75 XP for 7 days, +200 XP for 30 days), and a first log bonus (+50 XP).',
+          a: 'Eco Points are rewarded for sustainable campus actions. Points include: Base Logging (+10 XP), Eco Score tier bonuses (+20/40/60 XP), Active Transit (+15 XP walking/cycling, +12 XP college bus), Canteen vegetarian/vegan selections (+10/15 XP), consistent logging streaks (+30 XP for 3 days, +75 XP for 7 days, +200 XP for 30 days), and a first log bonus (+50 XP).'
+        }
+      }
+      return item
+    })
+  }
   const ctaContent = cms?.cta || {}
   const footerContent = cms?.footer || {}
   const creatorContent = cms?.creator || {}
@@ -1129,17 +1167,17 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Bento Block 2: Eco Tracker (Spans 1 column) */}
+            {/* Bento Block 2: Green Campus (Spans 1 column) */}
             <div onClick={() => handleFeatureClick(1)} className="group relative rounded-[24px] bg-[#0c1225]/35 border border-white/[0.04] p-5 backdrop-blur-xl hover:border-purple-500/20 hover:bg-[#0c1225]/45 transition-all duration-500 flex flex-col justify-between overflow-hidden min-h-[110px] cursor-pointer">
               <div className="absolute inset-0 bg-[radial-gradient(200px_circle_at_50%_120%,rgba(139,92,246,0.03),transparent_50%)] pointer-events-none" />
               <div className="relative z-10 flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
                   <Target size={16} />
                 </div>
-                <h4 className="text-xs font-black text-white uppercase tracking-tight">{featuresContent.cards?.[1]?.title || 'Eco Track'}</h4>
+                <h4 className="text-xs font-black text-white uppercase tracking-tight">{featuresContent.cards?.[1]?.title || 'Green Campus'}</h4>
               </div>
               <p className="text-gray-500 text-[10px] font-medium leading-relaxed mt-2 line-clamp-2">
-                {featuresContent.cards?.[1]?.description || 'Log daily choices, track saved carbon margins, and earn leaderboard points to climb the campus sustainability scoreboards.'}
+                {featuresContent.cards?.[1]?.description || 'Log daily choices, track Campus Green Score levels, and earn leaderboard points to climb the campus sustainability scoreboards.'}
               </p>
             </div>
 
@@ -1213,16 +1251,16 @@ export default function LandingPage() {
               </p>
             </div>
 
-            {/* Bento Block 7: Carbon Analytics (Spans 2 columns) */}
+            {/* Bento Block 7: Green Analytics (Spans 2 columns) */}
             <div onClick={() => handleFeatureClick(6)} className="group relative md:col-span-2 rounded-[24px] bg-[#0c1225]/35 border border-white/[0.04] p-5 backdrop-blur-xl hover:border-green-500/20 hover:bg-[#0c1225]/45 transition-all duration-500 flex flex-row items-center gap-5 overflow-hidden min-h-[110px] cursor-pointer">
               <div className="absolute inset-0 bg-[radial-gradient(300px_circle_at_50%_120%,rgba(34,197,94,0.03),transparent_50%)] pointer-events-none" />
               <div className="w-10 h-10 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 flex items-center justify-center shrink-0">
                 <BarChart3 size={20} />
               </div>
               <div className="relative z-10 flex-1 min-w-0">
-                <h4 className="text-sm font-black text-white uppercase tracking-tight mb-1">{featuresContent.cards?.[6]?.title || 'Carbon Analytics'}</h4>
+                <h4 className="text-sm font-black text-white uppercase tracking-tight mb-1">{featuresContent.cards?.[6]?.title || 'Green Analytics'}</h4>
                 <p className="text-gray-500 text-[11px] font-medium leading-relaxed line-clamp-2">
-                  {featuresContent.cards?.[6]?.description || 'Visualize dynamic emission charts and reductions by transport, food, energy, and waste categories.'}
+                  {featuresContent.cards?.[6]?.description || 'Visualize dynamic Campus Green Score progression charts and sustainability trends by transport, food, energy, and waste categories.'}
                 </p>
               </div>
             </div>

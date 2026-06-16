@@ -41,9 +41,9 @@ function getDefaultContentForSection(key) {
           bullets: ["Time-restricted QR codes for fraud prevention", "Auto-syncs with your class timetable", "Real-time attendance analytics for faculty", "Location verification for campus validation"]
         },
         { 
-          title: "Eco Track", 
-          description: "Log daily choices, track saved carbon margins, and earn leaderboard points to climb the campus sustainability scoreboards.",
-          bullets: ["Log daily transport, meals & energy usage", "Personal CO₂ footprint dashboard", "Earn leaderboard points for green choices", "Track weekly/monthly sustainability trends"]
+          title: "Green Campus", 
+          description: "Log daily choices, track Campus Green Score levels, and earn leaderboard points to climb the campus sustainability scoreboards.",
+          bullets: ["Log daily transport, meals & energy usage", "Campus Green Score & Green Status levels", "Earn leaderboard points for green choices", "Track weekly/monthly sustainability trends"]
         },
         { 
           title: "Study Planner", 
@@ -66,9 +66,9 @@ function getDefaultContentForSection(key) {
           bullets: ["Browse full digital menu with prices", "Pre-order meals to skip the queue", "Nutritional info & calorie tracking", "Real-time item availability updates"]
         },
         { 
-          title: "Carbon Analytics", 
-          description: "Visualize dynamic emission charts and reductions by transport, food, energy, and waste categories.",
-          bullets: ["Interactive emission breakdown charts", "Transport, food, energy & waste categories", "Monthly trend reports with comparisons", "Campus-wide vs individual analytics"]
+          title: "Green Analytics", 
+          description: "Visualize dynamic Campus Green Score progression charts and sustainability trends by transport, food, energy, and waste categories.",
+          bullets: ["Interactive Campus Green Score progression charts", "Active transit, vegan meals & energy efficiency logs", "Monthly department-level green comparison reports", "Real-time campus sustainability statistics"]
         },
         { 
           title: "Leaderboards", 
@@ -112,7 +112,7 @@ function getDefaultContentForSection(key) {
       sectionTitle: "Get started in 3 easy steps.",
       steps: [
         { number: "01", title: "Create Your Account", description: "Sign up with your college email. Your eco-profile, timetable, and campus map sync automatically." },
-        { number: "02", title: "Track Your Impact", description: "Log daily commutes, meals, and energy usage. Watch your carbon score drop and eco-points rise." },
+        { number: "02", title: "Track Your Impact", description: "Log daily commutes, meals, and energy usage. Watch your Campus Green Score grow and eco-points rise." },
         { number: "03", title: "Earn & Compete", description: "Climb the leaderboard, unlock green badges, and participate in campus-wide eco campaigns." }
       ]
     },
@@ -121,7 +121,7 @@ function getDefaultContentForSection(key) {
       sectionTitle: "Frequently Asked Questions",
       items: [
         { question: "How does QR Smart Attendance work?", answer: "Instructors generate a time-restricted check-in QR code on the lecture hall screen. Students scan the QR code via their Attendance page. The system checks location validity and student identity to log the attendance record instantly." },
-        { question: "What are Eco Points and how are they calculated?", answer: "Eco Points are rewarded for green actions like ridesharing, selecting vegetarian canteen meals, and recycling items. Point values are defined in the sustainability guidelines (e.g. +20 pts for canteen veg selection)." },
+        { question: "What are Eco Points and how are they calculated?", answer: "Eco Points are rewarded for sustainable campus actions. Points include: Base Logging (+10 XP), Eco Score tier bonuses (+20/40/60 XP), Active Transit (+15 XP walking/cycling, +12 XP college bus), Canteen vegetarian/vegan selections (+10/15 XP), consistent logging streaks (+30 XP for 3 days, +75 XP for 7 days, +200 XP for 30 days), and a first log bonus (+50 XP)." },
         { question: "Is my personal study and logging data secure?", answer: "Yes. All authentication and data transfers are protected under Supabase security protocols, and student records are kept private and accessible only to authorized administrators and the student themselves." },
         { question: "Can other colleges adopt the Institute Pulse platform?", answer: "Yes, the core system is modularized and can be configured with semester tables, location maps, bus routes, and cafeteria items for any educational institute." }
       ]
@@ -226,11 +226,40 @@ export default function AdminLandingPage() {
               mergedContent.cards = cardsCopy
             }
             // Populate default bullets if not present in the saved card
-            mergedContent.cards = mergedContent.cards.map((card, idx) => ({
-              ...defaults.cards[idx],
-              ...card,
-              bullets: card.bullets || defaults.cards[idx]?.bullets || []
-            }))
+            mergedContent.cards = mergedContent.cards.map((card, idx) => {
+              const mergedCard = {
+                ...defaults.cards[idx],
+                ...card,
+                bullets: card.bullets || defaults.cards[idx]?.bullets || []
+              }
+              // Force rename if old names are loaded from database
+              if (idx === 1 && (mergedCard.title === 'Eco Track' || mergedCard.title === 'Eco Tracker')) {
+                mergedCard.title = defaults.cards[idx].title
+                mergedCard.description = defaults.cards[idx].description
+                mergedCard.bullets = defaults.cards[idx].bullets
+              }
+              if (idx === 6 && (mergedCard.title === 'Carbon Analytics' || mergedCard.title === 'Carbon Footprint')) {
+                mergedCard.title = defaults.cards[idx].title
+                mergedCard.description = defaults.cards[idx].description
+                mergedCard.bullets = defaults.cards[idx].bullets
+              }
+              return mergedCard
+            })
+          }
+
+          // Specially handle FAQ points calculation updates
+          if (key === 'faq' && Array.isArray(mergedContent.items) && Array.isArray(defaults.items)) {
+            mergedContent.items = mergedContent.items.map(item => {
+              const isPointsQuestion = item.question === 'What are Eco Points and how are they calculated?' || item.q === 'What are Eco Points and how are they calculated?'
+              if (isPointsQuestion) {
+                return {
+                  ...item,
+                  question: defaults.items[1].question,
+                  answer: defaults.items[1].answer
+                }
+              }
+              return item
+            })
           }
 
           // Specially handle hero slogan updates
