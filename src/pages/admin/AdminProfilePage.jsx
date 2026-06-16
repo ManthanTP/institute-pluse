@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { User, Shield, Key, Bell, Globe, Camera, Edit3, CheckCircle2, AlertCircle, LogOut, ShieldCheck, Mail, MapPin, Building, Lock, Zap, Upload, Eye } from 'lucide-react'
+import { User, Shield, Key, Bell, Globe, Camera, Edit3, CheckCircle2, AlertCircle, LogOut, ShieldCheck, Mail, MapPin, Building, Lock, Zap, Upload, Eye, Phone } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import AdminLayout from './AdminLayout'
 import { motion } from 'framer-motion'
