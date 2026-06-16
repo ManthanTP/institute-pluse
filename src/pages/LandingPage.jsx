@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, Leaf, Shield, Zap, Compass, Sparkles, Globe, Target, Layers, Cpu, ChevronRight, BarChart3, Fingerprint, Activity, Terminal, Users, BookOpen, TreePine, Award, QrCode, Bot, MapPin, Menu, X, Trophy, CheckCircle, ArrowUpRight, Lock, Play, Pause, RotateCcw, Utensils, MessageSquare, Bell, UserPlus, TrendingUp, Medal } from 'lucide-react'
+import { ArrowRight, Leaf, Shield, Zap, Compass, Sparkles, Globe, Target, Layers, Cpu, ChevronRight, BarChart3, Fingerprint, Activity, Terminal, Users, BookOpen, TreePine, Award, QrCode, Bot, MapPin, Menu, X, Trophy, CheckCircle, ArrowUpRight, Lock, Play, Pause, RotateCcw, Utensils, MessageSquare, Bell, UserPlus, TrendingUp, Medal, Download } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import logo from '../assets/logo.png'
 import heroImage from '../assets/hero-campus.png'
@@ -516,19 +516,28 @@ export default function LandingPage() {
                   Explore Features <ArrowRight size={12} />
                 </button>
 
-                <div className="flex items-center gap-3 mt-4">
-                  <button 
-                    onClick={() => setCurrentSlide(FEATURE_DETAILS.length + 1)}
-                    className="px-5 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-black text-[8px] uppercase tracking-widest transition-all active:scale-95"
+                <div className="flex flex-col gap-2 mt-4 w-full">
+                  <div className="flex items-center gap-3 justify-center w-full">
+                    <button 
+                      onClick={() => setCurrentSlide(FEATURE_DETAILS.length + 1)}
+                      className="flex-1 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-black text-[8px] uppercase tracking-widest transition-all active:scale-95"
+                    >
+                      About Creator
+                    </button>
+                    <button 
+                      onClick={() => setCurrentSlide(FEATURE_DETAILS.length + 2)}
+                      className="flex-1 py-3 rounded-xl bg-white/5 border border-cyan-500/20 text-cyan-400 font-black text-[8px] uppercase tracking-widest transition-all active:scale-95"
+                    >
+                      Get Started
+                    </button>
+                  </div>
+                  <a 
+                    href="/InstitutePulse.apk"
+                    download="InstitutePulse.apk"
+                    className="w-full py-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-black text-[8px] uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5"
                   >
-                    About Creator
-                  </button>
-                  <button 
-                    onClick={() => setCurrentSlide(FEATURE_DETAILS.length + 2)}
-                    className="px-5 py-3 rounded-xl bg-white/5 border border-cyan-500/20 text-cyan-400 font-black text-[8px] uppercase tracking-widest transition-all active:scale-95"
-                  >
-                    Get Started
-                  </button>
+                    <Download size={10} /> Download Android App (APK)
+                  </a>
                 </div>
                 
                 <span className="text-[8px] font-black text-gray-500 uppercase tracking-[0.25em] mt-6 animate-pulse">
@@ -1034,6 +1043,13 @@ export default function LandingPage() {
               >
                 {hero.ctaSecondary || 'Explore Features'}
               </button>
+              <a 
+                href="/InstitutePulse.apk"
+                download="InstitutePulse.apk"
+                className="px-9 py-4.5 rounded-2xl bg-cyan-500/10 border border-cyan-500/35 hover:bg-cyan-500/20 text-cyan-400 font-black text-[10px] uppercase tracking-[0.25em] transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
+              >
+                <Download size={14} /> Download APK
+              </a>
             </motion.div>
           </div>
 
