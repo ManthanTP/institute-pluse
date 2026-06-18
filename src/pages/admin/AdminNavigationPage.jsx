@@ -9,6 +9,7 @@ export default function AdminNavigationPage() {
   const [locations, setLocations] = useState([])
   const [loading, setLoading] = useState(true)
   const [isAdding, setIsAdding] = useState(false)
+  const [editingId, setEditingId] = useState(null)
   
   const [formData, setFormData] = useState({
     name: '',
@@ -38,16 +39,41 @@ export default function AdminNavigationPage() {
   async function handleSubmit(e) {
     e.preventDefault()
     try {
-      const { error } = await supabase.from('campus_locations').insert([formData])
-      if (error) throw error
+      if (editingId) {
+        const { error } = await supabase.from('campus_locations').update(formData).eq('id', editingId)
+        if (error) throw error
+        toast.success('Location updated in directory')
+      } else {
+        const { error } = await supabase.from('campus_locations').insert([formData])
+        if (error) throw error
+        toast.success('Location added to directory')
+      }
       
-      toast.success('Location added to directory')
       setIsAdding(false)
+      setEditingId(null)
       setFormData({ name: '', type: 'Academic', building: '', floor: '', description: '' })
       fetchLocations()
     } catch (err) {
       toast.error(err.message)
     }
+  }
+
+  function handleEdit(loc) {
+    setEditingId(loc.id)
+    setFormData({
+      name: loc.name,
+      type: loc.type,
+      building: loc.building || '',
+      floor: loc.floor || '',
+      description: loc.description || ''
+    })
+    setIsAdding(true)
+  }
+
+  function handleCancel() {
+    setIsAdding(false)
+    setEditingId(null)
+    setFormData({ name: '', type: 'Academic', building: '', floor: '', description: '' })
   }
 
   async function handleDelete(id) {
@@ -80,7 +106,9 @@ export default function AdminNavigationPage() {
 
         {isAdding && (
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="bg-[#161b22] border border-white/10 rounded-[32px] p-8">
-            <h3 className="text-xl font-black text-white uppercase italic mb-6">New Location Protocol</h3>
+            <h3 className="text-xl font-black text-white uppercase italic mb-6">
+              {editingId ? 'Modify Location Protocol' : 'New Location Protocol'}
+            </h3>
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Room Name / Number</label>
@@ -105,8 +133,10 @@ export default function AdminNavigationPage() {
                 <textarea required value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full mt-2 bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-sm text-white outline-none focus:border-red-500/50 min-h-[100px]" placeholder="e.g. Take the left stairs from the main entrance, 2nd door on the right." />
               </div>
               <div className="md:col-span-2 flex gap-4">
-                <button type="button" onClick={() => setIsAdding(false)} className="px-8 py-4 bg-white/5 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10">Cancel</button>
-                <button type="submit" className="px-8 py-4 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500">Save Location</button>
+                <button type="button" onClick={handleCancel} className="px-8 py-4 bg-white/5 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10">Cancel</button>
+                <button type="submit" className="px-8 py-4 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500">
+                  {editingId ? 'Update Location' : 'Save Location'}
+                </button>
               </div>
             </form>
           </motion.div>
@@ -127,7 +157,10 @@ export default function AdminNavigationPage() {
                       <h4 className="text-lg font-black text-white uppercase tracking-tight">{loc.name}</h4>
                       <span className="inline-block px-2 py-1 mt-2 bg-red-500/10 text-red-500 text-[8px] font-black uppercase tracking-widest rounded-md border border-red-500/20">{loc.type}</span>
                    </div>
-                   <button onClick={() => handleDelete(loc.id)} className="p-2 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity bg-red-500/10 rounded-lg hover:bg-red-500 hover:text-white"><Trash2 size={14}/></button>
+                   <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => handleEdit(loc)} className="p-2 text-blue-500 bg-blue-500/10 rounded-lg hover:bg-blue-500 hover:text-white transition-all"><Edit3 size={14}/></button>
+                      <button onClick={() => handleDelete(loc.id)} className="p-2 text-red-500 bg-red-500/10 rounded-lg hover:bg-red-500 hover:text-white transition-all"><Trash2 size={14}/></button>
+                   </div>
                 </div>
                 
                 <div className="space-y-3 pt-4 border-t border-white/5">

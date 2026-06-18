@@ -20,6 +20,24 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true)
   const [selectedUser, setSelectedUser] = useState(null)
 
+  // Academic data states
+  const [semesters, setSemesters] = useState([])
+  const [divisions, setDivisions] = useState([])
+
+  // User details form states
+  const [editFullName, setEditFullName] = useState('')
+  const [editPhone, setEditPhone] = useState('')
+  const [editDepartment, setEditDepartment] = useState('')
+  const [editUSN, setEditUSN] = useState('')
+  const [editSemesterId, setEditSemesterId] = useState('')
+  const [editDivisionId, setEditDivisionId] = useState('')
+  const [savingProfile, setSavingProfile] = useState(false)
+
+  // Deletion confirmation states
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteInputName, setDeleteInputName] = useState('')
+  const [deletingUser, setDeletingUser] = useState(false)
+
   // Direct Messaging States
   const [messageTitle, setMessageTitle] = useState('')
   const [messageBody, setMessageBody] = useState('')
@@ -29,6 +47,7 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     fetchUsers()
+    fetchAcademicData()
   }, [])
 
   async function fetchUsers() {
@@ -36,6 +55,13 @@ export default function AdminUsersPage() {
     const { data, error } = await supabase.from('profiles').select('*, academic_semesters(name), academic_divisions(name)').order('created_at', { ascending: false })
     if (data) setUsers(data)
     setLoading(false)
+  }
+
+  async function fetchAcademicData() {
+    const { data: sems } = await supabase.from('academic_semesters').select('*').order('name')
+    const { data: divs } = await supabase.from('academic_divisions').select('*').order('name')
+    if (sems) setSemesters(sems)
+    if (divs) setDivisions(divs)
   }
 
   async function updateRole(userId, newRole) {
@@ -161,6 +187,114 @@ export default function AdminUsersPage() {
     setShowMessageBox(false)
     setMessageTitle('')
     setMessageBody('')
+
+    // Populate edit form states
+    setEditFullName(u.full_name || '')
+    setEditPhone(u.phone || '')
+    setEditDepartment(u.department || 'Other')
+    setEditUSN(u.usn || '')
+    setEditSemesterId(u.semester_id || '')
+    setEditDivisionId(u.division_id || '')
+
+    // Reset deletion states
+    setShowDeleteConfirm(false)
+    setDeleteInputName('')
+  }
+
+  async function handleUpdateProfileDetails(e) {
+    e.preventDefault()
+    if (!editFullName.trim()) {
+      toast.error('Full Name is required')
+      return
+    }
+
+    try {
+      setSavingProfile(true)
+      const updatePayload = {
+        full_name: editFullName.trim(),
+        phone: editPhone.trim(),
+        department: editDepartment,
+      }
+
+      if (selectedUser.role === 'student') {
+        if (!editUSN.trim()) {
+          toast.error('USN is required for students')
+          return
+        }
+        updatePayload.usn = editUSN.trim()
+        updatePayload.semester_id = editSemesterId || null
+        updatePayload.division_id = editDivisionId || null
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updatePayload)
+        .eq('id', selectedUser.id)
+
+      if (error) throw error
+
+      toast.success('User profile updated successfully')
+      
+      // Update local state to reflect changes instantly without full reload
+      setUsers(prev => prev.map(u => {
+        if (u.id === selectedUser.id) {
+          const semObj = semesters.find(s => s.id === editSemesterId)
+          const divObj = divisions.find(d => d.id === editDivisionId)
+          return {
+            ...u,
+            ...updatePayload,
+            academic_semesters: semObj ? { name: semObj.name } : null,
+            academic_divisions: divObj ? { name: divObj.name } : null
+          }
+        }
+        return u
+      }))
+      
+      // Update selected user reference as well
+      setSelectedUser(prev => {
+        const semObj = semesters.find(s => s.id === editSemesterId)
+        const divObj = divisions.find(d => d.id === editDivisionId)
+        return {
+          ...prev,
+          ...updatePayload,
+          academic_semesters: semObj ? { name: semObj.name } : null,
+          academic_divisions: divObj ? { name: divObj.name } : null
+        }
+      })
+
+    } catch (err) {
+      toast.error('Failed to update profile: ' + err.message)
+    } finally {
+      setSavingProfile(false)
+    }
+  }
+
+  async function handleDeleteUser() {
+    if (deleteInputName !== selectedUser.full_name) {
+      toast.error('Confirmation name does not match')
+      return
+    }
+
+    try {
+      setDeletingUser(true)
+      const { error } = await supabase.rpc('delete_user_by_admin', {
+        target_user_id: selectedUser.id
+      })
+
+      if (error) throw error
+
+      toast.success(`User account ${selectedUser.full_name} has been purged`)
+      
+      // Remove from local state
+      setUsers(prev => prev.filter(u => u.id !== selectedUser.id))
+      setSelectedUser(null)
+      setShowDeleteConfirm(false)
+      setDeleteInputName('')
+    } catch (err) {
+      toast.error('Failed to delete user: ' + err.message)
+    } finally {
+      setDeletingUser(false)
+    }
   }
 
   return (
@@ -423,24 +557,131 @@ export default function AdminUsersPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 mb-10">
-                {[
-                  { label: 'E-Mail Identity', value: selectedUser.email, icon: Mail },
-                  { label: 'Contact Node', value: selectedUser.phone || 'N/A', icon: Phone },
-                  { label: 'Enrollment Date', value: new Date(selectedUser.created_at).toLocaleDateString(), icon: Calendar },
-                  { label: 'Status', value: 'Active Node', icon: UserCheck },
-                ].map(s => (
-                  <div key={s.label} className="bg-white/5 border border-white/10 rounded-3xl p-6 flex items-start gap-4">
-                    <s.icon size={18} className="text-gray-500 mt-1" />
-                    <div>
-                      <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">{s.label}</p>
-                      <p className="text-sm font-black text-white truncate max-w-[150px]">{s.value}</p>
+              <form onSubmit={handleUpdateProfileDetails} className="space-y-6 mb-10 text-left">
+                <p className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em] mb-4">Edit Profile details</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest block">Full Name</label>
+                    <input 
+                      type="text"
+                      required
+                      value={editFullName}
+                      onChange={e => setEditFullName(e.target.value)}
+                      className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-white text-xs outline-none focus:border-red-500/50 font-bold"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest block">Contact Node (Phone)</label>
+                    <input 
+                      type="text"
+                      value={editPhone}
+                      onChange={e => setEditPhone(e.target.value)}
+                      className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-white text-xs outline-none focus:border-red-500/50 font-bold"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest block">Department</label>
+                    <select
+                      value={editDepartment}
+                      onChange={e => setEditDepartment(e.target.value)}
+                      className="w-full bg-[#161b22] border border-white/10 rounded-2xl p-4 text-white text-xs outline-none focus:border-red-500/50 cursor-pointer"
+                    >
+                      {DEPT_FILTER.filter(d => d !== 'All').map(d => (
+                        <option key={d} value={d} className="bg-slate-900">{d}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest block">Email Address (Read-only)</label>
+                    <input 
+                      type="text"
+                      disabled
+                      value={selectedUser.email}
+                      className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-gray-500 text-xs outline-none cursor-not-allowed font-bold"
+                    />
+                  </div>
+                </div>
+
+                {selectedUser.role === 'student' && (
+                  <div className="border-t border-white/5 pt-6 space-y-6">
+                    <p className="text-[9px] font-black text-red-500 uppercase tracking-widest">Academic Configurations</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest block">USN</label>
+                        <input 
+                          type="text"
+                          required
+                          value={editUSN}
+                          onChange={e => setEditUSN(e.target.value)}
+                          className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-white text-xs outline-none focus:border-red-500/50 font-bold uppercase"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest block">Semester</label>
+                        <select
+                          value={editSemesterId}
+                          onChange={e => {
+                            setEditSemesterId(e.target.value)
+                            setEditDivisionId('')
+                          }}
+                          className="w-full bg-[#161b22] border border-white/10 rounded-2xl p-4 text-white text-xs outline-none focus:border-red-500/50 cursor-pointer"
+                        >
+                          <option value="" className="bg-slate-900">Select Sem</option>
+                          {semesters.map(s => (
+                            <option key={s.id} value={s.id} className="bg-slate-900">{s.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest block">Division</label>
+                        <select
+                          value={editDivisionId}
+                          onChange={e => setEditDivisionId(e.target.value)}
+                          disabled={!editSemesterId}
+                          className="w-full bg-[#161b22] border border-white/10 rounded-2xl p-4 text-white text-xs outline-none focus:border-red-500/50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <option value="" className="bg-slate-900">Select Div</option>
+                          {divisions
+                            .filter(d => d.semester_id === editSemesterId && d.department === editDepartment)
+                            .map(d => (
+                              <option key={d.id} value={d.id} className="bg-slate-900">Division {d.name}</option>
+                            ))
+                          }
+                        </select>
+                      </div>
                     </div>
                   </div>
-                ))}
+                )}
+
+                <button 
+                  type="submit" 
+                  disabled={savingProfile}
+                  className="w-full py-4 rounded-2xl bg-green-600 hover:bg-green-500 text-white text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
+                >
+                  {savingProfile ? 'Saving Changes...' : 'Save Profile Changes'}
+                </button>
+              </form>
+
+              <div className="grid grid-cols-2 gap-4 mb-10 text-left">
+                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 flex items-start gap-4">
+                  <Calendar size={18} className="text-gray-500 mt-1" />
+                  <div>
+                    <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">Enrollment Date</p>
+                    <p className="text-sm font-black text-white truncate max-w-[150px]">
+                      {new Date(selectedUser.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 flex items-start gap-4">
+                  <UserCheck size={18} className="text-gray-500 mt-1" />
+                  <div>
+                    <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">Status</p>
+                    <p className="text-sm font-black text-white truncate max-w-[150px]">Active Node</p>
+                  </div>
+                </div>
               </div>
 
-              <div className="bg-white/5 border border-white/10 rounded-[32px] p-8 mb-10">
+              <div className="bg-white/5 border border-white/10 rounded-[32px] p-8 mb-10 text-left">
                 <p className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em] mb-4">Point Calibration Node</p>
                 <form onSubmit={(e) => { e.preventDefault(); updatePoints(selectedUser.id, calibratingPoints); }} className="flex items-center gap-4">
                   <input 
@@ -456,7 +697,7 @@ export default function AdminUsersPage() {
               </div>
 
               {showMessageBox ? (
-                <form onSubmit={handleSendMessage} className="bg-white/5 border border-white/10 rounded-[32px] p-8 mb-10 space-y-4">
+                <form onSubmit={handleSendMessage} className="bg-white/5 border border-white/10 rounded-[32px] p-8 mb-10 space-y-4 text-left">
                   <p className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em] mb-2">Send Direct Message</p>
                   <div className="space-y-1.5">
                     <label className="text-[8px] font-black text-gray-500 uppercase tracking-widest block">Subject / Title</label>
@@ -494,10 +735,51 @@ export default function AdminUsersPage() {
                 </button>
               )}
 
-              <div className="space-y-4">
-                <button className="w-full py-5 rounded-[28px] bg-red-600 text-white text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-red-600/20">
-                  Audit Identity Logs
-                </button>
+              <div className="border-t border-white/5 pt-8 mt-8 space-y-6 text-left">
+                {!showDeleteConfirm ? (
+                  <button 
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="w-full py-5 rounded-[28px] bg-red-950/40 border border-red-900/30 hover:bg-red-900/40 text-red-500 text-[11px] font-black uppercase tracking-[0.2em] transition-all"
+                  >
+                    Purge Identity Account
+                  </button>
+                ) : (
+                  <div className="bg-red-950/20 border border-red-500/20 rounded-[32px] p-8 space-y-4">
+                    <p className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em]">Confirm Identity Purge</p>
+                    <p className="text-[11px] text-gray-400 leading-relaxed">
+                      Purging will delete this authentication account and all associated profiles/records. 
+                      This action is irreversible. Type <span className="text-white font-bold">{selectedUser.full_name}</span> to confirm.
+                    </p>
+                    <input 
+                      type="text"
+                      value={deleteInputName}
+                      onChange={e => setDeleteInputName(e.target.value)}
+                      placeholder="Type name here..."
+                      className="w-full bg-black/40 border border-red-500/20 rounded-2xl p-4 text-white text-xs outline-none focus:border-red-500/50 font-bold"
+                    />
+                    <div className="flex gap-4">
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          setShowDeleteConfirm(false)
+                          setDeleteInputName('')
+                        }}
+                        className="flex-1 py-4 bg-white/5 text-gray-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all"
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        type="button"
+                        disabled={deletingUser || deleteInputName !== selectedUser.full_name}
+                        onClick={handleDeleteUser}
+                        className="flex-1 py-4 bg-red-600 disabled:bg-red-800 disabled:opacity-40 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500 transition-all"
+                      >
+                        {deletingUser ? 'Purging...' : 'Confirm Purge'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <button onClick={() => setSelectedUser(null)} className="w-full py-4 rounded-2xl bg-white/5 text-gray-500 text-[10px] font-black uppercase tracking-widest">
                   Close Manifest
                 </button>

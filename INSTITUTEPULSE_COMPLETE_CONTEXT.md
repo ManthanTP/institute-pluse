@@ -699,7 +699,7 @@ Browse Events → Filter by Category → View Details → Register → QR Pass G
 | 3 | `eco_badges` | ✅ | Achievement badges: student_id, badge_key, earned_at |
 | 4 | `menu_items` | ✅ | Cafeteria menu: name, description, category, price, carbon_kg, is_vegetarian, is_vegan, available, image_url |
 | 5 | `orders` | ✅ | Cafeteria orders: student_id, items (JSONB), total_price, total_carbon_kg, status, token_number, qr_code, special_instructions |
-| 6 | `events` | ✅ | Campus events: title, description, category, event_date, venue, eco_points, max_participants, current_participants, enable_chat, created_by |
+| 6 | `events` | ✅ | Campus events: title, description, category, event_date, venue, eco_points, max_participants, current_participants, enable_chat, created_by, team_type, max_team_size |
 | 7 | `event_participants` | ✅ | Event registrations: event_id, student_id |
 | 8 | `event_messages` | ✅ | Event Discussion Room chat: event_id, sender_id, message, created_at |
 | 9 | `attendance_sessions` | ✅ | QR attendance sessions: teacher_id, subject, division_id, qr_code, expires_at, status, session_type |
@@ -723,6 +723,8 @@ Browse Events → Filter by Category → View Details → Register → QR Pass G
 | 27 | `lab_batches` | ✅ | Lab batch groups (A1, A2, A3) |
 | 28 | `timetable` | ✅ | Weekly recurring timetable slots |
 | 29 | `institution_settings` | ✅ | Global settings including carbon_config |
+| 30 | `event_teams` | ✅ | Event teams tracking: id, event_id, team_name, leader_id, created_at |
+| 31 | `event_team_members` | ✅ | Team members tracking: id, team_id, student_id, status (pending/accepted/declined), invited_at |
 
 ### Key Database Functions:
 - `handle_new_user()` — Trigger function that auto-creates a profile row on signup with 20 XP welcome bonus.

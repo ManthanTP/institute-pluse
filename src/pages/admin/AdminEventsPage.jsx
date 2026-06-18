@@ -7,8 +7,9 @@ import { createPortal } from 'react-dom'
 import toast from 'react-hot-toast'
 import { exportTablePDF } from '../../lib/pdfExport'
 import { useAuthStore } from '../../store/index'
+import * as XLSX from 'xlsx'
 
-const CATEGORIES = ['Workshop', 'Seminar', 'Sustainability', 'Cultural', 'Sports', 'Other']
+const CATEGORIES = ['Workshop', 'Seminar', 'Sustainability', 'Cultural', 'Sports', 'Hackathon', 'Gaming', 'Other']
 
 export default function AdminEventsPage() {
   const { profile } = useAuthStore()
@@ -20,6 +21,9 @@ export default function AdminEventsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false)
   const [participants, setParticipants] = useState([])
+  const [teamsData, setTeamsData] = useState([])
+  const [formTeamType, setFormTeamType] = useState('solo')
+  const [formMaxTeamSize, setFormMaxTeamSize] = useState(1)
 
   // Event Room Chat States
   const [activeModalTab, setActiveModalTab] = useState('roster') // 'roster', 'chat'
@@ -132,12 +136,33 @@ export default function AdminEventsPage() {
   }
 
   async function fetchParticipants(eventId) {
-    const { data, error } = await supabase
+    const { data: pData } = await supabase
       .from('event_participants')
       .select('*, profiles(full_name, email, department)')
       .eq('event_id', eventId)
     
-    if (data) setParticipants(data)
+    if (pData) setParticipants(pData)
+
+    // Load team data
+    const { data: teams } = await supabase
+      .from('event_teams')
+      .select('*, profiles(full_name)')
+      .eq('event_id', eventId)
+
+    if (teams && teams.length > 0) {
+      const { data: members } = await supabase
+        .from('event_team_members')
+        .select('*, profiles(full_name, email, department)')
+        .in('team_id', teams.map(t => t.id))
+
+      const teamsWithMembers = teams.map(team => ({
+        ...team,
+        members: members ? members.filter(m => m.team_id === team.id) : []
+      }))
+      setTeamsData(teamsWithMembers)
+    } else {
+      setTeamsData([])
+    }
   }
 
   async function deleteEvent(id) {
@@ -152,6 +177,7 @@ export default function AdminEventsPage() {
   async function handleSaveEvent(e) {
     e.preventDefault()
     const formData = new FormData(e.target)
+    const teamType = formData.get('team_type') || 'solo'
     const eventData = {
       title: formData.get('title'),
       description: formData.get('description'),
@@ -163,7 +189,9 @@ export default function AdminEventsPage() {
       eco_points: parseInt(formData.get('eco_points')),
       status: formData.get('status'),
       banner_color: formData.get('banner_color') || '#dc2626',
-      enable_chat: formData.get('enable_chat') === 'on'
+      enable_chat: formData.get('enable_chat') === 'on',
+      team_type: teamType,
+      max_team_size: teamType === 'solo' ? 1 : parseInt(formData.get('max_team_size') || '2')
     }
 
     let error
@@ -185,32 +213,118 @@ export default function AdminEventsPage() {
   }
 
   function handleDownloadCSV() {
-    if (!participants || participants.length === 0) {
-      toast.error('No participants to download');
-      return;
+    const isTeamEvent = selectedEvent?.team_type && selectedEvent?.team_type !== 'solo'
+    
+    if (isTeamEvent) {
+      if (!teamsData || teamsData.length === 0) {
+        toast.error('No team data to download');
+        return;
+      }
+      const headers = ['Team Name', 'Role', 'Name', 'Email', 'Department', 'Status'];
+      const rows = [];
+      teamsData.forEach(team => {
+        team.members.forEach(m => {
+          rows.push([
+            team.team_name,
+            m.student_id === team.leader_id ? 'Leader' : 'Member',
+            m.profiles?.full_name || '',
+            m.profiles?.email || '',
+            m.profiles?.department || '',
+            m.status || 'pending'
+          ]);
+        });
+      });
+
+      exportTablePDF({
+        title: `Event Team Manifest`,
+        subtitle: selectedEvent?.title || 'Event',
+        headers,
+        rows,
+        filename: `${selectedEvent?.title?.replace(/\s+/g, '_') || 'event'}_team_manifest`,
+        summaryCards: [
+          { label: 'Total Teams', value: teamsData.length },
+          { label: 'Event Format', value: selectedEvent?.team_type?.toUpperCase() || 'TEAM' },
+          { label: 'Eco Points', value: `${selectedEvent?.eco_points || 0} XP` }
+        ]
+      });
+    } else {
+      if (!participants || participants.length === 0) {
+        toast.error('No participants to download');
+        return;
+      }
+      const headers = ['Name', 'Email', 'Department', 'Registered At'];
+      const rows = participants.map(p => [
+        p.profiles?.full_name || '',
+        p.profiles?.email || '',
+        p.profiles?.department || '',
+        new Date(p.registered_at).toLocaleString()
+      ]);
+
+      exportTablePDF({
+        title: `Event Participant Manifest`,
+        subtitle: selectedEvent?.title || 'Event',
+        headers,
+        rows,
+        filename: `${selectedEvent?.title?.replace(/\s+/g, '_') || 'event'}_manifest`,
+        summaryCards: [
+          { label: 'Total Participants', value: participants.length },
+          { label: 'Event Date', value: selectedEvent?.event_date ? new Date(selectedEvent.event_date).toLocaleDateString() : 'N/A' },
+          { label: 'Eco Points', value: `${selectedEvent?.eco_points || 0} XP` }
+        ]
+      });
+    }
+    toast.success('Manifest Exported as PDF');
+  }
+
+  function handleDownloadXLSX() {
+    const isTeamEvent = selectedEvent?.team_type && selectedEvent?.team_type !== 'solo'
+    let excelData = []
+
+    if (isTeamEvent) {
+      if (!teamsData || teamsData.length === 0) {
+        toast.error('No team data to download');
+        return;
+      }
+      teamsData.forEach(team => {
+        team.members.forEach(member => {
+          excelData.push({
+            'Event Title': selectedEvent.title,
+            'Team Name': team.team_name,
+            'Role': member.student_id === team.leader_id ? 'Leader' : 'Member',
+            'Full Name': member.profiles?.full_name || 'N/A',
+            'Email': member.profiles?.email || 'N/A',
+            'Department': member.profiles?.department || 'N/A',
+            'Invitation Status': member.status || 'pending',
+            'Invitation Date': member.invited_at ? new Date(member.invited_at).toLocaleDateString() : 'N/A'
+          })
+        })
+      })
+    } else {
+      if (!participants || participants.length === 0) {
+        toast.error('No participants to download');
+        return;
+      }
+      excelData = participants.map(p => ({
+        'Event Title': selectedEvent.title,
+        'Full Name': p.profiles?.full_name || 'N/A',
+        'Email': p.profiles?.email || 'N/A',
+        'Department': p.profiles?.department || 'N/A',
+        'Registration Date': new Date(p.registered_at).toLocaleDateString()
+      }))
     }
 
-    const headers = ['Name', 'Email', 'Department', 'Registered At'];
-    const rows = participants.map(p => [
-      p.profiles?.full_name || '',
-      p.profiles?.email || '',
-      p.profiles?.department || '',
-      new Date(p.registered_at).toLocaleString()
-    ]);
-
-    exportTablePDF({
-      title: `Event Participant Manifest`,
-      subtitle: selectedEvent?.title || 'Event',
-      headers,
-      rows,
-      filename: `${selectedEvent?.title?.replace(/\s+/g, '_') || 'event'}_manifest`,
-      summaryCards: [
-        { label: 'Total Participants', value: participants.length },
-        { label: 'Event Date', value: selectedEvent?.event_date ? new Date(selectedEvent.event_date).toLocaleDateString() : 'N/A' },
-        { label: 'Eco Points', value: `${selectedEvent?.eco_points || 0} XP` }
-      ]
-    });
-    toast.success('Manifest Exported as PDF');
+    try {
+      const ws = XLSX.utils.json_to_sheet(excelData)
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Roster')
+      
+      const fileName = `${selectedEvent?.title?.replace(/\s+/g, '_') || 'event'}_roster.xlsx`
+      XLSX.writeFile(wb, fileName)
+      toast.success('Roster Exported as Excel')
+    } catch (err) {
+      console.error('XLSX export failed:', err)
+      toast.error('Excel Export Failed: ' + err.message)
+    }
   }
 
   const filtered = events.filter(e => e.title.toLowerCase().includes(search.toLowerCase()))
@@ -243,7 +357,7 @@ export default function AdminEventsPage() {
                 ))}
              </div>
              <button 
-               onClick={() => { setSelectedEvent(null); setIsModalOpen(true); }}
+               onClick={() => { setSelectedEvent(null); setFormTeamType('solo'); setFormMaxTeamSize(1); setIsModalOpen(true); }}
                className="w-full md:w-auto px-6 lg:px-8 py-4 rounded-xl lg:rounded-2xl bg-red-600 text-white text-[9px] lg:text-[10px] font-black uppercase tracking-[0.2em] hover:bg-red-500 shadow-xl shadow-red-600/20 transition-all flex items-center justify-center gap-3"
              >
                 <Plus size={16} /> New Protocol
@@ -431,6 +545,43 @@ export default function AdminEventsPage() {
                         <option value="cancelled" className="bg-slate-900">Cancelled</option>
                       </select>
                     </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[8px] lg:text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Game / Team Format</label>
+                      <select 
+                        name="team_type" 
+                        value={formTeamType} 
+                        onChange={e => {
+                          const val = e.target.value;
+                          setFormTeamType(val);
+                          if (val === 'solo') setFormMaxTeamSize(1);
+                          else if (val === 'duo') setFormMaxTeamSize(2);
+                          else if (val === 'trio') setFormMaxTeamSize(3);
+                          else if (val === 'squad') setFormMaxTeamSize(4);
+                        }}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl lg:rounded-2xl p-4 lg:p-5 text-xs lg:text-sm text-white outline-none appearance-none cursor-pointer"
+                      >
+                        <option value="solo" className="bg-slate-900">Solo (1 Player)</option>
+                        <option value="duo" className="bg-slate-900">Duo (2 Players)</option>
+                        <option value="trio" className="bg-slate-900">Trio (3 Players)</option>
+                        <option value="squad" className="bg-slate-900">Squad (4 Players)</option>
+                        <option value="custom" className="bg-slate-900">Custom Size</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[8px] lg:text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Max Team Size</label>
+                      <input 
+                        name="max_team_size" 
+                        type="number"
+                        min="1"
+                        value={formMaxTeamSize}
+                        onChange={e => setFormMaxTeamSize(parseInt(e.target.value) || 1)}
+                        disabled={formTeamType !== 'custom'}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl lg:rounded-2xl p-4 lg:p-5 text-xs lg:text-sm text-white outline-none disabled:opacity-50 disabled:cursor-not-allowed shadow-inner"
+                        required 
+                      />
+                    </div>
                     <div className="space-y-2 sm:col-span-2 flex items-center gap-3 pt-2">
                        <input 
                          type="checkbox" 
@@ -486,12 +637,20 @@ export default function AdminEventsPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     {activeModalTab === 'roster' && (
-                      <button 
-                        onClick={handleDownloadCSV}
-                        className="px-4 py-2 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-red-500/20 transition-all flex items-center gap-2"
-                      >
-                        <Download size={14} /> Export PDF
-                      </button>
+                      <>
+                        <button 
+                          onClick={handleDownloadCSV}
+                          className="px-4 py-2 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-red-500/20 transition-all flex items-center gap-2"
+                        >
+                          <Download size={14} /> PDF
+                        </button>
+                        <button 
+                          onClick={handleDownloadXLSX}
+                          className="px-4 py-2 bg-green-500/10 text-green-500 border border-green-500/20 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-green-500/20 transition-all flex items-center gap-2"
+                        >
+                          <Download size={14} /> Excel
+                        </button>
+                      </>
                     )}
                     <button onClick={() => { setIsParticipantsModalOpen(false); setActiveModalTab('roster'); }} className="p-3 lg:p-4 rounded-xl lg:rounded-2xl bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-colors"><X size={20} /></button>
                   </div>
@@ -514,26 +673,69 @@ export default function AdminEventsPage() {
                 </div>
 
                 {activeModalTab === 'roster' ? (
-                  <div className="flex-1 overflow-y-auto no-scrollbar space-y-3 lg:space-y-4 pr-1 pb-4">
-                    {participants.length === 0 ? (
-                      <div className="py-20 text-center"><p className="text-[9px] lg:text-[10px] font-black text-gray-600 uppercase tracking-widest italic">Zero Identities Registered</p></div>
-                    ) : participants.map((p, i) => (
-                      <div key={p.id} className="bg-white/5 border border-white/5 rounded-2xl lg:rounded-3xl p-5 lg:p-6 flex items-center justify-between hover:bg-white/[0.08] transition-all">
-                        <div className="flex items-center gap-3 lg:gap-4">
-                          <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-lg lg:rounded-xl bg-red-500/10 flex items-center justify-center text-[10px] lg:text-[11px] font-black text-red-500 uppercase border border-red-500/10">
-                            {p.profiles?.full_name?.[0]}
+                  <div className="flex-1 overflow-y-auto no-scrollbar space-y-6 pr-1 pb-4">
+                    {selectedEvent?.team_type && selectedEvent?.team_type !== 'solo' ? (
+                      /* Team Event Roster Grouping */
+                      teamsData.length === 0 ? (
+                        <div className="py-20 text-center"><p className="text-[9px] lg:text-[10px] font-black text-gray-600 uppercase tracking-widest italic">Zero Teams Registered</p></div>
+                      ) : (
+                        teamsData.map((team, tIdx) => (
+                          <div key={team.id} className="bg-white/5 border border-white/10 rounded-3xl p-6 space-y-4">
+                            <div className="flex justify-between items-center border-b border-white/5 pb-3">
+                              <h3 className="text-sm font-black text-red-500 uppercase tracking-wider">Team: {team.team_name}</h3>
+                              <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Leader: {team.profiles?.full_name}</span>
+                            </div>
+                            <div className="space-y-3">
+                              {team.members.map(member => (
+                                <div key={member.id} className="flex justify-between items-center bg-black/20 rounded-2xl p-4 hover:bg-black/35 transition-colors">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center text-[10px] font-black text-red-500 uppercase">
+                                      {member.profiles?.full_name?.[0]}
+                                    </div>
+                                    <div>
+                                      <p className="text-[10px] font-black text-white uppercase tracking-tight">{member.profiles?.full_name}</p>
+                                      <p className="text-[7px] font-black text-gray-500 uppercase tracking-widest">{member.profiles?.department || 'Student'}</p>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <span className={`px-3 py-1 rounded-full text-[7px] font-black uppercase tracking-widest border ${
+                                      member.status === 'accepted' 
+                                        ? 'bg-green-500/10 border-green-500/20 text-green-500'
+                                        : member.status === 'declined'
+                                          ? 'bg-red-500/10 border-red-500/20 text-red-500'
+                                          : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-500'
+                                    }`}>
+                                      {member.status}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-[10px] lg:text-[11px] font-black text-white uppercase tracking-tight">{p.profiles?.full_name}</p>
-                            <p className="text-[7px] lg:text-[8px] font-black text-gray-500 uppercase tracking-widest">{p.profiles?.department || 'Student'}</p>
+                        ))
+                      )
+                    ) : (
+                      /* Solo Event Flat Roster */
+                      participants.length === 0 ? (
+                        <div className="py-20 text-center"><p className="text-[9px] lg:text-[10px] font-black text-gray-600 uppercase tracking-widest italic">Zero Identities Registered</p></div>
+                      ) : participants.map((p, i) => (
+                        <div key={p.id} className="bg-white/5 border border-white/5 rounded-2xl lg:rounded-3xl p-5 lg:p-6 flex items-center justify-between hover:bg-white/[0.08] transition-all">
+                          <div className="flex items-center gap-3 lg:gap-4">
+                            <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-lg lg:rounded-xl bg-red-500/10 flex items-center justify-center text-[10px] lg:text-[11px] font-black text-red-500 uppercase border border-red-500/10">
+                              {p.profiles?.full_name?.[0]}
+                            </div>
+                            <div>
+                              <p className="text-[10px] lg:text-[11px] font-black text-white uppercase tracking-tight">{p.profiles?.full_name}</p>
+                              <p className="text-[7px] lg:text-[8px] font-black text-gray-500 uppercase tracking-widest">{p.profiles?.department || 'Student'}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[8px] lg:text-[9px] font-black text-white uppercase tracking-widest">{new Date(p.registered_at).toLocaleDateString()}</p>
+                            <p className="text-[7px] lg:text-[8px] font-gray-500 uppercase tracking-widest mt-1">Uplinked</p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-[8px] lg:text-[9px] font-black text-white uppercase tracking-widest">{new Date(p.registered_at).toLocaleDateString()}</p>
-                          <p className="text-[7px] lg:text-[8px] font-gray-500 uppercase tracking-widest mt-1">Uplinked</p>
-                        </div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 ) : (
                   selectedEvent?.enable_chat ? (

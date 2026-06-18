@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { CalendarDays, MapPin, Star, ChevronLeft, Sparkles, QrCode, X, Filter, Clock, Users, Search, Home, LayoutGrid, Coffee, User } from 'lucide-react'
+import { CalendarDays, MapPin, Star, ChevronLeft, Sparkles, QrCode, X, Filter, Clock, Users, Search, Home, LayoutGrid, Coffee, User, Check, Plus, Trash2, CheckCircle2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store/index'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -7,7 +7,7 @@ import { createPortal } from 'react-dom'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 
-const EVENT_CATEGORIES = ['All', 'History', 'Sustainability', 'Technical', 'Workshop', 'Seminar']
+const EVENT_CATEGORIES = ['All', 'History', 'Sustainability', 'Technical', 'Workshop', 'Seminar', 'Cultural', 'Sports', 'Hackathon', 'Gaming', 'Other']
 
 export default function EventsPage() {
   const { profile } = useAuthStore()
@@ -17,6 +17,15 @@ export default function EventsPage() {
   const [selectedEvent, setSelectedEvent] = useState(null)
   const [registeredEvents, setRegisteredEvents] = useState([])
   const [loading, setLoading] = useState(true)
+
+  // Team states
+  const [teamInvites, setTeamInvites] = useState([])
+  const [userTeam, setUserTeam] = useState(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState([])
+  const [selectedTeammates, setSelectedTeammates] = useState([])
+  const [teamName, setTeamName] = useState('')
+  const [isCreatingTeam, setIsCreatingTeam] = useState(false)
 
   const [roomMessages, setRoomMessages] = useState([])
   const [newMessage, setNewMessage] = useState('')
@@ -90,6 +99,13 @@ export default function EventsPage() {
     e.preventDefault()
     if (!newMessage.trim() || !selectedEvent || !profile?.id) return
 
+    const isTeamEvent = selectedEvent?.team_type && selectedEvent?.team_type !== 'solo'
+    const isLeader = userTeam && userTeam.leader_id === profile?.id
+    if (isTeamEvent && !isLeader) {
+      toast.error('Only the team leader can send messages')
+      return
+    }
+
     const messageText = newMessage.trim()
     setNewMessage('')
 
@@ -113,8 +129,23 @@ export default function EventsPage() {
     fetchEvents()
     if (profile?.id) {
       fetchRegistrations()
+      fetchTeamInvites()
     }
   }, [profile?.id])
+
+  useEffect(() => {
+    if (selectedEvent) {
+      fetchUserTeam(selectedEvent.id)
+      // Reset team creation states
+      setTeamName('')
+      setSelectedTeammates([])
+      setSearchQuery('')
+      setSearchResults([])
+      setIsCreatingTeam(false)
+    } else {
+      setUserTeam(null)
+    }
+  }, [selectedEvent, profile?.id])
 
   async function fetchEvents() {
     setLoading(true)
@@ -126,7 +157,7 @@ export default function EventsPage() {
     if (!error && data && data.length > 0) {
       setEvents(data)
     } else {
-      setEvents(SAMPLE_EVENTS)
+      setEvents([])
     }
     setLoading(false)
   }
@@ -139,6 +170,266 @@ export default function EventsPage() {
     
     if (!error && data) {
       setRegisteredEvents(data.map(r => r.event_id))
+    }
+  }
+
+  async function fetchTeamInvites() {
+    if (!profile?.id) return
+    try {
+      const { data, error } = await supabase
+        .from('event_team_members')
+        .select(`
+          id,
+          team_id,
+          student_id,
+          status,
+          event_teams (
+            id,
+            team_name,
+            leader_id,
+            events (
+              id,
+              title,
+              category
+            ),
+            profiles:leader_id (
+              full_name
+            )
+          )
+        `)
+        .eq('student_id', profile.id)
+        .eq('status', 'pending')
+
+      if (!error && data) {
+        setTeamInvites(data)
+      }
+    } catch (err) {
+      console.error('Error fetching team invites:', err)
+    }
+  }
+
+  async function fetchUserTeam(eventId) {
+    if (!profile?.id) return
+    try {
+      const { data: memberOf, error: memberError } = await supabase
+        .from('event_team_members')
+        .select('team_id')
+        .eq('student_id', profile.id)
+
+      if (memberOf && memberOf.length > 0) {
+        const teamIds = memberOf.map(m => m.team_id)
+        const { data: team, error: teamError } = await supabase
+          .from('event_teams')
+          .select('*, profiles:leader_id(full_name)')
+          .eq('event_id', eventId)
+          .in('id', teamIds)
+          .maybeSingle()
+
+        if (team) {
+          const { data: members, error: memsError } = await supabase
+            .from('event_team_members')
+            .select('*, profiles:student_id(full_name, email, department)')
+            .eq('team_id', team.id)
+
+          setUserTeam({
+            ...team,
+            members: members || []
+          })
+          return
+        }
+      }
+      setUserTeam(null)
+    } catch (err) {
+      console.error('Error fetching user team:', err)
+      setUserTeam(null)
+    }
+  }
+
+  useEffect(() => {
+    if (searchQuery.trim().length > 1) {
+      const delayDebounce = setTimeout(() => {
+        searchClassmates(searchQuery)
+      }, 300)
+      return () => clearTimeout(delayDebounce)
+    } else {
+      setSearchResults([])
+    }
+  }, [searchQuery])
+
+  async function searchClassmates(query) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, department')
+      .eq('role', 'student')
+      .neq('id', profile.id)
+      .ilike('full_name', `%${query}%`)
+      .limit(10)
+
+    if (!error && data) {
+      setSearchResults(data)
+    }
+  }
+
+  async function handleAcceptInvite(invite) {
+    try {
+      // Check if already registered
+      if (registeredEvents.includes(invite.event_teams.events.id)) {
+        toast.error('You are already registered for this event')
+        return
+      }
+
+      // 1. Update member status to accepted
+      const { error: updateError } = await supabase
+        .from('event_team_members')
+        .update({ status: 'accepted' })
+        .eq('id', invite.id)
+
+      if (updateError) throw updateError
+
+      // 2. Add to event_participants
+      const { error: partError } = await supabase
+        .from('event_participants')
+        .insert({
+          event_id: invite.event_teams.events.id,
+          student_id: profile.id
+        })
+
+      if (partError) throw partError
+
+      // 3. Increment current participants count
+      await supabase.rpc('increment_event_participants', { event_id: invite.event_teams.events.id })
+
+      toast.success('Invitation Accepted! Registered for event.')
+      
+      fetchRegistrations()
+      fetchTeamInvites()
+      fetchEvents()
+      
+      if (selectedEvent?.id === invite.event_teams.events.id) {
+        fetchUserTeam(selectedEvent.id)
+      }
+    } catch (err) {
+      console.error('Error accepting invite:', err)
+      toast.error('Failed to accept invitation')
+    }
+  }
+
+  async function handleDeclineInvite(invite) {
+    try {
+      const { error: updateError } = await supabase
+        .from('event_team_members')
+        .update({ status: 'declined' })
+        .eq('id', invite.id)
+
+      if (updateError) throw updateError
+
+      toast.success('Invitation Declined')
+      fetchTeamInvites()
+    } catch (err) {
+      console.error('Error declining invite:', err)
+      toast.error('Failed to decline invitation')
+    }
+  }
+
+  async function handleCreateTeam(e) {
+    e.preventDefault()
+    if (!teamName.trim() || !selectedEvent || !profile?.id) return
+
+    try {
+      // 1. Create team in event_teams
+      const { data: team, error: teamError } = await supabase
+        .from('event_teams')
+        .insert({
+          event_id: selectedEvent.id,
+          team_name: teamName.trim(),
+          leader_id: profile.id
+        })
+        .select()
+        .single()
+
+      if (teamError) {
+        if (teamError.code === '23505') {
+          toast.error('A team with this name already exists for this event')
+        } else {
+          toast.error('Failed to create team')
+        }
+        return
+      }
+
+      // 2. Insert members into event_team_members (leader accepted, teammates pending)
+      const membersToInsert = [
+        { team_id: team.id, student_id: profile.id, status: 'accepted' },
+        ...selectedTeammates.map(student => ({
+          team_id: team.id,
+          student_id: student.id,
+          status: 'pending'
+        }))
+      ]
+
+      const { error: membersError } = await supabase
+        .from('event_team_members')
+        .insert(membersToInsert)
+
+      if (membersError) throw membersError
+
+      // 3. Add leader to event_participants
+      const { error: partError } = await supabase
+        .from('event_participants')
+        .insert({
+          event_id: selectedEvent.id,
+          student_id: profile.id
+        })
+
+      if (partError) throw partError
+
+      // 4. Increment participant count
+      await supabase.rpc('increment_event_participants', { event_id: selectedEvent.id })
+
+      toast.success(`Team "${teamName}" launched successfully!`)
+      
+      fetchRegistrations()
+      fetchEvents()
+      fetchUserTeam(selectedEvent.id)
+      setIsCreatingTeam(false)
+    } catch (err) {
+      console.error('Launch team error:', err)
+      toast.error('Failed to launch team')
+    }
+  }
+
+  async function handleInviteMore(classmate) {
+    if (!userTeam || !selectedEvent) return
+    
+    // Check if team already reached max capacity
+    const totalMembersCount = userTeam.members.length
+    if (totalMembersCount >= selectedEvent.max_team_size) {
+      toast.error(`Team is already full (Max size: ${selectedEvent.max_team_size})`)
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('event_team_members')
+        .insert({
+          team_id: userTeam.id,
+          student_id: classmate.id,
+          status: 'pending'
+        })
+
+      if (error) {
+        if (error.code === '23505') {
+          toast.error(`${classmate.full_name} is already invited or in the team`)
+        } else {
+          toast.error('Failed to invite classmate')
+        }
+        return
+      }
+
+      toast.success(`Invitation sent to ${classmate.full_name}`)
+      fetchUserTeam(selectedEvent.id)
+    } catch (err) {
+      console.error('Invite classmate error:', err)
+      toast.error('Failed to invite classmate')
     }
   }
 
@@ -208,6 +499,45 @@ export default function EventsPage() {
           <span className="text-base md:text-lg">🗺️</span>
           <span className="text-xs md:text-[13px] font-black text-black uppercase tracking-[0.2em]">Browse</span>
         </motion.button>
+
+        {/* TEAM INVITES SECTION */}
+        {teamInvites && teamInvites.length > 0 && (
+          <div className="mb-8 p-6 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-3xl backdrop-blur-xl">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+              <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500">Pending Campaign Invitations ({teamInvites.length})</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {teamInvites.map(invite => (
+                <div key={invite.id} className="bg-black/40 border border-white/5 rounded-2xl p-5 flex flex-col justify-between gap-4">
+                  <div>
+                    <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-500 text-[8px] font-black uppercase tracking-widest">
+                      {invite.event_teams?.events?.category}
+                    </span>
+                    <h3 className="text-sm font-black text-white uppercase mt-2">{invite.event_teams?.events?.title}</h3>
+                    <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mt-1">
+                      Team: <span className="text-white">{invite.event_teams?.team_name}</span> (Invited by {invite.event_teams?.profiles?.full_name})
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => handleAcceptInvite(invite)}
+                      className="flex-1 py-2 bg-amber-600 hover:bg-amber-500 text-black text-[9px] font-black uppercase tracking-wider rounded-xl transition-all"
+                    >
+                      Accept
+                    </button>
+                    <button 
+                      onClick={() => handleDeclineInvite(invite)}
+                      className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 text-[9px] font-black uppercase tracking-wider rounded-xl transition-all"
+                    >
+                      Decline
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* CATEGORY TABS */}
         <div className="flex gap-2 overflow-x-auto no-scrollbar mb-6 md:mb-10 pb-2">
@@ -334,81 +664,383 @@ export default function EventsPage() {
                       <StatNode label="Hub" value={selectedEvent.venue} icon={MapPin} />
                       <StatNode label="Identity" value={`${selectedEvent.current_participants}/${selectedEvent.max_participants}`} icon={Users} />
                       <StatNode label="Yield" value={`+${selectedEvent.eco_points} XP`} icon={Star} />
-                   </div>
-
-                    {registeredEvents.includes(selectedEvent.id) ? (
-                      selectedEvent.enable_chat ? (
-                        <div className="space-y-4 mt-6 pt-6 border-t border-white/5">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                            <h4 className="text-[10px] font-black uppercase tracking-widest text-green-500">Event Discussion Room</h4>
-                          </div>
-                          
-                          <div className="h-48 overflow-y-auto no-scrollbar bg-white/5 rounded-2xl p-4 border border-white/5 flex flex-col gap-3">
-                            {roomMessages.length === 0 ? (
-                              <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest text-center my-auto">No messages in this event room yet. Be the first to start the discussion!</p>
-                            ) : (
-                              roomMessages.map((m) => {
-                                const isSelf = m.sender_id === profile?.id
-                                const isFaculty = m.profiles?.role === 'faculty' || m.profiles?.role === 'admin'
-                                return (
-                                  <div key={m.id} className={`flex flex-col max-w-[85%] ${isSelf ? 'self-end items-end' : 'self-start items-start'}`}>
-                                    {!isSelf && (
-                                      <div className="flex items-center gap-1.5 mb-1 ml-1">
-                                        <span className="text-[8px] font-black text-gray-500 uppercase">{m.profiles?.full_name || 'Anonymous'}</span>
-                                        {isFaculty && (
-                                          <span className="px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-500 text-[6px] font-black uppercase">Faculty</span>
-                                        )}
+                      {/* Team Registration / Status / Invite Interface */}
+                    {selectedEvent.team_type && selectedEvent.team_type !== 'solo' ? (
+                       <div className="space-y-6 mt-6 pt-6 border-t border-white/5">
+                          {registeredEvents.includes(selectedEvent.id) ? (
+                             // Registered (User has a team)
+                             userTeam ? (
+                                <div className="space-y-4">
+                                   <div className="p-5 bg-white/5 border border-white/5 rounded-3xl space-y-4">
+                                      <div className="flex justify-between items-center border-b border-white/5 pb-3">
+                                         <div>
+                                            <h4 className="text-xs font-black text-blue-500 uppercase tracking-widest">Team: {userTeam.team_name}</h4>
+                                            <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mt-1">Leader: {userTeam.profiles?.full_name}</p>
+                                         </div>
+                                         <span className="px-2.5 py-1 rounded bg-blue-500/10 border border-blue-500/20 text-blue-500 text-[8px] font-black uppercase">
+                                            Registered
+                                         </span>
                                       </div>
-                                    )}
-                                    <div className={`px-4 py-2.5 rounded-2xl text-xs font-semibold leading-relaxed ${
-                                      isSelf 
-                                        ? 'bg-blue-600 text-white rounded-tr-none' 
-                                        : 'bg-white/5 border border-white/5 text-gray-300 rounded-tl-none'
-                                    }`}>
-                                      {m.message}
-                                    </div>
-                                  </div>
-                                )
-                              })
-                            )}
-                            <div ref={messagesEndRef} />
-                          </div>
+                                      <div className="space-y-2">
+                                         <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Roster</p>
+                                         {userTeam.members.map(member => (
+                                            <div key={member.id} className="flex justify-between items-center bg-black/30 rounded-2xl p-3">
+                                               <div className="flex items-center gap-2.5">
+                                                  <div className="w-7 h-7 rounded-lg bg-blue-500/10 flex items-center justify-center text-[10px] font-black text-blue-500 uppercase">
+                                                     {member.profiles?.full_name?.[0]}
+                                                  </div>
+                                                  <div>
+                                                     <p className="text-[10px] font-black text-white uppercase tracking-tight">{member.profiles?.full_name}</p>
+                                                     <p className="text-[7px] font-black text-gray-500 uppercase">{member.profiles?.department || 'Student'}</p>
+                                                  </div>
+                                               </div>
+                                               <div className="flex items-center gap-2">
+                                                  {member.student_id === userTeam.leader_id && (
+                                                     <span className="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[6px] font-black uppercase">
+                                                        Leader
+                                                     </span>
+                                                  )}
+                                                  <span className={`px-2 py-0.5 rounded text-[6px] font-black uppercase border ${
+                                                     member.status === 'accepted' 
+                                                        ? 'bg-green-500/10 border-green-500/20 text-green-500'
+                                                        : member.status === 'declined'
+                                                           ? 'bg-red-500/10 border-red-500/20 text-red-500'
+                                                           : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-500'
+                                                  }`}>
+                                                     {member.status}
+                                                  </span>
+                                               </div>
+                                            </div>
+                                         ))}
+                                      </div>
 
-                          <form onSubmit={handleSendMessage} className="flex gap-2">
-                            <input
-                              type="text"
-                              value={newMessage}
-                              onChange={(e) => setNewMessage(e.target.value)}
-                              placeholder="Type a message to event members..."
-                              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs outline-none focus:border-blue-500/50 transition-colors"
-                            />
-                            <button
-                              type="submit"
-                              className="px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
-                            >
-                              Send
-                            </button>
-                          </form>
-                        </div>
-                      ) : (
-                        <div className="space-y-4 mt-6 pt-6 border-t border-white/5 text-center">
-                          <div className="flex items-center gap-2 mb-2 justify-center">
-                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                            <h4 className="text-[10px] font-black uppercase tracking-widest text-red-500">Event Discussion Room</h4>
-                          </div>
-                          <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest py-6">Event Discussion Room is disabled by host</p>
-                        </div>
-                      )
+                                      {/* Leader actions: Invite more members */}
+                                      {profile.id === userTeam.leader_id && userTeam.members.length < selectedEvent.max_team_size && (
+                                         <div className="border-t border-white/5 pt-4 space-y-3">
+                                            <label className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Invite Teammates ({userTeam.members.length}/{selectedEvent.max_team_size} members)</label>
+                                            <div className="relative">
+                                               <input 
+                                                  type="text" 
+                                                  value={searchQuery}
+                                                  onChange={e => setSearchQuery(e.target.value)}
+                                                  placeholder="Search student by name..."
+                                                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white outline-none"
+                                               />
+                                               <Search size={14} className="absolute right-3 top-3.5 text-gray-500" />
+                                            </div>
+                                            {searchResults.length > 0 && (
+                                               <div className="bg-black/50 border border-white/10 rounded-xl p-2 max-h-36 overflow-y-auto no-scrollbar space-y-1">
+                                                  {searchResults
+                                                     .filter(res => !userTeam.members.some(m => m.student_id === res.id))
+                                                     .map(res => (
+                                                        <div key={res.id} className="flex justify-between items-center p-2 hover:bg-white/5 rounded-lg">
+                                                           <div>
+                                                              <p className="text-[10px] font-black text-white uppercase">{res.full_name}</p>
+                                                              <p className="text-[7px] font-black text-gray-500 uppercase">{res.department || 'Student'}</p>
+                                                           </div>
+                                                           <button 
+                                                              onClick={() => handleInviteMore(res)}
+                                                              className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[8px] font-black uppercase tracking-wider"
+                                                           >
+                                                              Invite
+                                                           </button>
+                                                        </div>
+                                                  ))}
+                                               </div>
+                                            )}
+                                         </div>
+                                      )}
+                                   </div>
+
+                                   {/* Discussion Room */}
+                                   {selectedEvent.enable_chat ? (
+                                      <div className="space-y-4 mt-6 pt-6 border-t border-white/5">
+                                         <div className="flex items-center gap-2 mb-2">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-green-500">Event Discussion Room</h4>
+                                         </div>
+                                         <div className="h-48 overflow-y-auto no-scrollbar bg-white/5 rounded-2xl p-4 border border-white/5 flex flex-col gap-3">
+                                            {roomMessages.length === 0 ? (
+                                               <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest text-center my-auto">No messages yet. Only the leader can send messages.</p>
+                                            ) : (
+                                               roomMessages.map((m) => {
+                                                  const isSelf = m.sender_id === profile?.id
+                                                  const isFaculty = m.profiles?.role === 'faculty' || m.profiles?.role === 'admin'
+                                                  return (
+                                                     <div key={m.id} className={`flex flex-col max-w-[85%] ${isSelf ? 'self-end items-end' : 'self-start items-start'}`}>
+                                                        {!isSelf && (
+                                                           <div className="flex items-center gap-1.5 mb-1 ml-1">
+                                                              <span className="text-[8px] font-black text-gray-500 uppercase">{m.profiles?.full_name || 'Anonymous'}</span>
+                                                              {isFaculty && (
+                                                                 <span className="px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-500 text-[6px] font-black uppercase">Faculty</span>
+                                                              )}
+                                                           </div>
+                                                        )}
+                                                        <div className={`px-4 py-2.5 rounded-2xl text-xs font-semibold leading-relaxed ${
+                                                           isSelf 
+                                                              ? 'bg-blue-600 text-white rounded-tr-none' 
+                                                              : 'bg-white/5 border border-white/5 text-gray-300 rounded-tl-none'
+                                                        }`}>
+                                                           {m.message}
+                                                        </div>
+                                                     </div>
+                                                  )
+                                               })
+                                            )}
+                                            <div ref={messagesEndRef} />
+                                         </div>
+
+                                         {profile.id === userTeam.leader_id ? (
+                                            <form onSubmit={handleSendMessage} className="flex gap-2">
+                                               <input
+                                                  type="text"
+                                                  value={newMessage}
+                                                  onChange={(e) => setNewMessage(e.target.value)}
+                                                  placeholder="Type a message as Team Leader..."
+                                                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs outline-none focus:border-blue-500/50 transition-colors"
+                                               />
+                                               <button
+                                                  type="submit"
+                                                  className="px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
+                                               >
+                                                  Send
+                                               </button>
+                                            </form>
+                                         ) : (
+                                            <div className="py-3 px-4 bg-white/5 border border-white/5 rounded-2xl text-center">
+                                               <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                                                  🔒 Only team leaders can chat in event discussion room
+                                               </p>
+                                            </div>
+                                         )}
+                                      </div>
+                                   ) : (
+                                      <div className="space-y-4 mt-6 pt-6 border-t border-white/5 text-center">
+                                         <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest py-6">Event Discussion Room is disabled by host</p>
+                                      </div>
+                                   )}
+                                </div>
+                             ) : (
+                                <div className="py-10 text-center">
+                                   <p className="text-xs font-black text-gray-500 uppercase tracking-wider animate-pulse">Establishing Team Uplink...</p>
+                                </div>
+                             )
+                          ) : (
+                             // Not Registered
+                             (() => {
+                                const pendingInvite = teamInvites.find(inv => inv.event_teams?.events?.id === selectedEvent.id);
+                                if (pendingInvite) {
+                                   return (
+                                      <div className="p-6 bg-yellow-500/10 border border-yellow-500/20 rounded-3xl space-y-4">
+                                         <div>
+                                            <h4 className="text-xs font-black text-yellow-500 uppercase tracking-widest">Pending Invitation Found</h4>
+                                            <p className="text-[10px] font-black text-white uppercase mt-1">
+                                               You have been invited to join Team <span className="text-yellow-400 font-bold">{pendingInvite.event_teams?.team_name}</span> by {pendingInvite.event_teams?.profiles?.full_name}.
+                                            </p>
+                                         </div>
+                                         <div className="flex gap-2">
+                                            <button 
+                                               onClick={() => handleAcceptInvite(pendingInvite)}
+                                               className="flex-1 py-3 bg-yellow-600 hover:bg-yellow-500 text-black text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
+                                            >
+                                               Accept Invite
+                                            </button>
+                                            <button 
+                                               onClick={() => handleDeclineInvite(pendingInvite)}
+                                               className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white border border-white/10 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
+                                            >
+                                               Decline
+                                            </button>
+                                         </div>
+                                      </div>
+                                   );
+                                } else {
+                                   return (
+                                      <div className="space-y-4">
+                                         {!isCreatingTeam ? (
+                                            <motion.button
+                                               whileTap={{ scale: 0.98 }}
+                                               onClick={() => setIsCreatingTeam(true)}
+                                               className="w-full py-5 md:py-7 rounded-2xl md:rounded-[32px] font-black text-[10px] md:text-xs uppercase tracking-[0.3em] md:tracking-[0.4em] transition-all flex items-center justify-center gap-3 bg-blue-600 text-white shadow-[0_15px_40px_rgba(37,99,235,0.4)] hover:bg-blue-500 active:scale-95"
+                                            >
+                                               Register Team
+                                            </motion.button>
+                                         ) : (
+                                            <form onSubmit={handleCreateTeam} className="bg-white/5 border border-white/5 rounded-3xl p-6 space-y-4">
+                                               <div className="flex justify-between items-center border-b border-white/5 pb-3">
+                                                  <h4 className="text-xs font-black text-white uppercase tracking-widest">Create Event Team</h4>
+                                                  <button type="button" onClick={() => setIsCreatingTeam(false)} className="text-[10px] font-black text-gray-500 hover:text-white uppercase tracking-widest">Cancel</button>
+                                               </div>
+                                               
+                                               <div className="space-y-2">
+                                                  <label className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Team Name</label>
+                                                  <input 
+                                                     type="text"
+                                                     required
+                                                     value={teamName}
+                                                     onChange={e => setTeamName(e.target.value)}
+                                                     placeholder="ENTER A DISTINCT TEAM NAME..."
+                                                     className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-xs text-white outline-none focus:border-blue-500/30"
+                                                  />
+                                               </div>
+
+                                               <div className="space-y-2">
+                                                  <label className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Invite Classmates (Invite up to {selectedEvent.max_team_size - 1} members)</label>
+                                                  <div className="relative">
+                                                     <input 
+                                                        type="text" 
+                                                        value={searchQuery}
+                                                        onChange={e => setSearchQuery(e.target.value)}
+                                                        placeholder="Search classmates by name..."
+                                                        className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-xs text-white outline-none"
+                                                     />
+                                                     <Search size={14} className="absolute right-4 top-3.5 text-gray-500" />
+                                                  </div>
+                                                  
+                                                  {/* Selected teammates list */}
+                                                  {selectedTeammates.length > 0 && (
+                                                     <div className="space-y-2 pt-2">
+                                                        <p className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Invited List</p>
+                                                        <div className="flex flex-wrap gap-2">
+                                                           {selectedTeammates.map(student => (
+                                                              <span key={student.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-full text-[9px] font-black uppercase">
+                                                                 {student.full_name}
+                                                                 <button 
+                                                                    type="button" 
+                                                                    onClick={() => setSelectedTeammates(prev => prev.filter(s => s.id !== student.id))}
+                                                                    className="text-red-500 hover:text-red-400 font-bold ml-1"
+                                                                 >
+                                                                    ×
+                                                                 </button>
+                                                              </span>
+                                                           ))}
+                                                        </div>
+                                                     </div>
+                                                  )}
+
+                                                  {/* Search results */}
+                                                  {searchResults.length > 0 && (
+                                                     <div className="bg-black/50 border border-white/10 rounded-2xl p-3 max-h-40 overflow-y-auto no-scrollbar space-y-2">
+                                                        {searchResults
+                                                           .filter(res => !selectedTeammates.some(s => s.id === res.id))
+                                                           .map(res => (
+                                                              <div key={res.id} className="flex justify-between items-center p-2 hover:bg-white/5 rounded-xl">
+                                                                 <div>
+                                                                    <p className="text-[10px] font-black text-white uppercase">{res.full_name}</p>
+                                                                    <p className="text-[7px] font-black text-gray-500 uppercase">{res.department || 'Student'}</p>
+                                                                 </div>
+                                                                 <button 
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                       if (selectedTeammates.length >= selectedEvent.max_team_size - 1) {
+                                                                          toast.error(`You can only invite up to ${selectedEvent.max_team_size - 1} classmates for this format`);
+                                                                          return;
+                                                                       }
+                                                                       setSelectedTeammates(prev => [...prev, res]);
+                                                                       setSearchQuery('');
+                                                                       setSearchResults([]);
+                                                                    }}
+                                                                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[8px] font-black uppercase tracking-wider"
+                                                                 >
+                                                                    Add
+                                                                 </button>
+                                                              </div>
+                                                        ))}
+                                                     </div>
+                                                  )}
+                                               </div>
+
+                                               <button
+                                                  type="submit"
+                                                  className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black text-[9px] uppercase tracking-[0.2em] shadow-lg transition-all"
+                                               >
+                                                  Launch Team
+                                               </button>
+                                            </form>
+                                         )}
+                                      </div>
+                                   );
+                                }
+                             })()
+                          )}
+                       </div>
                     ) : (
-                      <motion.button
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => handleRegister(selectedEvent)}
-                        className="w-full py-5 md:py-7 rounded-2xl md:rounded-[32px] font-black text-[10px] md:text-xs uppercase tracking-[0.3em] md:tracking-[0.4em] transition-all flex items-center justify-center gap-3 bg-blue-600 text-white shadow-[0_15px_40px_rgba(37,99,235,0.4)] hover:bg-blue-500 active:scale-95"
-                      >
-                        Initiate Linking
-                      </motion.button>
+                       // Solo Event Format
+                       registeredEvents.includes(selectedEvent.id) ? (
+                          selectedEvent.enable_chat ? (
+                             <div className="space-y-4 mt-6 pt-6 border-t border-white/5">
+                                <div className="flex items-center gap-2 mb-2">
+                                   <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                                   <h4 className="text-[10px] font-black uppercase tracking-widest text-green-500">Event Discussion Room</h4>
+                                </div>
+                                
+                                <div className="h-48 overflow-y-auto no-scrollbar bg-white/5 rounded-2xl p-4 border border-white/5 flex flex-col gap-3">
+                                   {roomMessages.length === 0 ? (
+                                      <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest text-center my-auto">No messages in this event room yet. Be the first to start the discussion!</p>
+                                   ) : (
+                                      roomMessages.map((m) => {
+                                         const isSelf = m.sender_id === profile?.id
+                                         const isFaculty = m.profiles?.role === 'faculty' || m.profiles?.role === 'admin'
+                                         return (
+                                            <div key={m.id} className={`flex flex-col max-w-[85%] ${isSelf ? 'self-end items-end' : 'self-start items-start'}`}>
+                                               {!isSelf && (
+                                                  <div className="flex items-center gap-1.5 mb-1 ml-1">
+                                                     <span className="text-[8px] font-black text-gray-500 uppercase">{m.profiles?.full_name || 'Anonymous'}</span>
+                                                     {isFaculty && (
+                                                        <span className="px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-500 text-[6px] font-black uppercase">Faculty</span>
+                                                     )}
+                                                  </div>
+                                               )}
+                                               <div className={`px-4 py-2.5 rounded-2xl text-xs font-semibold leading-relaxed ${
+                                                  isSelf 
+                                                     ? 'bg-blue-600 text-white rounded-tr-none' 
+                                                     : 'bg-white/5 border border-white/5 text-gray-300 rounded-tl-none'
+                                               }`}>
+                                                  {m.message}
+                                               </div>
+                                            </div>
+                                         )
+                                      })
+                                   )}
+                                   <div ref={messagesEndRef} />
+                                </div>
+
+                                <form onSubmit={handleSendMessage} className="flex gap-2">
+                                   <input
+                                      type="text"
+                                      value={newMessage}
+                                      onChange={(e) => setNewMessage(e.target.value)}
+                                      placeholder="Type a message to event members..."
+                                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs outline-none focus:border-blue-500/50 transition-colors"
+                                   />
+                                   <button
+                                      type="submit"
+                                      className="px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
+                                   >
+                                      Send
+                                   </button>
+                                </form>
+                             </div>
+                          ) : (
+                             <div className="space-y-4 mt-6 pt-6 border-t border-white/5 text-center">
+                                <div className="flex items-center gap-2 mb-2 justify-center">
+                                   <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                                   <h4 className="text-[10px] font-black uppercase tracking-widest text-red-500">Event Discussion Room</h4>
+                                </div>
+                                <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest py-6">Event Discussion Room is disabled by host</p>
+                             </div>
+                          )
+                       ) : (
+                          <motion.button
+                             whileTap={{ scale: 0.98 }}
+                             onClick={() => handleRegister(selectedEvent)}
+                             className="w-full py-5 md:py-7 rounded-2xl md:rounded-[32px] font-black text-[10px] md:text-xs uppercase tracking-[0.3em] md:tracking-[0.4em] transition-all flex items-center justify-center gap-3 bg-blue-600 text-white shadow-[0_15px_40px_rgba(37,99,235,0.4)] hover:bg-blue-500 active:scale-95"
+                          >
+                             Initiate Linking
+                          </motion.button>
+                       )
                     )}
+                   </div>
                 </div>
               </motion.div>
             </div>
