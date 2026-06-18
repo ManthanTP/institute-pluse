@@ -45,7 +45,7 @@ Educational institutions face multiple disconnected challenges:
 - **Gamified Sustainability** — Eco Points (XP), badges, streaks, and a real-time campus leaderboard create a competitive, engaging environment for green behavior.
 - **Smart QR Attendance** — Timetable-driven, auto-generated QR codes with batch-level granularity, anti-proxy validation, and faculty verification.
 - **Campus Services Hub** — Eco-Cafeteria ordering, lost & found registry, complaint ticketing, campus navigation, and event management — all in one place.
-- **AI-Powered Tools** — AI Study Planner (powered by Google Gemini) for academic productivity.
+- **Interactive Study Tools** — Local Study Planner with Pomodoro timers for academic productivity.
 - **Role-Based Dashboards** — Dedicated control panels for Students, Faculty, Cafeteria Owners, and Administrators.
 - **Campus Green Cover Tracker** — Tracks trees, plants, and lawn area to calculate daily CO₂ absorption and determine if the campus is carbon neutral.
 - **Anti-Cheat Carbon Integrity System** — Prevents gaming of the eco-points system with smart validation, canteen cross-referencing, quarantine workflows, and suspension enforcement.
@@ -64,7 +64,7 @@ Educational institutions face multiple disconnected challenges:
 | **Animations** | Framer Motion | 12.12.1 |
 | **Charts & Graphs** | Recharts | 2.15.3 |
 | **Backend (BaaS)** | Supabase (PostgreSQL, Auth, Realtime, RLS) | 2.49.8 |
-| **AI Engine** | Google Gemini API (@google/generative-ai) | 0.24.1 |
+| **JSON Utilities** | Native JSON parser | — |
 | **Mobile Framework** | Capacitor (Android) | 8.4.0 |
 | **Icons** | Lucide React | 0.511.0 |
 | **QR Code Generation** | qrcode + qrcode.react | 1.5.4 / 4.2.0 |
@@ -105,9 +105,6 @@ Educational institutions face multiple disconnected challenges:
 │  │PostgreSQL │ │  Auth    │ │ Realtime │ │ Row Level    │  │
 │  │ Database  │ │ (Email)  │ │Subscript.│ │  Security    │  │
 │  └───────────┘ └──────────┘ └──────────┘ └──────────────┘  │
-├──────────────────────────────────────────────────────────────┤
-│                      AI LAYER                                │
-│  Google Gemini API (Study Planner, AI Tips)                   │
 ├──────────────────────────────────────────────────────────────┤
 │                      MOBILE LAYER                            │
 │  Capacitor → Android APK (com.institutepulse.app)            │
@@ -555,23 +552,30 @@ If Net Carbon ≤ 0 → Campus is CARBON NEUTRAL ✅
 ### 7.7 Events System
 
 **Student Flow:**
-```
-Browse Events → Filter by Category → View Details → Register → QR Pass Generated → Access Event Discussion Room → Attend → Eco Points Awarded
-```
+Browse Events → Filter by Category → View Details → Register (Solo or Create/Join Team) → QR Pass Generated → Access Event Discussion Room → Attend → Eco Points Awarded
 
-**Event Categories:** Sustainability, Technical, Workshop, Seminar, History (past events).
+**Event Categories:** Sustainability, Technical, Workshop, Seminar, History (past events), Hackathon, Gaming, Other.
 
-**Event Data:** Title, date/time, venue, category, max participants, current participants, eco reward points, description, chat toggle.
+**Event Data:** Title, date/time, venue, category, max participants, current participants, eco reward points, description, chat toggle, team_type, max_team_size.
 
-**Management:** Faculty and Admin can create, edit, and manage events. Participant lists, QR-based check-in, attendance reports.
+**Game / Team Format Configurations:**
+- Supports **Solo**, **Duo**, **Trio**, **Squad**, and **Custom Size** options.
+- Organizers (Admin/Faculty) specify formats and set custom maximum sizes (e.g. up to 10 for Hackathons).
 
-**🆕 Event Discussion Room (Live Chat):**
-- Real-time chat room per event using Supabase Realtime on `event_messages` table.
-- Only visible to registered participants after they join an event.
-- Faculty/Admin messages show a role badge.
-- Chat can be enabled/disabled per event by the organizer (`enable_chat` field).
-- Uses `event_messages` table with `sender_id`, `event_id`, `message` fields.
-- Role-differentiated message bubbles (self vs others, faculty badge).
+**Teammate Invitations & Registration Flow:**
+- Unregistered students register for team events by creating a team (inputting a Team Name and searching/inviting classmates from the student directory).
+- The team creator is assigned as the **Team Leader**. Teammates are added with a `pending` status.
+- Students receive real-time notifications about team invites on their dashboard and can **Accept** or **Decline**. Accepting registers them as `accepted` and links them to the event's participants.
+- Registered users can view their team roster and real-time statuses (Leader, Accepted, Pending, Declined). Leaders can invite additional classmates if empty slots are available.
+
+**Leader-Only Chat Room Restrictions:**
+- In team events, only the **Team Leader** (the team creator) is permitted to type and send messages in the discussion room.
+- Non-leader members have read-only access to the discussion room with a lock status indicator: `🔒 Only team leaders can chat in event discussion room`.
+- For solo events, any registered student can chat freely.
+
+**Management & Exports:**
+- Faculty and Admin dashboards display registrations grouped by Team Name for team events, detailing member roles and status.
+- Support for exporting rosters in **PDF** and **Excel** (`XLSX` format compiled using SheetJS/`xlsx` library).
 
 ---
 
@@ -610,10 +614,10 @@ Browse Events → Filter by Category → View Details → Register → QR Pass G
 
 ---
 
-### 7.11 AI-Powered Features (Google Gemini)
+### 7.11 Interactive Study Planner & Local Tips
 
-- **AI Study Planner:** Organizes focus sessions with AI-generated task breakdowns. Includes task CRUD with `study_tasks` table, status management (pending → in_progress → completed), AI-generated study plans, and focus timer integration.
-- **AI Carbon Tips:** After logging, AI generates personalized sustainability tips in the carbon log results based on the user's carbon footprint data.
+- **Interactive Study Planner:** Organizes focus sessions with task breakdowns. Includes task CRUD with `study_tasks` table, status management (pending → in_progress → completed), customizable study schedules, and Pomodoro focus timer integration.
+- **Local Carbon Tips:** After logging, the local rule-based system generates personalized sustainability tips in the carbon log results based on the user's carbon footprint categories (e.g. suggesting transit sharing if commute carbon is high).
 
 ---
 
@@ -972,7 +976,7 @@ InstitutePulse/
 - GPS-based classroom validation for attendance
 - Face verification for anti-proxy detection
 - NFC-based attendance scanning
-- AI proxy detection using behavioral patterns
+- Algorithmic proxy detection using behavioral patterns
 - Offline attendance sync
 - Push notifications via Firebase Cloud Messaging
 - iOS build via Capacitor
