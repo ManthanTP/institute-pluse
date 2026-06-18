@@ -137,39 +137,53 @@ export default function AttendancePage() {
       await stopScanner()
     }
 
-    setTimeout(async () => {
-      const element = document.getElementById("reader")
-      if (!element) return
+    // Polling function to wait for the DOM element to be available (handles animation delay)
+    const waitForElement = (id, retries = 20, delay = 100) => {
+      return new Promise((resolve, reject) => {
+        const check = () => {
+          const el = document.getElementById(id)
+          if (el) {
+            resolve(el)
+          } else if (retries > 0) {
+            setTimeout(check, delay)
+          } else {
+            reject(new Error(`Scanner container element #${id} not found in DOM`))
+          }
+        }
+        check()
+      })
+    }
 
-      try {
-        const html5QrCode = new Html5Qrcode("reader")
-        scannerRef.current = html5QrCode
-        
-        const config = { 
-          fps: 15, 
-          qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.0,
-          showTorchButtonIfSupported: true
-        }
-        
-        await html5QrCode.start(
-          { facingMode: "environment" },
-          config,
-          async (decodedText) => {
-            await stopScanner()
-            setScanning(false)
-            await markAttendance(decodedText)
-          },
-          () => {} // Silent scan errors
-        )
-      } catch (err) {
-        console.error("Scanner Start Error:", err)
-        if (!err.toString().includes("is already running")) {
-          toast.error("Camera access failed. Check permissions.")
-          setScanning(false)
-        }
+    try {
+      await waitForElement("reader")
+      const html5QrCode = new Html5Qrcode("reader")
+      scannerRef.current = html5QrCode
+      
+      const config = { 
+        fps: 15, 
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0,
+        showTorchButtonIfSupported: true
       }
-    }, 400)
+      
+      await html5QrCode.start(
+        { facingMode: "environment" },
+        config,
+        async (decodedText) => {
+          await stopScanner()
+          setScanning(false)
+          await markAttendance(decodedText)
+        },
+        () => {} // Silent scan errors
+      )
+    } catch (err) {
+      console.error("Scanner Start Error:", err)
+      const errMsg = err.toString()
+      if (!errMsg.includes("is already running")) {
+        toast.error("Camera access failed. Check permissions.")
+        setScanning(false)
+      }
+    }
   }
 
   const stopScanner = async () => {

@@ -12,6 +12,34 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { toDataURL } from 'qrcode'
 
+// Cross-platform PDF save: uses native Share sheet on Capacitor, standard download on web
+async function savePDF(doc, filename) {
+  if (window.Capacitor?.isNativePlatform()) {
+    try {
+      const pdfBlob = doc.output('blob')
+      const base64Data = await new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onloadend = () => resolve(reader.result.split(',')[1])
+        reader.onerror = reject
+        reader.readAsDataURL(pdfBlob)
+      })
+      const { Filesystem, Directory } = await import('@capacitor/filesystem')
+      const { Share } = await import('@capacitor/share')
+      const result = await Filesystem.writeFile({
+        path: `${filename}.pdf`,
+        data: base64Data,
+        directory: Directory.Cache,
+      })
+      await Share.share({ title: filename, url: result.uri })
+    } catch (err) {
+      console.error('Native PDF save error:', err)
+      doc.save(`${filename}.pdf`)
+    }
+  } else {
+    doc.save(`${filename}.pdf`)
+  }
+}
+
 // ── Existing Color Palette (Default Cyber Intelligence) ──
 export const COLORS = {
   bg: [5, 8, 22],             // #050816
@@ -772,7 +800,7 @@ export async function exportTablePDF({ title, subtitle, headers, rows, filename,
 
   // Draw footers on all pages
   drawFooter(doc, docId, dateStr, studentName, colors)
-  doc.save(`${filename}.pdf`)
+  await savePDF(doc, filename)
 }
 
 /**
@@ -874,5 +902,5 @@ export async function exportReportPDF({ title, subtitle, data, filename, student
 
   // Footers
   drawFooter(doc, docId, dateStr, studentName, colors)
-  doc.save(`${filename}.pdf`)
+  await savePDF(doc, filename)
 }

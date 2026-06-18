@@ -115,13 +115,23 @@ function StatItem({ label, value, icon: Icon, color, index }) {
 
 export default function LandingPage() {
   const navigate = useNavigate()
-  const { user, profile } = useAuthStore()
+  const { user, profile, loading, initialized } = useAuthStore()
   const [mobileMenu, setMobileMenu] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [activeTab, setActiveTab] = useState('CAMPUS')
   const [featureModal, setFeatureModal] = useState(null)
   const [isMobile, setIsMobile] = useState(false)
   const [currentSlide, setCurrentSlide] = useState(0)
+
+  // Auto-redirect logged-in users to their dashboard (fixes APK session persistence)
+  useEffect(() => {
+    if (initialized && !loading && user && profile) {
+      if (profile.role === 'admin') navigate('/12345678/admin/dashboard', { replace: true })
+      else if (profile.role === 'faculty') navigate('/faculty/dashboard', { replace: true })
+      else if (profile.role === 'owner') navigate('/owner/dashboard', { replace: true })
+      else navigate('/dashboard', { replace: true })
+    }
+  }, [initialized, loading, user, profile, navigate])
 
   // Dynamic landing page content from Supabase
   const { content: cms } = useLandingContent()

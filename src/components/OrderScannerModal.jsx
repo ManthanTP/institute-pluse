@@ -27,37 +27,50 @@ export default function OrderScannerModal({ isOpen, onClose, onOrderProcessed })
       await stopScanner()
     }
 
-    setTimeout(async () => {
-      const element = document.getElementById("qr-reader-global")
-      if (!element) return
+    // Polling function to wait for the DOM element to be available (handles animation delay)
+    const waitForElement = (id, retries = 20, delay = 100) => {
+      return new Promise((resolve, reject) => {
+        const check = () => {
+          const el = document.getElementById(id)
+          if (el) {
+            resolve(el)
+          } else if (retries > 0) {
+            setTimeout(check, delay)
+          } else {
+            reject(new Error(`Scanner container element #${id} not found in DOM`))
+          }
+        }
+        check()
+      })
+    }
 
-      try {
-        const html5QrCode = new Html5Qrcode("qr-reader-global")
-        scannerRef.current = html5QrCode
-        
-        const config = { 
-          fps: 15, 
-          qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.0,
-          showTorchButtonIfSupported: true
-        }
-        
-        await html5QrCode.start(
-          { facingMode: "environment" },
-          config,
-          async (decodedText) => {
-            handleScanSuccess(decodedText)
-          },
-          () => {} // Silent scan errors
-        )
-      } catch (err) {
-        console.error("Scanner Start Error:", err)
-        // If it's already running, don't toast
-        if (!err.includes("is already running")) {
-          toast.error("Camera access failed. Check permissions.")
-        }
+    try {
+      await waitForElement("qr-reader-global")
+      const html5QrCode = new Html5Qrcode("qr-reader-global")
+      scannerRef.current = html5QrCode
+      
+      const config = { 
+        fps: 15, 
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0,
+        showTorchButtonIfSupported: true
       }
-    }, 400)
+      
+      await html5QrCode.start(
+        { facingMode: "environment" },
+        config,
+        async (decodedText) => {
+          handleScanSuccess(decodedText)
+        },
+        () => {} // Silent scan errors
+      )
+    } catch (err) {
+      console.error("Scanner Start Error:", err)
+      const errMsg = err?.toString() || ""
+      if (!errMsg.includes("is already running")) {
+        toast.error("Camera access failed. Check permissions.")
+      }
+    }
   }
 
   const stopScanner = async () => {
