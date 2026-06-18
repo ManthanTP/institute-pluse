@@ -9,6 +9,57 @@ import { useNavigate } from 'react-router-dom'
 
 const EVENT_CATEGORIES = ['All', 'History', 'Sustainability', 'Technical', 'Workshop', 'Seminar', 'Cultural', 'Sports', 'Hackathon', 'Gaming', 'Other']
 
+const getCountdownText = (dateStr, timeStr) => {
+  try {
+    if (!dateStr) return null;
+    let hours = 0;
+    let minutes = 0;
+    if (timeStr) {
+      const timeMatch = timeStr.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+      if (timeMatch) {
+        hours = parseInt(timeMatch[1], 10);
+        minutes = parseInt(timeMatch[2], 10);
+        const ampm = timeMatch[3];
+        if (ampm) {
+          if (ampm.toUpperCase() === 'PM' && hours < 12) hours += 12;
+          if (ampm.toUpperCase() === 'AM' && hours === 12) hours = 0;
+        }
+      }
+    }
+    
+    const eventDateTime = new Date(`${dateStr}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`);
+    if (isNaN(eventDateTime.getTime())) {
+      return null;
+    }
+    
+    const now = new Date();
+    const diffMs = eventDateTime.getTime() - now.getTime();
+    
+    if (diffMs > 0) {
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const diffHrs = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      const diffSecs = Math.floor((diffMs % (1000 * 60)) / 1000);
+      
+      if (diffDays > 0) {
+        return `Starts in: ${diffDays}d ${diffHrs}h ${diffMins}m`;
+      } else if (diffHrs > 0) {
+        return `Starts in: ${diffHrs}h ${diffMins}m`;
+      } else {
+        return `Starts in: ${diffMins}m ${diffSecs}s`;
+      }
+    } else {
+      const todayStr = now.toISOString().split('T')[0];
+      if (dateStr === todayStr) {
+        return "Started (Active)";
+      }
+      return "Completed";
+    }
+  } catch (e) {
+    return null;
+  }
+};
+
 export default function EventsPage() {
   const { profile } = useAuthStore()
   const navigate = useNavigate()
@@ -30,6 +81,85 @@ export default function EventsPage() {
   const [roomMessages, setRoomMessages] = useState([])
   const [newMessage, setNewMessage] = useState('')
   const messagesEndRef = useRef(null)
+
+  const [tick, setTick] = useState(0)
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTick(prev => prev + 1)
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const checkAndCreateEventReminders = async (registeredEventsList, eventsList, userId) => {
+    try {
+      if (!userId || !registeredEventsList || registeredEventsList.length === 0) return;
+      
+      const { data: existingNotifs, error } = await supabase
+        .from('notifications')
+        .select('message')
+        .eq('user_id', userId)
+        .eq('type', 'event_reminder');
+        
+      if (error) {
+        console.error('Error fetching notifications:', error);
+        return;
+      }
+      
+      const existingMessages = existingNotifs ? existingNotifs.map(n => n.message) : [];
+      const now = new Date();
+      
+      for (const eventId of registeredEventsList) {
+        const event = eventsList.find(e => e.id === eventId);
+        if (!event) continue;
+        
+        let hours = 0;
+        let minutes = 0;
+        if (event.event_time) {
+          const timeMatch = event.event_time.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+          if (timeMatch) {
+            hours = parseInt(timeMatch[1], 10);
+            minutes = parseInt(timeMatch[2], 10);
+            const ampm = timeMatch[3];
+            if (ampm) {
+              if (ampm.toUpperCase() === 'PM' && hours < 12) hours += 12;
+              if (ampm.toUpperCase() === 'AM' && hours === 12) hours = 0;
+            }
+          }
+        }
+        
+        const eventDateTime = new Date(`${event.event_date}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`);
+        if (isNaN(eventDateTime.getTime())) continue;
+        
+        const diffMs = eventDateTime.getTime() - now.getTime();
+        
+        // If event starts in less than 24 hours and is in the future
+        if (diffMs > 0 && diffMs <= 86400000) {
+          const reminderMsg = `Friendly reminder: The event "${event.title}" is starting in less than 24 hours at ${event.venue}!`;
+          
+          if (!existingMessages.some(m => m === reminderMsg)) {
+            await supabase
+              .from('notifications')
+              .insert({
+                user_id: userId,
+                title: `Upcoming Event: ${event.title}`,
+                message: reminderMsg,
+                type: 'event_reminder',
+                is_read: false
+              });
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error in checkAndCreateEventReminders:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (profile?.id && registeredEvents.length > 0 && events.length > 0) {
+      checkAndCreateEventReminders(registeredEvents, events, profile.id)
+    }
+  }, [registeredEvents, events, profile?.id])
 
   // Scroll chat room to bottom
   useEffect(() => {
@@ -579,13 +709,24 @@ export default function EventsPage() {
                 onClick={() => setSelectedEvent(event)}
                 className="bg-[#161b22]/80 border border-white/5 rounded-2xl md:rounded-[40px] p-5 md:p-8 backdrop-blur-2xl relative overflow-hidden group active:scale-[0.98] transition-transform"
               >
-                <div className="flex items-center gap-3 mb-6">
+                <div className="flex items-center gap-3 mb-6 flex-wrap">
                   <span className="px-4 py-1.5 rounded-full bg-blue-600/10 border border-blue-500/20 text-[9px] font-black text-blue-500 uppercase tracking-widest">
                     {event.category}
                   </span>
                   {isRegistered && (
                     <span className="px-4 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 text-[9px] font-black text-green-500 uppercase tracking-widest">
                       Registered ✓
+                    </span>
+                  )}
+                  {getCountdownText(event.event_date, event.event_time) && (
+                    <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                      getCountdownText(event.event_date, event.event_time).startsWith('Starts in')
+                        ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-500'
+                        : getCountdownText(event.event_date, event.event_time) === 'Completed'
+                          ? 'bg-gray-500/10 border-gray-500/20 text-gray-400'
+                          : 'bg-green-500/10 border-green-500/20 text-green-500 animate-pulse'
+                    }`}>
+                      {getCountdownText(event.event_date, event.event_time)}
                     </span>
                   )}
                 </div>
@@ -636,10 +777,10 @@ export default function EventsPage() {
               <motion.div 
                 initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="relative w-full max-w-2xl bg-[#0a0c10] border-t border-white/10 rounded-t-3xl md:rounded-t-[50px] p-5 md:p-10 shadow-2xl pointer-events-auto flex flex-col"
-                style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}
+                className="relative w-full max-w-2xl bg-[#0a0c10] border-t border-white/10 rounded-t-3xl md:rounded-t-[50px] p-5 md:p-10 shadow-2xl pointer-events-auto flex flex-col max-h-[92vh] md:max-h-[90vh]"
+                style={{ paddingBottom: 'calc(3rem + env(safe-area-inset-bottom))' }}
               >
-                <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-8" />
+                <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-8 flex-shrink-0" />
                 
                 <div className="flex items-center justify-between mb-8">
                    <div className="flex items-center gap-4">
@@ -654,10 +795,22 @@ export default function EventsPage() {
                    <button onClick={() => setSelectedEvent(null)} className="p-3 rounded-xl bg-white/5 border border-white/10 text-gray-400"><X size={20} /></button>
                 </div>
 
-                <div className="space-y-6 overflow-y-auto no-scrollbar max-h-[60vh] pr-2 pb-10">
-                   <p className="text-gray-400 text-[13px] leading-relaxed font-medium">
-                      {selectedEvent.description}
-                   </p>
+                <div className="space-y-6 overflow-y-auto no-scrollbar max-h-[75vh] md:max-h-[75vh] pr-2 pb-10 flex-1">
+                    {getCountdownText(selectedEvent.event_date, selectedEvent.event_time) && (
+                      <div className={`p-4 rounded-2xl border text-center ${
+                        getCountdownText(selectedEvent.event_date, selectedEvent.event_time).startsWith('Starts in')
+                          ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-500'
+                          : getCountdownText(selectedEvent.event_date, selectedEvent.event_time) === 'Completed'
+                            ? 'bg-gray-500/10 border-gray-500/20 text-gray-400'
+                            : 'bg-green-500/10 border-green-500/20 text-green-500 animate-pulse'
+                      }`}>
+                        <p className="text-[10px] font-black uppercase tracking-widest mb-0.5">Status Check</p>
+                        <p className="text-sm font-black uppercase tracking-wider">{getCountdownText(selectedEvent.event_date, selectedEvent.event_time)}</p>
+                      </div>
+                    )}
+                    <p className="text-gray-400 text-[13px] leading-relaxed font-medium">
+                       {selectedEvent.description}
+                    </p>
                    
                    <div className="grid grid-cols-2 gap-3 md:gap-4">
                       <StatNode label="Temporal" value={selectedEvent.event_date} icon={Clock} />
@@ -729,7 +882,7 @@ export default function EventsPage() {
                                                <Search size={14} className="absolute right-3 top-3.5 text-gray-500" />
                                             </div>
                                             {searchResults.length > 0 && (
-                                               <div className="bg-black/50 border border-white/10 rounded-xl p-2 max-h-36 overflow-y-auto no-scrollbar space-y-1">
+                                               <div className="bg-black/50 border border-white/10 rounded-xl p-2 max-h-48 md:max-h-64 overflow-y-auto no-scrollbar space-y-1">
                                                   {searchResults
                                                      .filter(res => !userTeam.members.some(m => m.student_id === res.id))
                                                      .map(res => (
@@ -759,7 +912,7 @@ export default function EventsPage() {
                                             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                                             <h4 className="text-[10px] font-black uppercase tracking-widest text-green-500">Event Discussion Room</h4>
                                          </div>
-                                         <div className="h-48 overflow-y-auto no-scrollbar bg-white/5 rounded-2xl p-4 border border-white/5 flex flex-col gap-3">
+                                         <div className="h-72 md:h-96 overflow-y-auto no-scrollbar bg-white/5 rounded-2xl p-4 border border-white/5 flex flex-col gap-3">
                                             {roomMessages.length === 0 ? (
                                                <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest text-center my-auto">No messages yet. Only the leader can send messages.</p>
                                             ) : (

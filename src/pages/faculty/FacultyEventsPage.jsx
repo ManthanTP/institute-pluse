@@ -24,6 +24,12 @@ export default function FacultyEventsPage() {
   const [formTeamType, setFormTeamType] = useState('solo')
   const [formMaxTeamSize, setFormMaxTeamSize] = useState(1)
 
+  // XP Distribution States
+  const [xpModalTarget, setXpModalTarget] = useState(null)
+  const [xpAmount, setXpAmount] = useState(50)
+  const [splitEqually, setSplitEqually] = useState(false)
+  const [isDistributingXp, setIsDistributingXp] = useState(false)
+
   // Event Room Chat States
   const [activeModalTab, setActiveModalTab] = useState('roster') // 'roster', 'chat'
   const [roomMessages, setRoomMessages] = useState([])
@@ -118,6 +124,61 @@ export default function FacultyEventsPage() {
   useEffect(() => {
     fetchEvents()
   }, [])
+
+  const handleAwardXP = (members, name) => {
+    setXpModalTarget({ members, name })
+    setXpAmount(selectedEvent?.eco_points || 50)
+    setSplitEqually(false)
+  }
+
+  async function submitXpDistribution() {
+    if (!xpModalTarget || isDistributingXp) return
+    setIsDistributingXp(true)
+    try {
+      const { members, name } = xpModalTarget
+      const acceptedMembers = members.filter(m => m.status === 'accepted' || !m.status);
+      const targetList = acceptedMembers.length > 0 ? acceptedMembers : members;
+      
+      const awardAmount = splitEqually ? Math.round(xpAmount / targetList.length) : xpAmount
+      
+      for (const member of targetList) {
+        const actualStudentId = member.student_id ? member.student_id : member.id;
+        if (!actualStudentId) continue;
+
+        const { data: prof, error: getErr } = await supabase
+          .from('profiles')
+          .select('eco_points')
+          .eq('id', actualStudentId)
+          .single()
+          
+        if (prof) {
+          const { error: updErr } = await supabase
+            .from('profiles')
+            .update({ eco_points: prof.eco_points + awardAmount })
+            .eq('id', actualStudentId);
+            
+          if (!updErr) {
+            await supabase
+              .from('notifications')
+              .insert({
+                user_id: actualStudentId,
+                title: `Event Reward: +${awardAmount} XP!`,
+                message: `You earned ${awardAmount} XP for participating in "${selectedEvent.title}"!`,
+                type: 'challenge',
+                is_read: false
+              });
+          }
+        }
+      }
+      toast.success(`Successfully distributed XP to ${name}!`)
+      setXpModalTarget(null)
+    } catch (err) {
+      console.error('XP distribution error:', err)
+      toast.error('Failed to distribute XP')
+    } finally {
+      setIsDistributingXp(false)
+    }
+  }
 
   async function fetchEvents() {
     setLoading(true)
@@ -597,8 +658,8 @@ export default function FacultyEventsPage() {
                 initial={{ scale: 0.95, opacity: 0, y: 20 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.95, opacity: 0, y: 20 }}
-                className="relative w-full max-w-2xl bg-slate-900 border border-white/10 rounded-[48px] p-12 shadow-2xl pointer-events-auto overflow-hidden flex flex-col max-h-[85vh]"
-                style={{ paddingBottom: 'calc(3rem + env(safe-area-inset-bottom))' }}
+                className="relative w-full max-w-2xl bg-slate-900 border border-white/10 rounded-[24px] md:rounded-[48px] p-6 md:p-12 shadow-2xl pointer-events-auto overflow-hidden flex flex-col max-h-[92vh] md:max-h-[90vh]"
+                style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))' }}
               >
                 <div className="flex items-center justify-between mb-8 flex-shrink-0">
                   <div>
@@ -652,8 +713,16 @@ export default function FacultyEventsPage() {
                         teamsData.map((team) => (
                           <div key={team.id} className="bg-white/5 border border-white/10 rounded-3xl p-6 space-y-4">
                             <div className="flex justify-between items-center border-b border-white/5 pb-3">
-                              <h3 className="text-sm font-black text-blue-500 uppercase tracking-wider">Team: {team.team_name}</h3>
-                              <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Leader: {team.profiles?.full_name}</span>
+                              <div>
+                                <h3 className="text-sm font-black text-blue-500 uppercase tracking-wider">Team: {team.team_name}</h3>
+                                <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest mt-1 block">Leader: {team.profiles?.full_name}</span>
+                              </div>
+                              <button
+                                onClick={() => handleAwardXP(team.members, team.team_name)}
+                                className="px-3 py-1.5 bg-yellow-600/20 hover:bg-yellow-600/30 border border-yellow-600/30 text-yellow-500 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all"
+                              >
+                                Distribute XP
+                              </button>
                             </div>
                             <div className="space-y-3">
                               {team.members.map(member => (
@@ -699,9 +768,17 @@ export default function FacultyEventsPage() {
                               <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">{p.profiles?.department || 'Student'}</p>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className="text-[9px] font-black text-white uppercase tracking-widest">{new Date(p.registered_at).toLocaleDateString()}</p>
-                            <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mt-1">Uplinked</p>
+                          <div className="flex items-center gap-4">
+                            <div className="text-right">
+                              <p className="text-[9px] font-black text-white uppercase tracking-widest">{new Date(p.registered_at).toLocaleDateString()}</p>
+                              <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mt-1">Uplinked</p>
+                            </div>
+                            <button
+                              onClick={() => handleAwardXP([p.profiles], p.profiles?.full_name)}
+                              className="px-3 py-1.5 bg-yellow-600/20 hover:bg-yellow-600/30 border border-yellow-600/30 text-yellow-500 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all"
+                            >
+                              Award XP
+                            </button>
                           </div>
                         </div>
                       ))
@@ -763,6 +840,78 @@ export default function FacultyEventsPage() {
                     </div>
                   )
                 )}
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
+
+      {createPortal(
+        <AnimatePresence>
+          {xpModalTarget && (
+            <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+              <motion.div 
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-slate-950/85 backdrop-blur-sm pointer-events-auto"
+                onClick={() => setXpModalTarget(null)}
+              />
+              <motion.div 
+                initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+                className="relative w-full max-w-md bg-slate-900 border border-white/10 rounded-3xl p-6 shadow-2xl overflow-hidden flex flex-col gap-4 text-white pointer-events-auto"
+              >
+                <div>
+                  <h3 className="text-lg font-black uppercase tracking-tight text-yellow-500">Distribute Event XP</h3>
+                  <p className="text-xs text-gray-400 mt-1">Awarding XP to: <span className="text-white font-bold">{xpModalTarget.name}</span></p>
+                </div>
+                
+                <div className="space-y-4 my-2">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">XP Amount to Award</label>
+                    <input 
+                      type="number"
+                      value={xpAmount}
+                      onChange={e => setXpAmount(parseInt(e.target.value) || 0)}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white outline-none focus:border-yellow-500/50"
+                      min="1"
+                    />
+                  </div>
+                  
+                  {xpModalTarget.members && xpModalTarget.members.length > 1 && (
+                    <div className="flex items-center gap-3 bg-white/5 border border-white/5 rounded-2xl p-4 cursor-pointer" onClick={() => setSplitEqually(!splitEqually)}>
+                      <input 
+                        type="checkbox"
+                        checked={splitEqually}
+                        onChange={() => {}}
+                        className="rounded bg-black/40 border-white/10 text-yellow-500 outline-none cursor-pointer"
+                      />
+                      <div>
+                        <p className="text-[11px] font-black uppercase tracking-tight">Split Points Equally</p>
+                        <p className="text-[9px] text-gray-500 mt-0.5">If checked, splits {xpAmount} XP among the {xpModalTarget.members.filter(m => m.status === 'accepted' || !m.status).length} members (~{Math.round(xpAmount / Math.max(1, xpModalTarget.members.filter(m => m.status === 'accepted' || !m.status).length))} XP each).</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-3 mt-2">
+                  <button 
+                    onClick={() => setXpModalTarget(null)}
+                    className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={submitXpDistribution}
+                    disabled={isDistributingXp}
+                    className="flex-1 py-3 bg-yellow-600 hover:bg-yellow-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                  >
+                    {isDistributingXp ? (
+                      <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      'Award XP'
+                    )}
+                  </button>
+                </div>
               </motion.div>
             </div>
           )}
