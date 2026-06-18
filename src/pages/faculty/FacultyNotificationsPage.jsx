@@ -36,6 +36,10 @@ export default function FacultyNotificationsPage() {
 
   useEffect(() => {
     if (!profile?.id) return
+    if (useFacultyNotifStore.getState().hasFetched) {
+      setLoading(false)
+      return
+    }
     setLoading(true)
     fetchNotifications(profile.id).finally(() => setLoading(false))
   }, [profile?.id])

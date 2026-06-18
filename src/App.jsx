@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect, Suspense, lazy } from 'react'
 import { Toaster } from 'react-hot-toast'
-import { useAuthStore } from './store/index'
+import { useAuthStore, useFacultyNotifStore, useNotifStore } from './store/index'
 import { supabase } from './lib/supabase'
 
 // Eager loaded (critical path)
@@ -126,6 +126,30 @@ function App() {
         useAuthStore.getState().fetchProfile(session.user.id)
       } else if (event === 'SIGNED_OUT') {
         useAuthStore.setState({ user: null, profile: null })
+
+        // Clean up faculty notifications channel and reset state
+        const facultyChannel = useFacultyNotifStore.getState().channel
+        if (facultyChannel) {
+          supabase.removeChannel(facultyChannel)
+        }
+        useFacultyNotifStore.setState({
+          notifications: [],
+          unreadCount: 0,
+          channel: null,
+          hasFetched: false
+        })
+
+        // Clean up student notifications channel and reset state
+        const studentChannel = useNotifStore.getState().channel
+        if (studentChannel) {
+          supabase.removeChannel(studentChannel)
+        }
+        useNotifStore.setState({
+          notifications: [],
+          unreadCount: 0,
+          channel: null,
+          hasFetched: false
+        })
       }
     })
 

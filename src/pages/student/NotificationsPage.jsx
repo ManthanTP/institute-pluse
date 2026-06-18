@@ -43,10 +43,12 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     if (profile?.id) {
+      if (useNotifStore.getState().hasFetched) {
+        setLoading(false)
+        return
+      }
       setLoading(true)
       fetchNotifications(profile.id).finally(() => setLoading(false))
-      const sub = useNotifStore.getState().subscribeToNotifications(profile.id)
-      return () => { supabase.removeChannel(sub) }
     }
   }, [profile?.id])
 

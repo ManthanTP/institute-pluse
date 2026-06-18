@@ -33,12 +33,7 @@ export default function FacultyLayout({ children }) {
   useEffect(() => {
     if (!profile?.id) return
     fetchNotifications(profile.id)
-    const channel = subscribeToNotifications(profile.id)
-    return () => {
-      if (channel) {
-        supabase.removeChannel(channel)
-      }
-    }
+    subscribeToNotifications(profile.id)
   }, [profile?.id])
 
   async function handleLogout() {

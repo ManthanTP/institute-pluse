@@ -77,8 +77,11 @@ export const useAuthStore = create((set, get) => ({
 export const useNotifStore = create((set, get) => ({
   notifications: [],
   unreadCount: 0,
+  channel: null,
+  hasFetched: false,
 
-  fetchNotifications: async (userId) => {
+  fetchNotifications: async (userId, force = false) => {
+    if (get().hasFetched && !force) return
     const { data } = await supabase
       .from('student_notifications')
       .select('*, sender:profiles!sender_id(full_name, role)')
@@ -89,7 +92,8 @@ export const useNotifStore = create((set, get) => ({
     if (data) {
       set({
         notifications: data,
-        unreadCount: data.filter(n => !n.is_read).length
+        unreadCount: data.filter(n => !n.is_read).length,
+        hasFetched: true
       })
     }
   },
@@ -131,16 +135,24 @@ export const useNotifStore = create((set, get) => ({
     }))
   },
 
-  addNotification: (notif) => set(state => ({
-    notifications: [notif, ...state.notifications],
-    unreadCount: state.unreadCount + (notif.is_read ? 0 : 1)
-  })),
+  addNotification: (notif) => set(state => {
+    if (state.notifications.some(n => n.id === notif.id)) {
+      return state
+    }
+    return {
+      notifications: [notif, ...state.notifications],
+      unreadCount: state.unreadCount + (notif.is_read ? 0 : 1)
+    }
+  }),
 
   subscribeToNotifications: (userId) => {
+    const currentChannel = get().channel
+    if (currentChannel) return currentChannel
+
     const uniqueId = Math.random().toString(36).substring(2, 9)
     const channelName = `student_notifs_${userId}_${uniqueId}`
 
-    return supabase
+    const channel = supabase
       .channel(channelName)
       .on('postgres_changes', {
         event: 'INSERT',
@@ -162,6 +174,9 @@ export const useNotifStore = create((set, get) => ({
         get().addNotification(fullNotif)
       })
       .subscribe()
+
+    set({ channel })
+    return channel
   }
 }))
 
@@ -277,8 +292,11 @@ export const useCartStore = create((set, get) => ({
 export const useFacultyNotifStore = create((set, get) => ({
   notifications: [],
   unreadCount: 0,
+  channel: null,
+  hasFetched: false,
 
-  fetchNotifications: async (userId) => {
+  fetchNotifications: async (userId, force = false) => {
+    if (get().hasFetched && !force) return
     const { data } = await supabase
       .from('notifications')
       .select('*, sender:profiles!sender_id(full_name, role)')
@@ -289,7 +307,8 @@ export const useFacultyNotifStore = create((set, get) => ({
     if (data) {
       set({
         notifications: data,
-        unreadCount: data.filter(n => !n.is_read).length
+        unreadCount: data.filter(n => !n.is_read).length,
+        hasFetched: true
       })
     }
   },
@@ -327,16 +346,24 @@ export const useFacultyNotifStore = create((set, get) => ({
     }))
   },
 
-  addNotification: (notif) => set(state => ({
-    notifications: [notif, ...state.notifications],
-    unreadCount: state.unreadCount + (notif.is_read ? 0 : 1)
-  })),
+  addNotification: (notif) => set(state => {
+    if (state.notifications.some(n => n.id === notif.id)) {
+      return state;
+    }
+    return {
+      notifications: [notif, ...state.notifications],
+      unreadCount: state.unreadCount + (notif.is_read ? 0 : 1)
+    };
+  }),
 
   subscribeToNotifications: (userId) => {
+    const currentChannel = get().channel
+    if (currentChannel) return currentChannel
+
     const uniqueId = Math.random().toString(36).substring(2, 9)
     const channelName = `faculty_notifs_${userId}_${uniqueId}`
 
-    return supabase
+    const channel = supabase
       .channel(channelName)
       .on('postgres_changes', {
         event: 'INSERT',
@@ -359,6 +386,9 @@ export const useFacultyNotifStore = create((set, get) => ({
         }
       })
       .subscribe()
+
+    set({ channel })
+    return channel
   }
 }))
 

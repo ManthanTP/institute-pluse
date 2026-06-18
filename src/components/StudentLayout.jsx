@@ -40,12 +40,7 @@ export default function StudentLayout({ children, title, showBack = false, hideC
   useEffect(() => {
     if (!profile?.id) return
     fetchNotifications(profile.id)
-    const channel = subscribeToNotifications(profile.id)
-    return () => {
-      if (channel) {
-        supabase.removeChannel(channel)
-      }
-    }
+    subscribeToNotifications(profile.id)
   }, [profile?.id])
 
   useEffect(() => {

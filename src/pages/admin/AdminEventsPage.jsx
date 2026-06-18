@@ -160,13 +160,14 @@ export default function AdminEventsPage() {
             
           if (!updErr) {
             await supabase
-              .from('notifications')
+              .from('student_notifications')
               .insert({
-                user_id: actualStudentId,
+                student_id: actualStudentId,
                 title: `Event Reward: +${awardAmount} XP!`,
                 message: `You earned ${awardAmount} XP for participating in "${selectedEvent.title}"!`,
-                type: 'challenge',
-                is_read: false
+                type: 'badge',
+                is_read: false,
+                sender_id: profile?.id
               });
           }
         }
@@ -199,7 +200,7 @@ export default function AdminEventsPage() {
   async function fetchParticipants(eventId) {
     const { data: pData } = await supabase
       .from('event_participants')
-      .select('*, profiles(full_name, email, department)')
+      .select('*, profiles(id, full_name, email, department)')
       .eq('event_id', eventId)
     
     if (pData) setParticipants(pData)
@@ -213,7 +214,7 @@ export default function AdminEventsPage() {
     if (teams && teams.length > 0) {
       const { data: members } = await supabase
         .from('event_team_members')
-        .select('*, profiles(full_name, email, department)')
+        .select('*, profiles(id, full_name, email, department)')
         .in('team_id', teams.map(t => t.id))
 
       const teamsWithMembers = teams.map(team => ({
@@ -804,7 +805,7 @@ export default function AdminEventsPage() {
                               <p className="text-[7px] lg:text-[8px] font-gray-500 uppercase tracking-widest mt-1">Uplinked</p>
                             </div>
                             <button
-                              onClick={() => handleAwardXP([p.profiles], p.profiles?.full_name)}
+                              onClick={() => handleAwardXP([{ ...p.profiles, id: p.student_id }], p.profiles?.full_name)}
                               className="px-3 py-1.5 bg-yellow-600/20 hover:bg-yellow-600/30 border border-yellow-600/30 text-yellow-500 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all"
                             >
                               Award XP

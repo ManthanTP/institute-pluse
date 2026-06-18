@@ -817,8 +817,9 @@ export default function EventsPage() {
                       <StatNode label="Hub" value={selectedEvent.venue} icon={MapPin} />
                       <StatNode label="Identity" value={`${selectedEvent.current_participants}/${selectedEvent.max_participants}`} icon={Users} />
                       <StatNode label="Yield" value={`+${selectedEvent.eco_points} XP`} icon={Star} />
-                      {/* Team Registration / Status / Invite Interface */}
-                    {selectedEvent.team_type && selectedEvent.team_type !== 'solo' ? (
+                   </div>
+                   {/* Team Registration / Status / Invite Interface */}
+                   {selectedEvent.team_type && selectedEvent.team_type !== 'solo' ? (
                        <div className="space-y-6 mt-6 pt-6 border-t border-white/5">
                           {registeredEvents.includes(selectedEvent.id) ? (
                              // Registered (User has a team)
@@ -1193,9 +1194,8 @@ export default function EventsPage() {
                           </motion.button>
                        )
                     )}
-                   </div>
-                </div>
-              </motion.div>
+                    </div>
+               </motion.div>
             </div>
           )}
         </AnimatePresence>,
