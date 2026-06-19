@@ -567,6 +567,7 @@ Browse Events → Filter by Category → View Details → Register (Solo or Crea
 - The team creator is assigned as the **Team Leader**. Teammates are added with a `pending` status.
 - Students receive real-time notifications about team invites on their dashboard and can **Accept** or **Decline**. Accepting registers them as `accepted` and links them to the event's participants.
 - Registered users can view their team roster and real-time statuses (Leader, Accepted, Pending, Declined). Leaders can invite additional classmates if empty slots are available.
+- **Visual Layout Fix (Desktop & Mobile):** The team registration form, classmate search results list, invite buttons, and live discussion panels are optimized to span the full width of the modal, resolving the previous cramped 50% left-column constraints.
 
 **Leader-Only Chat Room Restrictions:**
 - In team events, only the **Team Leader** (the team creator) is permitted to type and send messages in the discussion room.
@@ -638,6 +639,8 @@ Browse Events → Filter by Category → View Details → Register (Solo or Crea
   - `notifications` — general/faculty notifications (with optional user targeting).
 - Real-time via Supabase Realtime subscriptions.
 - Configurable notification preferences per user (eco, order, attendance, announcements).
+- **Optimization & Caching:** Prevents duplicate notification queries and redundant WebSocket connections by caching fetched status alerts using Zustand `hasFetched` persistent indicators. The database subscriptions are preserved across layout transitions and clean up automatically on logout to save network bandwidth.
+- **Faculty XP Awarding Notifications:** When faculty members award XP points, the system correctly fetches the student profile ID and routes the notifications to the targeted `student_notifications` table (represented with a Trophy icon) rather than the admin-only `notifications` table, ensuring students see their rewards immediately.
 
 ---
 
@@ -796,7 +799,7 @@ InstitutePulse/
 ├── green_cover_migration.sql       # Green cover tables migration
 ├── landing_sections_schema.sql     # Landing page CMS schema + seed data
 ├── fix_carbon_log_rls.sql          # Carbon log RLS fixes
-├── InstitutePulse.apk              # Built Android APK (40 MB)
+├── InstitutePulse.apk              # Built Android APK (~38 MB)
 ├── logo_with_background.jpeg       # Logo (with background)
 ├── logo_with_no_background.png     # Logo (transparent)
 │
@@ -932,12 +935,13 @@ InstitutePulse/
 | Platform | Configuration |
 |----------|--------------|
 | **Web Hosting** | Vercel (SPA with catch-all rewrite to index.html) |
-| **Mobile** | Capacitor → Android Studio → APK (40 MB) |
+| **Mobile** | Capacitor → Gradle Android Build (JDK 21) → APK (~38 MB) |
 | **Build Command** | `npm run build` (Vite production build) |
 | **Dev Command** | `npm run dev` (Vite dev server) |
 | **Preview Command** | `npm run preview` (Vite preview server) |
 | **Cap Sync** | `npx cap sync android` |
 | **Cap Open** | `npx cap open android` |
+| **Cap Build Outputs** | Placed in root, `public/`, and `dist/` as `InstitutePulse.apk` (~38.17 MB) |
 
 ---
 
