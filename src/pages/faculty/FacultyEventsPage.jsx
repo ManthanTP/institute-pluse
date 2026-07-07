@@ -158,6 +158,13 @@ export default function FacultyEventsPage() {
             .eq('id', actualStudentId);
             
           if (!updErr) {
+            // Update event_participants to show they attended and were awarded
+            await supabase
+              .from('event_participants')
+              .update({ attended: true })
+              .eq('event_id', selectedEvent.id)
+              .eq('student_id', actualStudentId);
+
             await supabase
               .from('student_notifications')
               .insert({
@@ -172,12 +179,32 @@ export default function FacultyEventsPage() {
         }
       }
       toast.success(`Successfully distributed XP to ${name}!`)
+      fetchParticipants(selectedEvent.id)
       setXpModalTarget(null)
     } catch (err) {
       console.error('XP distribution error:', err)
       toast.error('Failed to distribute XP')
     } finally {
       setIsDistributingXp(false)
+    }
+  }
+
+  const handleAwardAll = () => {
+    if (!selectedEvent) return
+    if (selectedEvent.team_type && selectedEvent.team_type !== 'solo') {
+      const allMembers = teamsData.flatMap(t => t.members)
+      if (allMembers.length === 0) {
+        toast.error('No participants found to award')
+        return
+      }
+      handleAwardXP(allMembers, 'All Team Participants')
+    } else {
+      if (participants.length === 0) {
+        toast.error('No participants found to award')
+        return
+      }
+      const membersList = participants.map(p => ({ ...p.profiles, id: p.student_id }))
+      handleAwardXP(membersList, 'All Solo Participants')
     }
   }
 
@@ -706,53 +733,86 @@ export default function FacultyEventsPage() {
 
                 {activeModalTab === 'roster' ? (
                   <div className="flex-1 overflow-y-auto no-scrollbar space-y-6 pr-2 pb-4">
+                    {/* Award XP to All Button */}
+                    {((selectedEvent?.team_type !== 'solo' && teamsData.length > 0) || (selectedEvent?.team_type === 'solo' && participants.length > 0)) && (
+                      <div className="flex justify-between items-center bg-white/5 p-4 rounded-3xl border border-white/5 mb-4">
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 leading-none">Global Award Protocol</p>
+                          <p className="text-[8px] font-medium text-gray-400 mt-1">Issue XP to all accepted participants at once</p>
+                        </div>
+                        <button
+                          onClick={handleAwardAll}
+                          className="px-4 py-2.5 bg-yellow-600/20 hover:bg-yellow-600/30 border border-yellow-600/30 text-yellow-500 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all shadow-lg"
+                        >
+                          Award XP to All
+                        </button>
+                      </div>
+                    )}
+
                     {selectedEvent?.team_type && selectedEvent?.team_type !== 'solo' ? (
                       /* Team Event Roster Grouping */
                       teamsData.length === 0 ? (
                         <div className="py-20 text-center"><p className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Zero Teams Registered</p></div>
                       ) : (
-                        teamsData.map((team) => (
-                          <div key={team.id} className="bg-white/5 border border-white/10 rounded-3xl p-6 space-y-4">
-                            <div className="flex justify-between items-center border-b border-white/5 pb-3">
-                              <div>
-                                <h3 className="text-sm font-black text-blue-500 uppercase tracking-wider">Team: {team.team_name}</h3>
-                                <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest mt-1 block">Leader: {team.profiles?.full_name}</span>
-                              </div>
-                              <button
-                                onClick={() => handleAwardXP(team.members, team.team_name)}
-                                className="px-3 py-1.5 bg-yellow-600/20 hover:bg-yellow-600/30 border border-yellow-600/30 text-yellow-500 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all"
-                              >
-                                Distribute XP
-                              </button>
-                            </div>
-                            <div className="space-y-3">
-                              {team.members.map(member => (
-                                <div key={member.id} className="flex justify-between items-center bg-black/20 rounded-2xl p-4 hover:bg-black/35 transition-colors">
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-[10px] font-black text-blue-500 uppercase">
-                                      {member.profiles?.full_name?.[0]}
-                                    </div>
-                                    <div>
-                                      <p className="text-[10px] font-black text-white uppercase tracking-tight">{member.profiles?.full_name}</p>
-                                      <p className="text-[7px] font-black text-gray-500 uppercase tracking-widest">{member.profiles?.department || 'Student'}</p>
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <span className={`px-3 py-1 rounded-full text-[7px] font-black uppercase tracking-widest border ${
-                                      member.status === 'accepted' 
-                                        ? 'bg-green-500/10 border-green-500/20 text-green-500'
-                                        : member.status === 'declined'
-                                          ? 'bg-red-500/10 border-red-500/20 text-red-500'
-                                          : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-500'
-                                    }`}>
-                                      {member.status}
-                                    </span>
-                                  </div>
+                        teamsData.map((team) => {
+                          const isTeamAwarded = team.members.every(m => participants.find(p => p.student_id === (m.student_id || m.profiles?.id))?.attended);
+                          return (
+                            <div key={team.id} className="bg-white/5 border border-white/10 rounded-3xl p-6 space-y-4">
+                              <div className="flex justify-between items-center border-b border-white/5 pb-3">
+                                <div>
+                                  <h3 className="text-sm font-black text-blue-500 uppercase tracking-wider">Team: {team.team_name}</h3>
+                                  <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest mt-1 block">Leader: {team.profiles?.full_name}</span>
                                 </div>
-                              ))}
+                                {isTeamAwarded ? (
+                                  <span className="px-3 py-1.5 bg-green-500/10 border border-green-500/20 text-green-400 rounded-xl text-[8px] font-black uppercase tracking-widest">
+                                    Awarded
+                                  </span>
+                                ) : (
+                                  <button
+                                    onClick={() => handleAwardXP(team.members, team.team_name)}
+                                    className="px-3 py-1.5 bg-yellow-600/20 hover:bg-yellow-600/30 border border-yellow-600/30 text-yellow-500 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all"
+                                  >
+                                    Distribute XP
+                                  </button>
+                                )}
+                              </div>
+                              <div className="space-y-3">
+                                {team.members.map(member => {
+                                  const isMemberAwarded = participants.find(p => p.student_id === (member.student_id || member.profiles?.id))?.attended;
+                                  return (
+                                    <div key={member.id} className="flex justify-between items-center bg-black/20 rounded-2xl p-4 hover:bg-black/35 transition-colors">
+                                      <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-[10px] font-black text-blue-500 uppercase">
+                                          {member.profiles?.full_name?.[0]}
+                                        </div>
+                                        <div>
+                                          <p className="text-[10px] font-black text-white uppercase tracking-tight">{member.profiles?.full_name}</p>
+                                          <p className="text-[7px] font-black text-gray-500 uppercase tracking-widest">{member.profiles?.department || 'Student'}</p>
+                                        </div>
+                                      </div>
+                                      <div className="text-right flex items-center gap-3">
+                                        <div>
+                                          <span className={`inline-block px-2 py-0.5 rounded text-[7px] font-black uppercase tracking-widest ${
+                                            member.status === 'accepted'
+                                              ? 'bg-green-500/10 border border-green-500/20 text-green-500'
+                                              : member.status === 'rejected'
+                                                ? 'bg-red-500/10 border border-red-500/20 text-red-500'
+                                                : 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-500'
+                                          }`}>
+                                            {member.status || 'invited'}
+                                          </span>
+                                        </div>
+                                        {isMemberAwarded && (
+                                          <span className="px-1.5 py-0.5 bg-green-500/10 text-green-400 rounded text-[7px] font-black uppercase tracking-widest border border-green-500/10">Awarded</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>
-                          </div>
-                        ))
+                          );
+                        })
                       )
                     ) : (
                       /* Solo Event Flat Roster */
@@ -774,12 +834,18 @@ export default function FacultyEventsPage() {
                               <p className="text-[9px] font-black text-white uppercase tracking-widest">{new Date(p.registered_at).toLocaleDateString()}</p>
                               <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mt-1">Uplinked</p>
                             </div>
-                            <button
-                              onClick={() => handleAwardXP([{ ...p.profiles, id: p.student_id }], p.profiles?.full_name)}
-                              className="px-3 py-1.5 bg-yellow-600/20 hover:bg-yellow-600/30 border border-yellow-600/30 text-yellow-500 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all"
-                            >
-                              Award XP
-                            </button>
+                            {p.attended ? (
+                              <span className="px-3 py-1.5 bg-green-500/10 border border-green-500/20 text-green-400 rounded-xl text-[8px] font-black uppercase tracking-widest animate-fade-in">
+                                Awarded
+                              </span>
+                            ) : (
+                              <button
+                                onClick={() => handleAwardXP([{ ...p.profiles, id: p.student_id }], p.profiles?.full_name)}
+                                className="px-3 py-1.5 bg-yellow-600/20 hover:bg-yellow-600/30 border border-yellow-600/30 text-yellow-500 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all"
+                              >
+                                Award XP
+                              </button>
+                            )}
                           </div>
                         </div>
                       ))
