@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, Flame, Leaf, TrendingUp, Star, Award, Zap, Compass, Search, MessageSquare, Info, ShieldAlert, ArrowRight, ChevronRight, Sparkles, LayoutGrid, Target, Waves, Wind, User, Megaphone, HelpCircle, BookOpen, TreePine } from 'lucide-react'
+import { Bell, Flame, Leaf, TrendingUp, Star, Award, Zap, Compass, Search, MessageSquare, Info, ShieldAlert, ArrowRight, ChevronRight, Sparkles, LayoutGrid, Target, Waves, Wind, User, Megaphone, HelpCircle, BookOpen, TreePine, Coffee, GraduationCap } from 'lucide-react'
 import { useAuthStore, useCarbonStore, useNotifStore } from '../../store/index'
 import { supabase } from '../../lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -12,8 +12,8 @@ const MODULE_TILES = [
   { path: '/carbon/history', icon: TrendingUp, label: 'Analytics', color: '#0ea5e9' },
   { path: '/carbon/balance', icon: TreePine, label: 'Carbon Balance', color: '#16a34a' },
   { path: '/leaderboard', icon: Award, label: 'Leaderboard', color: '#f59e0b' },
-  { path: '/cafeteria', icon: Zap, label: 'Cafeteria', color: '#f97316' },
-  { path: '/attendance', icon: Star, label: 'Attendance', color: '#14b8a6' },
+  { path: '/cafeteria', icon: Coffee, label: 'Cafeteria', color: '#f97316' },
+  { path: '/attendance', icon: GraduationCap, label: 'Attendance', color: '#14b8a6' },
   { path: '/events', icon: Award, label: 'Events', color: '#a855f7' },
   { path: '/announcements', icon: Megaphone, label: 'Broadcasts', color: '#f97316' },
   { path: '/study-planner', icon: LayoutGrid, label: 'Objectives', color: '#8b5cf6' },
@@ -32,6 +32,49 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [greenBalance, setGreenBalance] = useState(null)
   const [chartData, setChartData] = useState([])
+  const [attendanceRate, setAttendanceRate] = useState(null)
+  const [activeOrder, setActiveOrder] = useState(null)
+
+  async function fetchAttendanceRate() {
+    if (!profile?.id || !profile?.division_id) return
+    try {
+      const { data: allSessions } = await supabase
+        .from('attendance_sessions')
+        .select('id')
+        .eq('division_id', profile.division_id)
+
+      const { data: records } = await supabase
+        .from('attendance_records')
+        .select('id')
+        .eq('student_id', profile.id)
+        .eq('verification_status', 'verified')
+
+      const total = allSessions?.length || 0
+      const present = records?.length || 0
+      const rate = total > 0 ? Math.round((present / total) * 100) : null
+      setAttendanceRate(rate)
+    } catch (err) {
+      console.error('Failed to load attendance rate:', err)
+    }
+  }
+
+  async function fetchActiveOrder() {
+    if (!profile?.id) return
+    try {
+      const { data } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('student_id', profile.id)
+        .in('status', ['pending', 'preparing', 'ready'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      setActiveOrder(data)
+    } catch (err) {
+      console.error('Failed to load active order:', err)
+    }
+  }
 
   async function fetchWeeklyTrend() {
     if (!profile?.id) return
@@ -93,6 +136,8 @@ export default function DashboardPage() {
           fetchActiveSession(),
           fetchGreenBalance(),
           fetchWeeklyTrend(),
+          fetchAttendanceRate(),
+          fetchActiveOrder(),
         ])
       } catch (err) {
         console.error(err)
@@ -479,6 +524,119 @@ export default function DashboardPage() {
            )}
         </div>
 
+         {/* CREATIVE SERVICES (ATTENDANCE & CAFETERIA) */}
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+           {/* Attendance Status Widget */}
+           <motion.div
+             initial={{ opacity: 0, y: 20 }}
+             animate={{ opacity: 1, y: 0 }}
+             transition={{ delay: 0.15 }}
+             onClick={() => navigate('/attendance')}
+             className="cursor-pointer bg-gradient-to-br from-slate-900/60 to-slate-950/60 border border-white/5 rounded-[32px] p-6 backdrop-blur-xl hover:border-teal-500/30 transition-all group relative overflow-hidden shadow-xl"
+           >
+             <div className="absolute top-0 right-0 w-24 h-24 bg-teal-500/5 rounded-full blur-2xl group-hover:bg-teal-500/10 transition-all pointer-events-none" />
+             <div className="flex items-center gap-6">
+               {/* Circular Gauge */}
+               <div className="relative w-16 h-16 flex-shrink-0">
+                 <svg className="w-full h-full transform -rotate-90">
+                   <circle cx="32" cy="32" r="26" className="stroke-white/5" strokeWidth="5" fill="transparent" />
+                   <motion.circle
+                     cx="32"
+                     cy="32"
+                     r="26"
+                     stroke={attendanceRate === null ? '#64748b' : attendanceRate >= 75 ? '#14b8a6' : '#ef4444'}
+                     strokeWidth="5"
+                     fill="transparent"
+                     strokeDasharray={2 * Math.PI * 26}
+                     initial={{ strokeDashoffset: 2 * Math.PI * 26 }}
+                     animate={{ strokeDashoffset: 2 * Math.PI * 26 * (1 - (attendanceRate || 0) / 100) }}
+                     transition={{ duration: 1.2, ease: "easeOut" }}
+                     strokeLinecap="round"
+                     className="drop-shadow-[0_0_4px_rgba(20,184,166,0.3)]"
+                   />
+                 </svg>
+                 <div className="absolute inset-0 flex items-center justify-center">
+                   <span className="text-[10px] font-black text-white">
+                     {attendanceRate === null ? 'N/A' : `${attendanceRate}%`}
+                   </span>
+                 </div>
+               </div>
+
+               <div className="flex-1 min-w-0">
+                 <div className="flex items-center gap-2 mb-1">
+                   <span className="text-[8px] font-black text-teal-500 uppercase tracking-[0.2em]">Active Attendance</span>
+                   {attendanceRate !== null && (
+                     <span className={`px-2 py-0.5 rounded text-[6px] font-black uppercase tracking-widest ${
+                       attendanceRate >= 75 ? 'bg-teal-500/10 text-teal-400 border border-teal-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                     }`}>
+                       {attendanceRate >= 75 ? 'Safe' : 'Critical'}
+                     </span>
+                   )}
+                 </div>
+                 <h4 className="text-sm font-black text-white uppercase tracking-wider">Class Presence Status</h4>
+                 <p className="text-[9px] text-gray-500 font-medium mt-1 leading-normal">
+                   {attendanceRate === null
+                     ? 'No registered classes detected yet.'
+                     : attendanceRate >= 75
+                       ? 'Meeting the required attendance guidelines (>= 75%).'
+                       : 'Warning: Below minimum attendance. Action required.'}
+                 </p>
+               </div>
+               <ChevronRight size={18} className="text-gray-500 group-hover:text-teal-400 transition-colors" />
+             </div>
+           </motion.div>
+
+           {/* Cafeteria Pre-order Widget */}
+           <motion.div
+             initial={{ opacity: 0, y: 20 }}
+             animate={{ opacity: 1, y: 0 }}
+             transition={{ delay: 0.2 }}
+             onClick={() => navigate('/cafeteria')}
+             className="cursor-pointer bg-gradient-to-br from-slate-900/60 to-slate-950/60 border border-white/5 rounded-[32px] p-6 backdrop-blur-xl hover:border-orange-500/30 transition-all group relative overflow-hidden shadow-xl"
+           >
+             <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/5 rounded-full blur-2xl group-hover:bg-orange-500/10 transition-all pointer-events-none" />
+             <div className="flex items-center gap-6">
+               {/* Icon / status representation */}
+               <div className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 bg-orange-500/10 border border-orange-500/20 text-orange-500 shadow-inner group-hover:scale-105 transition-all">
+                 {activeOrder ? (
+                   <div className="text-center">
+                     <span className="text-[9px] font-black uppercase tracking-wider block text-orange-400">Token</span>
+                     <span className="text-sm font-black block mt-0.5">#{activeOrder.token_number}</span>
+                   </div>
+                 ) : (
+                   <Coffee size={24} className="text-orange-500 drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]" />
+                 )}
+               </div>
+
+               <div className="flex-1 min-w-0">
+                 <div className="flex items-center gap-2 mb-1">
+                   <span className="text-[8px] font-black text-orange-500 uppercase tracking-[0.2em]">Bites & Coffee</span>
+                   {activeOrder && (
+                     <span className={`px-2 py-0.5 rounded text-[6px] font-black uppercase tracking-widest ${
+                       activeOrder.status === 'ready'
+                         ? 'bg-green-500/10 text-green-400 border border-green-500/20 animate-pulse'
+                         : activeOrder.status === 'preparing'
+                           ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                           : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
+                     }`}>
+                       {activeOrder.status}
+                     </span>
+                   )}
+                 </div>
+                 <h4 className="text-sm font-black text-white uppercase tracking-wider">
+                   {activeOrder ? 'Active Pre-order Status' : 'Cafeteria Pre-order'}
+                 </h4>
+                 <p className="text-[9px] text-gray-500 font-medium mt-1 leading-normal truncate">
+                   {activeOrder
+                     ? `Items: ${Object.keys(activeOrder.items || {}).join(', ')}`
+                     : 'Pre-order food in advance to skip queue waiting times.'}
+                 </p>
+               </div>
+               <ChevronRight size={18} className="text-gray-500 group-hover:text-orange-400 transition-colors" />
+             </div>
+           </motion.div>
+         </div>
+
          {/* WEEKLY METRIC PROFILE */}
          {chartData.length > 0 && (
            <motion.div
@@ -525,51 +683,28 @@ export default function DashboardPage() {
               <div className="flex-1 h-[1px] bg-white/5" />
            </div>
            
-           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {MODULE_TILES.map((node, i) => {
-                const isFeatured = ['Carbon Log', 'Attendance', 'Cafeteria'].includes(node.label);
-                const subLabel = 
-                  node.label === 'Carbon Log' ? 'Track daily offset & footprints' :
-                  node.label === 'Attendance' ? 'Log class presence & logs' :
-                  node.label === 'Cafeteria' ? 'Pre-order food & track status' : '';
-
-                return (
-                  <motion.button
-                    key={node.path}
-                    whileHover={{ y: -6, borderColor: `${node.color}40`, boxShadow: `0 8px 30px ${node.color}08` }}
-                    whileTap={{ scale: 0.98 }}
+           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 lg:gap-4">
+              {MODULE_TILES.map((node, i) => (
+                <motion.div
+                  key={node.path}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 + i * 0.04 }}
+                  whileHover={{ y: -5, borderColor: `${node.color}40`, boxShadow: `0 8px 30px ${node.color}08` }}
+                  className="rounded-[28px] bg-gradient-to-br from-slate-900/40 to-slate-950/60 border border-white/5 transition-all duration-300"
+                >
+                  <button
                     onClick={() => navigate(node.path)}
-                    className={`relative overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-900/40 to-slate-950/60 backdrop-blur-xl border border-white/5 transition-all duration-300 p-6 flex text-left group ${
-                      isFeatured 
-                        ? 'col-span-2 flex-row items-center justify-between gap-4 shadow-lg' 
-                        : 'col-span-1 flex-col items-start justify-between gap-6 min-h-[140px]'
-                    }`}
+                    className="p-5 lg:p-6 flex flex-col items-center gap-4 group text-center block w-full h-full focus:outline-none"
                   >
-                    <div className={`flex ${isFeatured ? 'flex-row items-center gap-4' : 'flex-col gap-4'}`}>
-                      <div 
-                        className="w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]"
-                        style={{ 
-                          backgroundColor: `${node.color}15`, 
-                          color: node.color, 
-                          border: `1px solid ${node.color}25`,
-                          boxShadow: `0 0 15px ${node.color}15`
-                        }}
-                      >
-                         <node.icon size={22} />
-                      </div>
-                      <div>
-                        <span className="text-[10px] font-black text-white uppercase tracking-wider block">{node.label}</span>
-                        {isFeatured && (
-                          <span className="text-[8px] text-gray-500 font-bold uppercase tracking-wider block mt-1">{subLabel}</span>
-                        )}
-                      </div>
+                    <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl flex items-center justify-center transition-transform group-hover:rotate-12 mx-auto"
+                      style={{ background: node.color + '15', border: `1px solid ${node.color}30` }}>
+                      <node.icon size={20} style={{ color: node.color }} />
                     </div>
-                    {isFeatured && (
-                      <ChevronRight size={18} className="text-gray-500 group-hover:text-white transition-colors" />
-                    )}
-                  </motion.button>
-                );
-              })}
+                    <span className="text-[10px] font-black text-white uppercase tracking-wider">{node.label}</span>
+                  </button>
+                </motion.div>
+              ))}
            </div>
         </section>
 
