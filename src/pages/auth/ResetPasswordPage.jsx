@@ -15,7 +15,12 @@ export default function ResetPasswordPage() {
   const [sessionChecked, setSessionChecked] = useState(false)
 
   useEffect(() => {
+    let active = true
     async function checkSession() {
+      // Small delay to allow client to process hash fragments
+      await new Promise(resolve => setTimeout(resolve, 500))
+      if (!active) return
+
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) {
         toast.error('Recovery session not detected. Request a new link.')
@@ -25,6 +30,7 @@ export default function ResetPasswordPage() {
       }
     }
     checkSession()
+    return () => { active = false }
   }, [navigate])
 
   async function handleReset(e) {

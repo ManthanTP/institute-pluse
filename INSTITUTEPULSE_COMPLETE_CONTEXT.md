@@ -1,9 +1,5 @@
 # InstitutePulse — Complete Project Context Document
 
-> **Use this document to give any AI agent (ChatGPT, Gemini, Claude, Copilot, etc.) complete context about InstitutePulse so it can generate project reports, presentations (PPTs), documentation, abstracts, synopsis, or any academic/professional deliverable.**
-
----
-
 ## 1. PROJECT IDENTITY
 
 | Field | Details |
@@ -15,10 +11,13 @@
 | **Project Type** | Full-Stack Web Application + Android Mobile App (Hybrid) |
 | **Domain** | Smart Campus / Sustainability / EdTech / Green Technology |
 | **Institution** | Jain College of Engineering |
-| **Developer** | Manthan Patel (Full Stack Developer) |
+| **Developer / Team Lead** | Manthan T Patel (Full Stack Developer) |
+| **Team Members** | Manthan T Patel (CS), Mallikarjun B Chikkabasur (CS), Manoj G Raikar (CS), Bheemappa Talawar (AIML), Kasirayagouda Umannavar (E&C), Premkumar S Koppal (ME) |
+| **Project Guide** | Prof. Somashekar T M (Assistant Professor, Department of ME) |
+| **Subject Code** | 1BPRJ258 |
 | **Developer Portfolio** | https://manthantp-portfolio.vercel.app/ |
 | **Developer GitHub** | https://github.com/ManthanTP |
-| **Contact** | manthantp.work@gmail.com |
+| **Contact** | manthantp0321@gmail.com |
 | **License** | Private — All rights reserved |
 | **Year** | 2026 |
 | **App ID (Android)** | com.institutepulse.app |
@@ -799,6 +798,16 @@ InstitutePulse/
 ├── green_cover_migration.sql       # Green cover tables migration
 ├── landing_sections_schema.sql     # Landing page CMS schema + seed data
 ├── fix_carbon_log_rls.sql          # Carbon log RLS fixes
+├── PRD.md                          # Product Requirements Document
+├── README.md                       # Project overview and installation instructions
+├── attendance.md                   # Timetable and QR attendance specifications
+├── carbon_tracker_calculations.md  # Carbon grid factors and formulas reference
+├── pdf.md                          # PDF generation structure reference
+├── sustainability_anti_cheat_presentation.md # Anti-cheat feature presentation guide
+├── generate_pptx.cjs               # Automated presentation generation script (using pptxgenjs)
+├── color.cjs                       # Color utility/constants for pptx generation
+├── InstitutePulse_Presentation.pptx # Built PowerPoint Presentation (12 Slides)
+├── screenshoot/                    # Screenshots folder used in the presentation slides
 ├── InstitutePulse.apk              # Built Android APK (~38 MB)
 ├── logo_with_background.jpeg       # Logo (with background)
 ├── logo_with_no_background.png     # Logo (transparent)
@@ -965,12 +974,14 @@ InstitutePulse/
 | Field | Details |
 |-------|---------|
 | **Institution** | Jain College of Engineering |
-| **Course** | B.E. (Computer Science & Engineering) — adjust as needed |
+| **Course** | B.E. (Computer Science & Engineering / Interdisciplinary Project-Based Learning) |
+| **Subject Code** | 1BPRJ258 |
 | **Semester** | 2nd Semester (current timetable configured) |
 | **Academic Year** | 2025–2026 |
-| **Project Guide** | (Add your faculty guide's name here) |
-| **Team Size** | 1 (Solo Developer — Manthan Patel) |
-| **Development Period** | (Add your start date – end date) |
+| **Project Guide** | Prof. Somashekar T M (Assistant Professor, Department of ME) |
+| **Team Size** | 6 Members (CS, AIML, E&C, ME) |
+| **Team Members** | Manthan T Patel (CS), Mallikarjun B Chikkabasur (CS), Manoj G Raikar (CS), Bheemappa Talawar (AIML), Kasirayagouda Umannavar (E&C), Premkumar S Koppal (ME) |
+| **Development Period** | Week 15–16 |
 | **SDG Alignment** | UN SDG 4 (Quality Education), SDG 11 (Sustainable Cities), SDG 12 (Responsible Consumption), SDG 13 (Climate Action) |
 
 ---

@@ -16,8 +16,11 @@ const MOCK_STATS = {
 function StatCard({ icon: Icon, label, value, sub, color = '#3b82f6', delay = 0 }) {
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}
-      className="glass-card p-6 flex items-center gap-6 group hover:border-blue-500/30 transition-all"
+      initial={{ opacity: 0, y: 20 }} 
+      animate={{ opacity: 1, y: 0 }} 
+      transition={{ delay }}
+      whileHover={{ y: -4, borderColor: `${color}40`, boxShadow: `0 8px 30px ${color}05` }}
+      className="bg-gradient-to-br from-slate-900/60 to-slate-950/60 border border-white/5 rounded-[32px] p-6 flex items-center gap-6 group transition-all duration-300 shadow-xl"
     >
       <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:rotate-12"
         style={{ background: color + '15', border: `1px solid ${color}30` }}>
@@ -156,6 +159,7 @@ export default function FacultyDashboard() {
           <StatCard icon={GraduationCap} label="Attendance Rate" value={`${stats.attendanceRate}%`} sub="This Semester" color="#14b8a6" delay={0.2} />
           <StatCard icon={MessageSquare} label="Open Complaints" value={stats.openComplaints} color="#ef4444" delay={0.25} />
         </div>
+
         {/* QUICK ACTIONS */}
         <section className="mb-10">
           <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] mb-6">Administrative Protocols</h3>
@@ -172,11 +176,18 @@ export default function FacultyDashboard() {
               { label: 'Security Profile', icon: Users, path: '/faculty/profile', color: '#94a3b8' },
               { label: 'Help Center', icon: HelpCircle, path: '/faculty/help', color: '#6366f1' },
             ].map((action, i) => (
-              <motion.div key={action.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 + i * 0.05 }}>
-                <Link to={action.path} className="glass-card p-5 lg:p-6 flex flex-col items-center gap-4 group hover:border-blue-500/20 transition-all text-center">
-                  <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl flex items-center justify-center transition-transform group-hover:rotate-12"
+              <motion.div 
+                key={action.label} 
+                initial={{ opacity: 0, y: 10 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                transition={{ delay: 0.4 + i * 0.05 }}
+                whileHover={{ y: -5, borderColor: `${action.color}40`, boxShadow: `0 8px 30px ${action.color}08` }}
+                className="rounded-[28px] bg-gradient-to-br from-slate-900/40 to-slate-950/60 border border-white/5 transition-all duration-300"
+              >
+                <Link to={action.path} className="p-5 lg:p-6 flex flex-col items-center gap-4 group text-center block w-full h-full">
+                  <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl flex items-center justify-center transition-transform group-hover:rotate-12 mx-auto"
                     style={{ background: action.color + '15', border: `1px solid ${action.color}30` }}>
-                    <action.icon size={20} lg:size={24} style={{ color: action.color }} />
+                    <action.icon size={20} style={{ color: action.color }} />
                   </div>
                   <span className="text-[7px] lg:text-[9px] font-black text-gray-400 uppercase tracking-widest group-hover:text-white transition-colors">{action.label}</span>
                 </Link>
@@ -187,14 +198,19 @@ export default function FacultyDashboard() {
 
         {/* RECENT ACTIVITY */}
         <div className="grid lg:grid-cols-2 gap-6">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-8">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ y: -2 }}
+            className="bg-gradient-to-br from-slate-900/60 to-slate-950/60 border border-white/5 rounded-[40px] p-8 shadow-xl transition-all duration-300"
+          >
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Recent Events</h3>
               <Link to="/faculty/events" className="text-[9px] font-black text-blue-500 uppercase tracking-widest hover:text-blue-400">View All →</Link>
             </div>
             <div className="space-y-4">
               {recentEvents.length > 0 ? recentEvents.map((event) => (
-                <div key={event.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
+                <div key={event.id} className="flex items-center gap-4 p-4 rounded-2xl bg-slate-950/40 border border-white/5 hover:bg-slate-950/60 transition-colors">
                   <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
                     <CalendarDays size={18} className="text-blue-500" />
                   </div>
@@ -210,7 +226,12 @@ export default function FacultyDashboard() {
             </div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-8">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ y: -2 }}
+            className="bg-gradient-to-br from-slate-900/60 to-slate-950/60 border border-white/5 rounded-[40px] p-8 shadow-xl transition-all duration-300"
+          >
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Sustainability Metrics</h3>
               <Link to="/faculty/sustainability" className="text-[9px] font-black text-green-500 uppercase tracking-widest hover:text-green-400">Details →</Link>
@@ -220,7 +241,7 @@ export default function FacultyDashboard() {
                 { label: 'Total CO2 Saved', value: `${sustainMetrics.co2Saved.toLocaleString()} kg`, color: '#22c55e' },
                 { label: 'Engagement Rate', value: `${sustainMetrics.engagementScore}%`, color: '#3b82f6' },
               ].map(metric => (
-                <div key={metric.label} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5">
+                <div key={metric.label} className="flex items-center justify-between p-4 rounded-2xl bg-slate-950/40 border border-white/5 hover:bg-slate-950/60 transition-colors">
                   <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{metric.label}</span>
                   <span className="text-sm font-black" style={{ color: metric.color }}>{metric.value}</span>
                 </div>

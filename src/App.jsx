@@ -121,7 +121,9 @@ function App() {
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
+      if (event === 'PASSWORD_RECOVERY') {
+        window.location.href = '/reset-password'
+      } else if (event === 'SIGNED_IN' && session?.user) {
         useAuthStore.getState().setUser(session.user)
         useAuthStore.getState().fetchProfile(session.user.id)
       } else if (event === 'SIGNED_OUT') {

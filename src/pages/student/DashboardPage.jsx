@@ -281,25 +281,26 @@ export default function DashboardPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-[40px] p-8 mb-10 border border-white/5 shadow-2xl backdrop-blur-3xl"
+          whileHover={{ y: -4, borderColor: hasLogged ? 'rgba(34, 197, 94, 0.2)' : 'rgba(245, 158, 11, 0.2)' }}
+          className="relative overflow-hidden rounded-[40px] p-8 mb-10 border border-white/5 shadow-2xl backdrop-blur-3xl transition-all duration-300"
           style={{
             background: hasLogged
-              ? 'linear-gradient(135deg, rgba(5, 150, 105, 0.2), rgba(6, 78, 59, 0.4))'
-              : 'linear-gradient(135deg, rgba(30, 41, 59, 0.2), rgba(15, 23, 42, 0.4))',
+              ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(6, 78, 59, 0.45))'
+              : 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(120, 53, 4, 0.45))',
           }}
         >
           {/* Inner highlights */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.03),transparent_50%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.05),transparent_50%)]" />
           
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6 relative z-10">
             <div className="flex-1 w-full sm:w-auto">
               <span className={`inline-block px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.2em] mb-4 ${
-                hasLogged ? 'bg-green-500/20 text-green-400' : 'bg-white/10 text-gray-400'
+                hasLogged ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400 animate-pulse'
               }`}>
-                {hasLogged ? 'Protocol Active' : 'System Ready'}
+                {hasLogged ? 'Protocol Active' : 'Synchronization Required'}
               </span>
               <h2 className="text-4xl font-black text-white mb-2 leading-none tracking-tighter flex items-center gap-3">
-                {ecoScore}% 
+                {hasLogged ? `${ecoScore}%` : 'Pending Sync'} 
                 <div className="group relative">
                    <Info size={14} className="text-gray-500 hover:text-white cursor-help transition-colors" />
                    <div className="absolute left-0 top-full mt-4 w-60 p-4 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
@@ -308,12 +309,12 @@ export default function DashboardPage() {
                          Calculated based on your daily sustainable actions, event participation, and digital footprint reduction. Higher scores yield more ECO XP.
                       </p>
                    </div>
-                </div>
+                 </div>
               </h2>
               <p className="text-[10px] mb-8 leading-relaxed font-black text-gray-500 uppercase tracking-[0.1em]">
                 {hasLogged 
                   ? `Eco-yield: ${todayLog.total_kg?.toFixed(2)}kg CO2 offset.` 
-                  : 'Initialize daily log to synchronize ecosystem metrics.'}
+                  : 'Yesterday\'s carbon footprint is not synchronized yet.'}
               </p>
               <motion.button
                 whileTap={{ scale: 0.95 }}
@@ -321,7 +322,7 @@ export default function DashboardPage() {
                 className={`w-full py-4 rounded-2xl font-black text-[9px] uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 ${
                   hasLogged 
                     ? 'bg-white text-slate-900 shadow-xl shadow-white/5 hover:bg-slate-100' 
-                    : 'bg-green-600 text-white shadow-xl shadow-green-600/20 hover:bg-green-500'
+                    : 'bg-amber-500 text-slate-950 shadow-xl shadow-amber-500/20 hover:bg-amber-400'
                 }`}
               >
                 {hasLogged ? 'Analyze Manifest' : 'Sync Daily Log'} <ArrowRight size={14} />
@@ -343,22 +344,25 @@ export default function DashboardPage() {
                   cx="56"
                   cy="56"
                   r="46"
-                  stroke={hasLogged ? '#22c55e' : '#475569'}
+                  stroke={hasLogged ? '#10b981' : '#f59e0b'}
                   strokeWidth="8"
                   fill="transparent"
                   strokeDasharray={2 * Math.PI * 46}
                   initial={{ strokeDashoffset: 2 * Math.PI * 46 }}
-                  animate={{ strokeDashoffset: 2 * Math.PI * 46 * (1 - ecoScore / 100) }}
+                  animate={{ strokeDashoffset: 2 * Math.PI * 46 * (1 - (hasLogged ? ecoScore : 100) / 100) }}
                   transition={{ duration: 1.2, ease: "easeOut" }}
                   strokeLinecap="round"
-                  className={hasLogged ? "drop-shadow-[0_0_8px_rgba(34,197,94,0.5)]" : ""}
+                  className={`${hasLogged ? "drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "drop-shadow-[0_0_8px_rgba(245,158,11,0.5)] animate-pulse"}`}
                 />
               </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <Leaf size={24} className={hasLogged ? 'text-green-400 drop-shadow-[0_0_10px_rgba(34,197,94,0.4)]' : 'text-gray-600'} />
-                {hasLogged && (
-                  <span className="text-[10px] font-black text-green-400 mt-1 uppercase tracking-widest">{ecoScore}%</span>
-                )}
+              <div 
+                className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer"
+                onClick={() => navigate(hasLogged ? '/carbon/history' : '/carbon/log')}
+              >
+                <Leaf size={24} className={hasLogged ? 'text-emerald-400 drop-shadow-[0_0_10px_rgba(16,185,129,0.4)]' : 'text-amber-400 animate-pulse'} />
+                <span className={`text-[10px] font-black mt-1 uppercase tracking-widest ${hasLogged ? 'text-emerald-400' : 'text-amber-400 animate-pulse'}`}>
+                  {hasLogged ? `${ecoScore}%` : 'Sync'}
+                </span>
               </div>
             </div>
           </div>
@@ -366,17 +370,18 @@ export default function DashboardPage() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
            {[
-             { label: 'Ecosystem XP', val: (profile?.eco_points || 0).toLocaleString(), icon: Sparkles, color: 'text-yellow-500' },
-             { label: 'Registry USN', val: profile?.usn || 'N/A', icon: User, color: 'text-indigo-500' },
-             { label: 'Carbon Saved', val: `${(profile?.total_co2_kg || 0).toFixed(1)}kg`, icon: Zap, color: 'text-green-500' },
-             { label: 'Registry Node', val: `${profile?.department || 'Gen'} • ${profile?.semester_id ? 'Sem' : 'N/A'}`, icon: Target, color: 'text-blue-500' },
+             { label: 'Ecosystem XP', val: (profile?.eco_points || 0).toLocaleString(), icon: Sparkles, color: 'text-yellow-500', glow: 'group-hover:shadow-yellow-500/10' },
+             { label: 'Registry USN', val: profile?.usn || 'N/A', icon: User, color: 'text-indigo-500', glow: 'group-hover:shadow-indigo-500/10' },
+             { label: 'Carbon Saved', val: `${(profile?.total_co2_kg || 0).toFixed(1)}kg`, icon: Zap, color: 'text-green-500', glow: 'group-hover:shadow-green-500/10' },
+             { label: 'Registry Node', val: `${profile?.department || 'Gen'} • ${profile?.semester_id ? 'Sem' : 'N/A'}`, icon: Target, color: 'text-blue-500', glow: 'group-hover:shadow-blue-500/10' },
            ].map((stat, i) => (
              <motion.div
                key={stat.label}
                initial={{ opacity: 0, y: 10 }}
                animate={{ opacity: 1, y: 0 }}
                transition={{ delay: i * 0.05 }}
-               className="bg-white/5 border border-white/10 rounded-[32px] p-6 backdrop-blur-xl hover:bg-white/[0.08] hover:border-white/20 transition-all duration-300 group"
+               whileHover={{ y: -4, borderColor: 'rgba(255,255,255,0.12)' }}
+               className={`bg-gradient-to-br from-slate-900/60 to-slate-950/60 border border-white/5 rounded-[32px] p-6 backdrop-blur-xl transition-all duration-300 group shadow-lg ${stat.glow}`}
              >
                 <div className={`w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center ${stat.color} mb-3 group-hover:scale-110 transition-transform`}>
                    <stat.icon size={14} />
@@ -392,7 +397,8 @@ export default function DashboardPage() {
                animate={{ opacity: 1, y: 0 }}
                transition={{ delay: 0.2 }}
                onClick={() => navigate('/carbon/balance')}
-               className="bg-green-500/5 border border-green-500/20 rounded-[32px] p-6 backdrop-blur-xl hover:bg-green-500/10 hover:border-green-500/30 transition-all duration-300 group cursor-pointer col-span-2 md:col-span-4"
+               whileHover={{ y: -4, borderColor: 'rgba(34,197,94,0.3)', boxShadow: '0 8px 30px rgba(34,197,94,0.05)' }}
+               className="bg-gradient-to-r from-green-950/20 to-emerald-950/15 border border-green-500/10 rounded-[32px] p-6 backdrop-blur-xl transition-all duration-300 group cursor-pointer col-span-2 md:col-span-4 shadow-lg"
              >
                <div className="flex items-center justify-between">
                  <div className="flex items-center gap-4">
@@ -439,12 +445,12 @@ export default function DashboardPage() {
                 return (
                   <motion.button
                     key={node.path}
-                    whileHover={{ y: -4 }}
+                    whileHover={{ y: -6, borderColor: `${node.color}40`, boxShadow: `0 8px 30px ${node.color}08` }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => navigate(node.path)}
-                    className={`relative overflow-hidden rounded-[28px] bg-white/[0.03] backdrop-blur-xl border border-white/10 hover:bg-white/[0.08] hover:border-white/20 transition-all duration-300 p-6 flex text-left ${
+                    className={`relative overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-900/40 to-slate-950/60 backdrop-blur-xl border border-white/5 transition-all duration-300 p-6 flex text-left group ${
                       isFeatured 
-                        ? 'col-span-2 flex-row items-center justify-between gap-4 shadow-[0_4px_20px_rgba(255,255,255,0.02)]' 
+                        ? 'col-span-2 flex-row items-center justify-between gap-4 shadow-lg' 
                         : 'col-span-1 flex-col items-start justify-between gap-6 min-h-[140px]'
                     }`}
                   >
