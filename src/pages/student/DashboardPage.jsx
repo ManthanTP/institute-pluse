@@ -600,7 +600,7 @@ export default function DashboardPage() {
                   {activeOrder ? (
                     <div className="text-center">
                       <span className="text-[9px] font-black uppercase tracking-wider block text-orange-400">Token</span>
-                      <span className="text-xs font-black block mt-0.5">#{activeOrder.token_number || activeOrder.id?.slice(-4).toUpperCase()}</span>
+                      <span className="text-xs font-black block mt-0.5">#{activeOrder.token_number || activeOrder.id?.slice(0, 4).toUpperCase()}</span>
                     </div>
                   ) : (
                     <Coffee size={24} className="text-orange-500 drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]" />

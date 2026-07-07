@@ -432,7 +432,7 @@ export default function CafeteriaPage() {
                   </h3>
                   <div className="mb-4">
                     <span className="text-sm font-black text-orange-400 font-mono">
-                      Token: #{(orderSuccess || selectedOrder).token_number || (orderSuccess || selectedOrder).id?.slice(-4).toUpperCase()}
+                      Token: #{(orderSuccess || selectedOrder).token_number || (orderSuccess || selectedOrder).id?.slice(0, 4).toUpperCase()}
                     </span>
                   </div>
 
