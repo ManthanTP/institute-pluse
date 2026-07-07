@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import FacultyLayout from './FacultyLayout'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
 
 const MOCK_STATS = {
   activeEvents: 6,
@@ -45,6 +46,7 @@ export default function FacultyDashboard() {
   })
   const [recentEvents, setRecentEvents] = useState([])
   const [sustainMetrics, setSustainMetrics] = useState({ co2Saved: 0, engagementScore: 0 })
+  const [chartData, setChartData] = useState([])
 
   useEffect(() => {
     async function fetchData() {
@@ -114,6 +116,34 @@ export default function FacultyDashboard() {
       const engagedCount = (ecoProfiles || []).length
       const engagementScore = totalStudents ? Math.round((engagedCount / totalStudents) * 100) : 0
 
+      // Fetch weekly campus sustainability aggregates (carbon logs)
+      const lastWeek = new Date()
+      lastWeek.setDate(lastWeek.getDate() - 7)
+      const lastWeekStr = lastWeek.toISOString().split('T')[0]
+
+      const { data: trendLogs } = await supabase
+        .from('carbon_logs')
+        .select('log_date, total_kg')
+        .gte('log_date', lastWeekStr)
+        .order('log_date', { ascending: true })
+
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+      const trendMap = {}
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date()
+        d.setDate(d.getDate() - i)
+        const dateStr = d.toISOString().split('T')[0]
+        trendMap[dateStr] = { day: days[d.getDay()], co2: 0 }
+      }
+
+      trendLogs?.forEach(log => {
+        if (trendMap[log.log_date]) {
+          trendMap[log.log_date].co2 += parseFloat(log.total_kg || 0)
+        }
+      })
+
+      setChartData(Object.values(trendMap))
+
       setSustainMetrics({ co2Saved: Math.round(co2Saved * 100) / 100, engagementScore })
 
       setStats({
@@ -159,6 +189,45 @@ export default function FacultyDashboard() {
           <StatCard icon={GraduationCap} label="Attendance Rate" value={`${stats.attendanceRate}%`} sub="This Semester" color="#14b8a6" delay={0.2} />
           <StatCard icon={MessageSquare} label="Open Complaints" value={stats.openComplaints} color="#ef4444" delay={0.25} />
         </div>
+
+        {/* CHARTS */}
+        {chartData.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-br from-slate-900/60 to-slate-950/60 border border-white/5 rounded-[40px] p-6 lg:p-8 backdrop-blur-xl mb-10 shadow-xl"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <span className="text-[8px] font-black text-blue-500 uppercase tracking-[0.3em]">Telemetry Stream</span>
+                <h3 className="text-sm font-black text-white uppercase tracking-wider mt-1">Campus Sustainability Index</h3>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                <span className="text-[8px] font-black uppercase text-gray-500 tracking-wider">Total CO2 Saved (Campus)</span>
+              </div>
+            </div>
+            <div className="h-[200px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="facultyCo2Glow" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.25}/>
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} />
+                  <Tooltip 
+                    contentStyle={{ background: '#090d16', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', fontSize: '9px', color: '#fff' }}
+                  />
+                  <Area type="monotone" dataKey="co2" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#facultyCo2Glow)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </motion.div>
+        )}
 
         {/* QUICK ACTIONS */}
         <section className="mb-10">

@@ -221,7 +221,12 @@ export default function AdminUsersPage() {
           toast.error('USN is required for students')
           return
         }
-        updatePayload.usn = editUSN.trim()
+        const cleanUsn = editUSN.trim().toUpperCase()
+        if (cleanUsn.length !== 10) {
+          toast.error('USN must be exactly 10 characters (e.g. 2JH25CS061)')
+          return
+        }
+        updatePayload.usn = cleanUsn
         updatePayload.semester_id = editSemesterId || null
         updatePayload.division_id = editDivisionId || null
       }
@@ -612,8 +617,9 @@ export default function AdminUsersPage() {
                           type="text"
                           required
                           value={editUSN}
-                          onChange={e => setEditUSN(e.target.value)}
-                          className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-white text-xs outline-none focus:border-red-500/50 font-bold uppercase"
+                          onChange={e => setEditUSN(e.target.value.toUpperCase().slice(0, 10))}
+                          className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-white text-xs outline-none focus:border-red-500/50 font-bold uppercase font-mono"
+                          maxLength={10}
                         />
                       </div>
                       <div className="space-y-1.5">

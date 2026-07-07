@@ -89,7 +89,11 @@ export default function RegisterPage() {
     setError('')
     if (form.password !== form.confirm_password) return setError('Passwords do not match.')
     if (form.password.length < 6) return setError('Password too short.')
-    if (form.role === 'student' && !form.usn) return setError('USN is required for students.')
+    if (form.role === 'student') {
+      if (!form.usn) return setError('USN is required for students.')
+      const cleanUsn = form.usn.trim().toUpperCase()
+      if (cleanUsn.length !== 10) return setError('USN must be exactly 10 characters (e.g. 2JH25CS061).')
+    }
     
     // Key validation
     const FACULTY_KEY = import.meta.env.VITE_FACULTY_SECRET_KEY || 'PULSE_FACULTY_2026'
@@ -115,7 +119,7 @@ export default function RegisterPage() {
             role: form.role,
             phone: form.phone || '',
             department: form.department,
-            usn: form.role === 'student' ? form.usn : '',
+            usn: form.role === 'student' ? form.usn.trim().toUpperCase() : '',
             semester_id: form.role === 'student' ? (form.semester_id || '') : '',
             division_id: form.role === 'student' ? (form.division_id || '') : ''
           }
@@ -339,9 +343,10 @@ export default function RegisterPage() {
                         <div className="relative group">
                           <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-500 transition-colors" />
                           <input
-                            type="text" value={form.usn} onChange={e => update('usn', e.target.value)}
-                            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white placeholder:text-gray-600 outline-none focus:border-green-500/50 focus:bg-white/[0.08] transition-all"
-                            placeholder="e.g. 1MS22CS001" required={form.role === 'student'}
+                            type="text" value={form.usn} onChange={e => update('usn', e.target.value.toUpperCase().slice(0, 10))}
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white placeholder:text-gray-600 outline-none focus:border-green-500/50 focus:bg-white/[0.08] transition-all uppercase font-mono"
+                            placeholder="e.g. 2JH25CS061" required={form.role === 'student'}
+                            maxLength={10}
                           />
                         </div>
                       </div>

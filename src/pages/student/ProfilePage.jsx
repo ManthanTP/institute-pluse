@@ -78,9 +78,20 @@ export default function ProfilePage() {
 
   async function handleSave(e) {
     e.preventDefault()
+    
+    // Validate USN
+    const cleanUsn = form.usn.trim().toUpperCase()
+    if (cleanUsn.length !== 10) {
+      toast.error('USN must be exactly 10 characters (e.g. 2JH25CS061)')
+      return
+    }
+
     setLoading(true)
     try {
-      const { error } = await updateProfile(form)
+      const { error } = await updateProfile({
+        ...form,
+        usn: cleanUsn
+      })
       if (error) throw error
       toast.success('Neural Identity Synchronized!')
     } catch (err) {
@@ -241,9 +252,10 @@ export default function ProfilePage() {
                     <input 
                       type="text" 
                       value={form.usn} 
-                      onChange={e => setForm({...form, usn: e.target.value})}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-blue-500/50 transition-all uppercase" 
-                      placeholder="e.g. 1MS22CS001"
+                      onChange={e => setForm({...form, usn: e.target.value.toUpperCase().slice(0, 10)})}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-blue-500/50 transition-all uppercase font-mono" 
+                      placeholder="e.g. 2JH25CS061"
+                      maxLength={10}
                     />
                  </div>
               </div>

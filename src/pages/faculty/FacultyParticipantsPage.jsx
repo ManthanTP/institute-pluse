@@ -133,8 +133,9 @@ export default function FacultyParticipantsPage() {
   // Add a new student via the security definer function
   async function handleAddStudent(e) {
     e.preventDefault()
-    if (!addForm.full_name.trim() || !addForm.email.trim() || !addForm.usn.trim() || !addForm.password) {
-      toast.error('All fields marked with * are required')
+    const cleanUsn = addForm.usn.trim().toUpperCase()
+    if (cleanUsn.length !== 10) {
+      toast.error('USN must be exactly 10 characters (e.g. 2JH25CS061)')
       return
     }
 
@@ -146,7 +147,7 @@ export default function FacultyParticipantsPage() {
         p_full_name: addForm.full_name.trim(),
         p_phone: addForm.phone.trim() || null,
         p_department: addForm.department,
-        p_usn: addForm.usn.trim(),
+        p_usn: cleanUsn,
         p_semester_id: addForm.semester_id || null,
         p_division_id: addForm.division_id || null
       })
@@ -485,9 +486,10 @@ export default function FacultyParticipantsPage() {
                       <input
                         type="text" required
                         value={addForm.usn}
-                        onChange={(e) => setAddForm({...addForm, usn: e.target.value})}
-                        placeholder="1MS22CS001"
-                        className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-xs text-white outline-none focus:border-blue-500 transition-colors"
+                        onChange={(e) => setAddForm({...addForm, usn: e.target.value.toUpperCase().slice(0, 10)})}
+                        placeholder="2JH25CS061"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-xs text-white outline-none focus:border-blue-500 transition-colors uppercase font-mono"
+                        maxLength={10}
                       />
                     </div>
                   </div>

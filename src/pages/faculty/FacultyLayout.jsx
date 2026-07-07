@@ -5,6 +5,7 @@ import { useAuthStore, useFacultyNotifStore } from '../../store/index'
 import { supabase } from '../../lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
 import FacultyBottomNav from '../../components/FacultyBottomNav'
+import logo from '../../assets/logo.png'
 
 const FACULTY_NAV = [
   { path: '/faculty/dashboard', icon: Home, label: 'Dashboard' },
@@ -57,9 +58,7 @@ export default function FacultyLayout({ children }) {
           {/* Logo */}
           <div className="px-8 py-10 flex items-center justify-between lg:justify-start gap-4 border-b border-white/5">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-700 flex items-center justify-center text-xl shadow-lg shadow-blue-500/20">
-                 <Shield size={20} className="text-white" />
-              </div>
+              <img src={logo} alt="Logo" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(59,130,246,0.3)]" />
               <div>
                 <p className="text-white font-black text-sm uppercase tracking-tighter">InstitutePulse</p>
                 <p className="text-blue-500 font-black text-[9px] uppercase tracking-[0.3em]">Faculty Hub</p>

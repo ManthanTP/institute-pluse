@@ -5,7 +5,7 @@ import { useAuthStore, useCarbonStore, useNotifStore } from '../../store/index'
 import { supabase } from '../../lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
 import { calculateTotalAbsorption, calculateNetCarbon, getNetCarbonStatus } from '../../lib/greenCover'
-
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
 
 const MODULE_TILES = [
   { path: '/carbon/log', icon: Leaf, label: 'Carbon Log', color: '#22c55e' },
@@ -31,6 +31,57 @@ export default function DashboardPage() {
   const [activeSession, setActiveSession] = useState(null)
   const [loading, setLoading] = useState(true)
   const [greenBalance, setGreenBalance] = useState(null)
+  const [chartData, setChartData] = useState([])
+
+  async function fetchWeeklyTrend() {
+    if (!profile?.id) return
+    const lastWeek = new Date()
+    lastWeek.setDate(lastWeek.getDate() - 7)
+    const lastWeekStr = lastWeek.toISOString().split('T')[0]
+
+    try {
+      const [logsRes, ordersRes] = await Promise.all([
+        supabase
+          .from('carbon_logs')
+          .select('log_date, total_kg')
+          .eq('student_id', profile.id)
+          .gte('log_date', lastWeekStr)
+          .order('log_date', { ascending: true }),
+        supabase
+          .from('orders')
+          .select('created_at, total_carbon_kg')
+          .eq('student_id', profile.id)
+          .gte('created_at', lastWeekStr)
+      ])
+
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+      const trendMap = {}
+      
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date()
+        d.setDate(d.getDate() - i)
+        const dateStr = d.toISOString().split('T')[0]
+        trendMap[dateStr] = { day: days[d.getDay()], co2: 0 }
+      }
+
+      logsRes.data?.forEach(log => {
+        if (trendMap[log.log_date]) {
+          trendMap[log.log_date].co2 += parseFloat(log.total_kg || 0)
+        }
+      })
+      
+      ordersRes.data?.forEach(order => {
+        const dateStr = order.created_at.split('T')[0]
+        if (trendMap[dateStr]) {
+          trendMap[dateStr].co2 += parseFloat(order.total_carbon_kg || 0)
+        }
+      })
+
+      setChartData(Object.values(trendMap))
+    } catch (err) {
+      console.error('Failed to load weekly trend:', err)
+    }
+  }
 
   useEffect(() => {
     if (!profile?.id) return
@@ -41,6 +92,7 @@ export default function DashboardPage() {
           fetchTodayLog(profile.id),
           fetchActiveSession(),
           fetchGreenBalance(),
+          fetchWeeklyTrend(),
         ])
       } catch (err) {
         console.error(err)
@@ -426,6 +478,45 @@ export default function DashboardPage() {
              </motion.div>
            )}
         </div>
+
+         {/* WEEKLY METRIC PROFILE */}
+         {chartData.length > 0 && (
+           <motion.div
+             initial={{ opacity: 0, y: 20 }}
+             animate={{ opacity: 1, y: 0 }}
+             className="bg-gradient-to-br from-slate-900/60 to-slate-950/60 border border-white/5 rounded-[32px] p-6 lg:p-8 backdrop-blur-xl mb-10 shadow-xl"
+           >
+             <div className="flex items-center justify-between mb-6">
+               <div>
+                 <span className="text-[8px] font-black text-emerald-500 uppercase tracking-[0.3em]">Telemetry Scan</span>
+                 <h3 className="text-sm font-black text-white uppercase tracking-wider mt-1">7-Day Emissions Trajectory</h3>
+               </div>
+               <div className="flex items-center gap-1.5">
+                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                 <span className="text-[8px] font-black uppercase text-gray-500 tracking-wider">KG CO2 Equiv</span>
+               </div>
+             </div>
+             <div className="h-[180px] w-full">
+               <ResponsiveContainer width="100%" height="100%">
+                 <AreaChart data={chartData}>
+                   <defs>
+                     <linearGradient id="studentCo2Glow" x1="0" y1="0" x2="0" y2="1">
+                       <stop offset="5%" stopColor="#10b981" stopOpacity={0.25}/>
+                       <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                     </linearGradient>
+                   </defs>
+                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                   <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} />
+                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} />
+                   <Tooltip 
+                     contentStyle={{ background: '#090d16', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', fontSize: '9px', color: '#fff' }}
+                   />
+                   <Area type="monotone" dataKey="co2" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#studentCo2Glow)" />
+                 </AreaChart>
+               </ResponsiveContainer>
+             </div>
+           </motion.div>
+         )}
 
         {/* ECOSYSTEM NODES */}
         <section className="mb-10">
