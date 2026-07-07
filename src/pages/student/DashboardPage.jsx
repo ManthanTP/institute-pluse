@@ -596,42 +596,41 @@ export default function DashboardPage() {
            >
              <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/5 rounded-full blur-2xl group-hover:bg-orange-500/10 transition-all pointer-events-none" />
              <div className="flex items-center gap-6">
-               {/* Icon / status representation */}
-               <div className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 bg-orange-500/10 border border-orange-500/20 text-orange-500 shadow-inner group-hover:scale-105 transition-all">
-                 {activeOrder ? (
-                   <div className="text-center">
-                     <span className="text-[9px] font-black uppercase tracking-wider block text-orange-400">Token</span>
-                     <span className="text-sm font-black block mt-0.5">#{activeOrder.token_number}</span>
-                   </div>
-                 ) : (
-                   <Coffee size={24} className="text-orange-500 drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]" />
-                 )}
-               </div>
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 bg-orange-500/10 border border-orange-500/20 text-orange-500 shadow-inner group-hover:scale-105 transition-all">
+                  {activeOrder ? (
+                    <div className="text-center">
+                      <span className="text-[9px] font-black uppercase tracking-wider block text-orange-400">Token</span>
+                      <span className="text-xs font-black block mt-0.5">#{activeOrder.token_number || activeOrder.id?.slice(-4).toUpperCase()}</span>
+                    </div>
+                  ) : (
+                    <Coffee size={24} className="text-orange-500 drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]" />
+                  )}
+                </div>
 
-               <div className="flex-1 min-w-0">
-                 <div className="flex items-center gap-2 mb-1">
-                   <span className="text-[8px] font-black text-orange-500 uppercase tracking-[0.2em]">Bites & Coffee</span>
-                   {activeOrder && (
-                     <span className={`px-2 py-0.5 rounded text-[6px] font-black uppercase tracking-widest ${
-                       activeOrder.status === 'ready'
-                         ? 'bg-green-500/10 text-green-400 border border-green-500/20 animate-pulse'
-                         : activeOrder.status === 'preparing'
-                           ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                           : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
-                     }`}>
-                       {activeOrder.status}
-                     </span>
-                   )}
-                 </div>
-                 <h4 className="text-sm font-black text-white uppercase tracking-wider">
-                   {activeOrder ? 'Active Pre-order Status' : 'Cafeteria Pre-order'}
-                 </h4>
-                 <p className="text-[9px] text-gray-500 font-medium mt-1 leading-normal truncate">
-                   {activeOrder
-                     ? `Items: ${Object.keys(activeOrder.items || {}).join(', ')}`
-                     : 'Pre-order food in advance to skip queue waiting times.'}
-                 </p>
-               </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[8px] font-black text-orange-500 uppercase tracking-[0.2em]">Bites & Coffee</span>
+                    {activeOrder && (
+                      <span className={`px-2 py-0.5 rounded text-[6px] font-black uppercase tracking-widest ${
+                        activeOrder.status === 'ready'
+                          ? 'bg-green-500/10 text-green-400 border border-green-500/20 animate-pulse'
+                          : activeOrder.status === 'preparing'
+                            ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                            : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
+                      }`}>
+                        {activeOrder.status}
+                      </span>
+                    )}
+                  </div>
+                  <h4 className="text-sm font-black text-white uppercase tracking-wider">
+                    {activeOrder ? 'Active Pre-order Status' : 'Cafeteria Pre-order'}
+                  </h4>
+                  <p className="text-[9px] text-gray-500 font-medium mt-1 leading-normal truncate">
+                    {activeOrder
+                      ? `Items: ${activeOrder.items?.map(it => `${it.quantity}x ${it.name}`).join(', ')}`
+                      : 'Pre-order food in advance to skip queue waiting times.'}
+                  </p>
+                </div>
                <ChevronRight size={18} className="text-gray-500 group-hover:text-orange-400 transition-colors" />
              </div>
            </motion.div>
