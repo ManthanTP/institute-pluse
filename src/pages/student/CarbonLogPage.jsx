@@ -149,13 +149,42 @@ export default function CarbonLogPage() {
   const tipList = AI_TIPS[topCategory] || AI_TIPS.transport
   const aiTip = tipList[Math.floor((ecoScore * tipList.length) / 101) % tipList.length]
 
+  const getProjectedStreak = () => {
+    if (!profile) return 0
+    const now = new Date()
+    const yesterdayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)
+    const yyyy = yesterdayLocal.getFullYear()
+    const mm = String(yesterdayLocal.getMonth() + 1).padStart(2, '0')
+    const dd = String(yesterdayLocal.getDate()).padStart(2, '0')
+    const targetDateStr = `${yyyy}-${mm}-${dd}`
+
+    if (!profile.last_log_date) {
+      return 1
+    }
+
+    const lastLog = new Date(profile.last_log_date)
+    const currentLog = new Date(targetDateStr)
+    const diffTime = currentLog.getTime() - lastLog.getTime()
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24))
+
+    if (diffDays === 1) {
+      return (profile.logging_streak || 0) + 1
+    } else if (diffDays > 1) {
+      return 1
+    } else {
+      return profile.logging_streak || 1
+    }
+  }
+
+  const projectedStreak = getProjectedStreak()
+
   const estimatedPoints = calcEcoPoints(
     {
       eco_score: ecoScore,
       transport_entries: form.transport,
       meals: form.meals,
       is_first_log: !profile?.total_co2_kg,
-      streak: (profile?.logging_streak || 0) + 1,
+      streak: projectedStreak,
     },
     activeConfig.points_config,
     activeConfig.validation_limits.max_daily_xp_cap
@@ -167,7 +196,7 @@ export default function CarbonLogPage() {
       transport_entries: form.transport,
       meals: form.meals,
       is_first_log: !profile?.total_co2_kg,
-      streak: (profile?.logging_streak || 0) + 1,
+      streak: projectedStreak,
     },
     activeConfig.points_config
   )
@@ -308,13 +337,32 @@ export default function CarbonLogPage() {
       const isCanteenAnomaly = checkCanteenAnomaly(form.meals, yesterdayOrders)
       const shouldQuarantine = isSuspicious || isCanteenAnomaly
 
+      // Calculate continuous logging streak based on actual calendar difference
+      let newStreak = profile.logging_streak || 0
+      if (!profile.last_log_date) {
+        newStreak = 1
+      } else {
+        const lastLog = new Date(profile.last_log_date)
+        const currentLog = new Date(yesterday)
+        const diffTime = currentLog.getTime() - lastLog.getTime()
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24))
+
+        if (diffDays === 1) {
+          newStreak = (profile.logging_streak || 0) + 1
+        } else if (diffDays > 1) {
+          newStreak = 1
+        } else if (diffDays <= 0) {
+          newStreak = profile.logging_streak || 1
+        }
+      }
+
       const ecoPoints = calcEcoPoints(
         {
           eco_score: ecoScore,
           transport_entries: form.transport,
           meals: form.meals,
           is_first_log: !profile.total_co2_kg,
-          streak: (profile.logging_streak || 0) + 1,
+          streak: newStreak,
         },
         activeConfig.points_config,
         activeConfig.validation_limits.max_daily_xp_cap
@@ -326,7 +374,7 @@ export default function CarbonLogPage() {
           transport_entries: form.transport,
           meals: form.meals,
           is_first_log: !profile.total_co2_kg,
-          streak: (profile.logging_streak || 0) + 1,
+          streak: newStreak,
         },
         activeConfig.points_config
       )
@@ -405,7 +453,7 @@ export default function CarbonLogPage() {
           eco_points: (profile.eco_points || 0) + ecoPoints,
           total_co2_kg: (profile.total_co2_kg || 0) + totalKg,
           last_log_date: yesterday,
-          logging_streak: (profile.logging_streak || 0) + 1,
+          logging_streak: newStreak,
         }).eq('id', profile.id)
       }
 

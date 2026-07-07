@@ -311,6 +311,9 @@ export default function CafeteriaPage() {
                   </div>
                   <div>
                     <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                      <span className="px-2 py-0.5 bg-orange-500/10 border border-orange-500/20 text-orange-400 rounded-md text-[7px] font-black uppercase tracking-widest font-mono">
+                        #{order.token_number || order.id.slice(0, 4).toUpperCase()}
+                      </span>
                       <span className="text-[8px] md:text-[9px] font-black text-gray-600 uppercase tracking-widest italic">
                         {new Date(order.created_at).toLocaleDateString()} • {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
@@ -427,6 +430,11 @@ export default function CafeteriaPage() {
                   <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-2 leading-none">
                     {orderSuccess ? 'Uplink Confirmed' : 'Order Protocol'}
                   </h3>
+                  <div className="mb-4">
+                    <span className="text-sm font-black text-orange-400 font-mono">
+                      Token: #{(orderSuccess || selectedOrder).token_number || (orderSuccess || selectedOrder).id?.slice(-4).toUpperCase()}
+                    </span>
+                  </div>
 
                   {/* Payment Status Banner */}
                   <div className="mb-6">

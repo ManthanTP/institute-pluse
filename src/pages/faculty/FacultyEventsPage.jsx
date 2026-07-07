@@ -734,7 +734,21 @@ export default function FacultyEventsPage() {
                 {activeModalTab === 'roster' ? (
                   <div className="flex-1 overflow-y-auto no-scrollbar space-y-6 pr-2 pb-4">
                     {/* Award XP to All Button */}
-                    {((selectedEvent?.team_type !== 'solo' && teamsData.length > 0) || (selectedEvent?.team_type === 'solo' && participants.length > 0)) && (
+                    {(() => {
+                      if (!selectedEvent) return false;
+                      if (selectedEvent.team_type && selectedEvent.team_type !== 'solo') {
+                        if (teamsData.length === 0) return false;
+                        return teamsData.some(team => 
+                          team.members.some(m => {
+                            const participantRecord = participants.find(p => p.student_id === (m.student_id || m.profiles?.id));
+                            return !participantRecord?.attended;
+                          })
+                        );
+                      } else {
+                        if (participants.length === 0) return false;
+                        return participants.some(p => !p.attended);
+                      }
+                    })() && (
                       <div className="flex justify-between items-center bg-white/5 p-4 rounded-3xl border border-white/5 mb-4">
                         <div>
                           <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 leading-none">Global Award Protocol</p>
