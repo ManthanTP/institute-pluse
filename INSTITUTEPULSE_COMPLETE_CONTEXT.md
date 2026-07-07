@@ -981,8 +981,7 @@ InstitutePulse/
 | **Project Guide** | Prof. Somashekar T M (Assistant Professor, Department of ME) |
 | **Team Size** | 6 Members (CS, AIML, E&C, ME) |
 | **Team Members** | Manthan T Patel (CS), Mallikarjun B Chikkabasur (CS), Manoj G Raikar (CS), Bheemappa Talawar (AIML), Kasirayagouda Umannavar (E&C), Premkumar S Koppal (ME) |
-| **Development Period** | Week 15–16 |
-| **SDG Alignment** | UN SDG 4 (Quality Education), SDG 11 (Sustainable Cities), SDG 12 (Responsible Consumption), SDG 13 (Climate Action) |
+| **Development Period** | Week 15–16 | **SDG Alignment** | UN SDG 4 (Quality Education), SDG 11 (Sustainable Cities), SDG 12 (Responsible Consumption), SDG 13 (Climate Action) |
 
 ---
 

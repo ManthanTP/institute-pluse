@@ -1,10 +1,9 @@
-# InstitutePulse — Product Requirements Document (PRD)
+# InstitutePulse — Product Requirements Document
 
-> **Version:** 1.0  
-> **Last Updated:** May 12, 2026  
-> **Developer:** Manthan Patel — CSE, Jain College of Engineering  
-> **Platform:** Web (Vite + React) & Android (Capacitor)  
-> **Backend:** Supabase (Auth, Database, Realtime)
+**Version:** 1.0 | **Last Updated:** May 2026  
+**Developer:** Manthan Patel — CSE, Jain College of Engineering  
+**Platform:** Web (Vite + React) & Android (Capacitor)  
+**Backend:** Supabase (Auth, Database, Realtime)
 
 ---
 
@@ -531,6 +530,7 @@ Uses `AdminLayout.jsx` for sidebar (with restricted access for certain owner ema
 
 - **Excel** — Student registries, event rosters, attendance reports (via SheetJS/xlsx)
 - **PDF** — Printable manifests with verification QR codes (via jsPDF + autotable)
+- **PowerPoint** — Presentation generation (via pptxgenjs)
 
 ---
 
@@ -542,4 +542,4 @@ Uses `AdminLayout.jsx` for sidebar (with restricted access for certain owner ema
 - Share feature via `@capacitor/share`
 - Bottom tab bar navigation on mobile breakpoints
 
-________________________________________________________________________
+---
