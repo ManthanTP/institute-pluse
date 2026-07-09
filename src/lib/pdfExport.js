@@ -8,9 +8,9 @@
  * - Clean responsive table styling with rounded corners
  * - Multi-theme engine (Cyber Intelligence, Academic Excellence, Executive Analytics)
  */
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
-import { toDataURL } from 'qrcode'
+import { jsPDF } from 'jspdf'
+import 'jspdf-autotable'
+import QRCode from 'qrcode'
 
 // Cross-platform PDF save: uses native Share sheet on Capacitor, standard download on web
 async function savePDF(doc, filename) {
@@ -553,7 +553,7 @@ export async function drawVerificationPage(doc, docId, dateStr, studentName, col
 
   try {
     const verificationUrl = `https://institute-pluse.vercel.app/verify/${docId}`
-    const qrDataUrl = await toDataURL(verificationUrl, {
+    const qrDataUrl = await QRCode.toDataURL(verificationUrl, {
       margin: 1,
       width: 150,
       color: {
@@ -683,7 +683,7 @@ export async function exportTablePDF({ title, subtitle, headers, rows, filename,
     startY += 34
   }
 
-  autoTable(doc, {
+  doc.autoTable({
     head: [headers.map(h => h.toUpperCase())],
     body: rows,
     startY,

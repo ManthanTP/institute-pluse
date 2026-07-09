@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useEffect, Suspense, lazy } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { useAuthStore, useFacultyNotifStore, useNotifStore } from './store/index'
@@ -36,6 +36,15 @@ const VerificationPage = lazy(() => import('./pages/shared/VerificationPage'))
 const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'))
 const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'))
 const ResourceHubPage = lazy(() => import('./pages/student/ResourceHubPage'))
+
+// Reset scroll position on route changes
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+  return null
+}
 
 // ─── FACULTY PAGES ──────────────────────────────────────────────
 const FacultyDashboard = lazy(() => import('./pages/faculty/FacultyDashboard'))
@@ -160,6 +169,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Toaster
         position="top-center"
         toastOptions={{

@@ -13,17 +13,22 @@ export default function CarbonHistoryPage() {
   const { profile } = useAuthStore()
   const [history, setHistory] = useState([])
   const [loading, setLoading] = useState(true)
-  const [timeFrame, setTimeFrame] = useState(0)
+  const [timeFrame, setTimeFrame] = useState(0) // 0 = Week, 1 = Month, 2 = Year
   const [refreshKey, setRefreshKey] = useState(0)
 
   const [selectedItem, setSelectedItem] = useState(null)
   const [selectedType, setSelectedType] = useState(null) // 'log' | 'order'
   const [isExporting, setIsExporting] = useState(false)
 
-  // Download range picker states
-  const [showRangePicker, setShowRangePicker] = useState(false)
-  const [rangeType, setRangeType] = useState('Week') // 'Week' | 'Month' | 'Year'
-  const [selectedWeekStart, setSelectedWeekStart] = useState(new Date().toISOString().split('T')[0])
+  // Sync state for specific range filtering (both on-screen & report download)
+  const [selectedWeekStart, setSelectedWeekStart] = useState(() => {
+    const d = new Date()
+    d.setDate(d.getDate() - 7)
+    const yyyy = d.getFullYear()
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const dd = String(d.getDate()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd}`
+  })
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth())
   const [selectedMonthYear, setSelectedMonthYear] = useState(new Date().getFullYear())
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
@@ -31,42 +36,46 @@ export default function CarbonHistoryPage() {
 
   useEffect(() => {
     fetchHistory()
-  }, [profile?.id, timeFrame, refreshKey])
+  }, [profile?.id, timeFrame, selectedWeekStart, selectedMonth, selectedMonthYear, selectedYear, refreshKey])
 
   async function fetchHistory() {
     if (!profile?.id) return
     setLoading(true)
 
-    let logQuery = supabase
-      .from('carbon_logs')
-      .select('*')
-      .eq('student_id', profile.id)
-      .order('log_date', { ascending: false })
-
-    let orderQuery = supabase
-      .from('orders')
-      .select('*')
-      .eq('student_id', profile.id)
-      .order('created_at', { ascending: false })
-
+    let start, end
     if (timeFrame === 0) { // Week
-      const date = new Date()
-      date.setDate(date.getDate() - 7)
-      logQuery = logQuery.gte('log_date', date.toISOString().split('T')[0])
-      orderQuery = orderQuery.gte('created_at', date.toISOString())
+      start = new Date(selectedWeekStart)
+      start.setHours(0, 0, 0, 0)
+      end = new Date(start)
+      end.setDate(end.getDate() + 6)
+      end.setHours(23, 59, 59, 999)
     } else if (timeFrame === 1) { // Month
-      const date = new Date()
-      date.setMonth(date.getMonth() - 1)
-      logQuery = logQuery.gte('log_date', date.toISOString().split('T')[0])
-      orderQuery = orderQuery.gte('created_at', date.toISOString())
-    } else if (timeFrame === 2) { // Year
-      const date = new Date()
-      date.setFullYear(date.getFullYear() - 1)
-      logQuery = logQuery.gte('log_date', date.toISOString().split('T')[0])
-      orderQuery = orderQuery.gte('created_at', date.toISOString())
+      start = new Date(selectedMonthYear, selectedMonth, 1)
+      start.setHours(0, 0, 0, 0)
+      end = new Date(selectedMonthYear, Number(selectedMonth) + 1, 0, 23, 59, 59, 999)
+    } else { // Year
+      start = new Date(selectedYear, 0, 1)
+      start.setHours(0, 0, 0, 0)
+      end = new Date(selectedYear, 11, 31, 23, 59, 59, 999)
     }
 
     try {
+      const logQuery = supabase
+        .from('carbon_logs')
+        .select('*')
+        .eq('student_id', profile.id)
+        .gte('log_date', start.toISOString().split('T')[0])
+        .lte('log_date', end.toISOString().split('T')[0])
+        .order('log_date', { ascending: false })
+
+      const orderQuery = supabase
+        .from('orders')
+        .select('*')
+        .eq('student_id', profile.id)
+        .gte('created_at', start.toISOString())
+        .lte('created_at', end.toISOString())
+        .order('created_at', { ascending: false })
+
       const [logsRes, ordersRes] = await Promise.all([logQuery, orderQuery])
 
       if (logsRes.error) console.error('Carbon logs fetch error:', logsRes.error.message, logsRes.error)
@@ -84,9 +93,10 @@ export default function CarbonHistoryPage() {
       setLoading(false)
     }
   }
+
   const totalSaved = history.reduce((acc, curr) => {
     if (curr._type === 'log') return acc + (curr.total_kg * 0.15 || 0)
-    return acc // Orders don't "save" carbon, they are footprints
+    return acc
   }, 0)
 
   const averageImpact = history.length > 0 ? history.reduce((acc, curr) => {
@@ -127,86 +137,36 @@ export default function CarbonHistoryPage() {
   }
 
   const handleDownload = () => {
-    setShowRangePicker(true)
-  }
-
-  const handleGenerateRangeReport = async () => {
-    if (!profile?.id) return
-    setLoading(true)
-    setShowRangePicker(false)
-
     let start, end, rangeLabel
-    if (rangeType === 'Week') {
+    if (timeFrame === 0) { // Week
       start = new Date(selectedWeekStart)
       start.setHours(0, 0, 0, 0)
       end = new Date(start)
       end.setDate(end.getDate() + 6)
       end.setHours(23, 59, 59, 999)
-      
       const options = { day: 'numeric', month: 'short' }
       rangeLabel = `WEEK OF ${start.toLocaleDateString('en-US', options)} - ${end.toLocaleDateString('en-US', options)}`
-    } else if (rangeType === 'Month') {
+    } else if (timeFrame === 1) { // Month
       start = new Date(selectedMonthYear, selectedMonth, 1)
       start.setHours(0, 0, 0, 0)
       end = new Date(selectedMonthYear, Number(selectedMonth) + 1, 0, 23, 59, 59, 999)
-      
       rangeLabel = `${start.toLocaleString('en-US', { month: 'long' }).toUpperCase()} ${selectedMonthYear}`
-    } else {
+    } else { // Year
       start = new Date(selectedYear, 0, 1)
       start.setHours(0, 0, 0, 0)
       end = new Date(selectedYear, 11, 31, 23, 59, 59, 999)
-      
       rangeLabel = `YEAR ${selectedYear}`
     }
 
-    try {
-      const logRes = await supabase
-        .from('carbon_logs')
-        .select('*')
-        .eq('student_id', profile.id)
-        .gte('log_date', start.toISOString().split('T')[0])
-        .lte('log_date', end.toISOString().split('T')[0])
-        .order('log_date', { ascending: false })
-
-      const orderRes = await supabase
-        .from('orders')
-        .select('*')
-        .eq('student_id', profile.id)
-        .gte('created_at', start.toISOString())
-        .lte('created_at', end.toISOString())
-        .order('created_at', { ascending: false })
-
-      if (logRes.error) throw logRes.error
-      if (orderRes.error) throw orderRes.error
-
-      const logs = (logRes.data || []).map(l => ({ ...l, _type: 'log', _date: new Date(l.log_date + 'T00:00:00') }))
-      const orders = (orderRes.data || []).map(o => ({ ...o, _type: 'order', _date: new Date(o.created_at) }))
-      const merged = [...logs, ...orders].sort((a, b) => b._date - a._date)
-
-      const tSaved = merged.reduce((acc, curr) => {
-        if (curr._type === 'log') return acc + (curr.total_kg * 0.15 || 0)
-        return acc
-      }, 0)
-
-      const avgImpact = merged.length > 0 ? merged.reduce((acc, curr) => {
-        return acc + (Number(curr.total_kg || curr.total_carbon_kg || 0))
-      }, 0) / merged.length : 0
-
-      setExportData({
-        history: merged,
-        totalSaved: tSaved,
-        averageImpact: avgImpact,
-        periodLabel: rangeLabel,
-        filename: `carbon_manifest_${rangeType.toLowerCase()}_${profile?.id?.slice(0, 8)}`
-      })
-      
-      setIsExporting(true)
-    } catch (err) {
-      console.error('Failed to fetch export range data:', err)
-      toast.error('Failed to compile range metrics')
-    } finally {
-      setLoading(false)
-    }
+    setExportData({
+      history: history,
+      totalSaved: totalSaved,
+      averageImpact: averageImpact,
+      periodLabel: rangeLabel,
+      filename: `carbon_manifest_${TIME_FRAMES[timeFrame].toLowerCase()}_${profile?.id?.slice(0, 8)}`
+    })
+    
+    setIsExporting(true)
   }
 
   if (loading) {
@@ -308,6 +268,67 @@ export default function CarbonHistoryPage() {
               {t}
             </motion.button>
           ))}
+        </div>
+
+        {/* SPECIFIC PERIOD FILTER SELECTORS */}
+        <div className="bg-white/5 border border-white/10 rounded-[32px] p-6 mb-8 backdrop-blur-xl">
+          <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Filter Period Settings</p>
+          
+          {timeFrame === 0 && (
+            <div className="flex flex-col gap-2">
+              <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">Week Commencing (Start Date)</label>
+              <input 
+                type="date" 
+                value={selectedWeekStart} 
+                onChange={e => setSelectedWeekStart(e.target.value)}
+                className="w-full bg-slate-900 border border-white/10 rounded-2xl py-3.5 px-4 text-xs text-white outline-none focus:border-green-500/50 cursor-pointer"
+              />
+            </div>
+          )}
+
+          {timeFrame === 1 && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">Select Month</label>
+                <select 
+                  value={selectedMonth} 
+                  onChange={e => setSelectedMonth(Number(e.target.value))}
+                  className="w-full bg-slate-900 border border-white/10 rounded-2xl py-3.5 px-4 text-xs text-white outline-none focus:border-green-500/50 cursor-pointer"
+                >
+                  {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((m, idx) => (
+                    <option key={idx} value={idx} className="bg-slate-900 text-white">{m}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">Select Year</label>
+                <select 
+                  value={selectedMonthYear} 
+                  onChange={e => setSelectedMonthYear(Number(e.target.value))}
+                  className="w-full bg-slate-900 border border-white/10 rounded-2xl py-3.5 px-4 text-xs text-white outline-none focus:border-green-500/50 cursor-pointer"
+                >
+                  {[2024, 2025, 2026, 2027].map(y => (
+                    <option key={y} value={y} className="bg-slate-900 text-white">{y}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
+          {timeFrame === 2 && (
+            <div className="flex flex-col gap-2">
+              <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">Select Year</label>
+              <select 
+                value={selectedYear} 
+                onChange={e => setSelectedYear(Number(e.target.value))}
+                className="w-full bg-slate-900 border border-white/10 rounded-2xl py-3.5 px-4 text-xs text-white outline-none focus:border-green-500/50 cursor-pointer"
+              >
+                {[2024, 2025, 2026, 2027].map(y => (
+                  <option key={y} value={y} className="bg-slate-900 text-white">{y}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {/* LOG LIST */}
@@ -550,113 +571,7 @@ export default function CarbonHistoryPage() {
         </div>
       </div>
 
-      {/* RANGE PICKER MODAL */}
-      <AnimatePresence>
-        {showRangePicker && createPortal(
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6">
-            <motion.div 
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
-              onClick={() => setShowRangePicker(false)}
-            />
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              className="relative w-full max-w-md bg-slate-900 border border-white/10 rounded-[36px] p-8 shadow-2xl overflow-hidden text-white"
-            >
-              <h2 className="text-xl font-black uppercase tracking-tighter mb-2">Compile Manifest</h2>
-              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-6">Select report time-window to extract</p>
 
-              {/* Range Type Selection */}
-              <div className="flex gap-2 mb-6 bg-slate-950/50 p-1 border border-white/5 rounded-2xl">
-                {['Week', 'Month', 'Year'].map(t => (
-                  <button
-                    key={t} type="button"
-                    onClick={() => setRangeType(t)}
-                    className={`flex-1 py-2.5 text-[9px] font-black uppercase tracking-wider rounded-xl transition-all ${
-                      rangeType === t ? 'bg-green-600 text-white shadow-lg' : 'text-gray-500 hover:text-white'
-                    }`}
-                  >
-                    {t}ly
-                  </button>
-                ))}
-              </div>
-
-              {/* Conditional Inputs */}
-              <div className="space-y-4 mb-8">
-                {rangeType === 'Week' && (
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Week Commencing (Start Date)</label>
-                    <input 
-                      type="date" value={selectedWeekStart} onChange={e => setSelectedWeekStart(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-4 text-sm text-white outline-none focus:border-green-500/50 transition-all cursor-pointer bg-slate-950"
-                    />
-                  </div>
-                )}
-
-                {rangeType === 'Month' && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Month</label>
-                      <select 
-                        value={selectedMonth} onChange={e => setSelectedMonth(Number(e.target.value))}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-4 text-sm text-white outline-none focus:border-green-500/50 appearance-none cursor-pointer bg-slate-950"
-                      >
-                        {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((m, idx) => (
-                          <option key={idx} value={idx}>{m}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Year</label>
-                      <select 
-                        value={selectedMonthYear} onChange={e => setSelectedMonthYear(Number(e.target.value))}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-4 text-sm text-white outline-none focus:border-green-500/50 appearance-none cursor-pointer bg-slate-950"
-                      >
-                        {[2024, 2025, 2026].map(y => (
-                          <option key={y} value={y}>{y}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                )}
-
-                {rangeType === 'Year' && (
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Year</label>
-                    <select 
-                      value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-4 text-sm text-white outline-none focus:border-green-500/50 appearance-none cursor-pointer bg-slate-950"
-                    >
-                      {[2024, 2025, 2026].map(y => (
-                        <option key={y} value={y}>{y}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-4">
-                <button
-                  type="button"
-                  onClick={() => setShowRangePicker(false)}
-                  className="flex-1 py-4 bg-white/5 border border-white/10 hover:border-red-500/20 text-gray-400 hover:text-red-400 text-[9px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleGenerateRangeReport}
-                  className="flex-1 py-4 bg-green-600 hover:bg-green-500 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-green-600/10 transition-all"
-                >
-                  Generate PDF
-                </button>
-              </div>
-            </motion.div>
-          </div>,
-          document.body
-        )}
-      </AnimatePresence>
 
       <PDFExportModal 
         isOpen={isExporting} 
