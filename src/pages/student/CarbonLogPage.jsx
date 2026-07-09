@@ -534,7 +534,7 @@ export default function CarbonLogPage() {
     const isRejected = alreadyLogged.status === 'rejected'
     const isQuarantined = alreadyLogged.log_status === 'quarantined' && !isRejected
     return (
-      <div className="min-h-[100dvh] bg-slate-950 relative overflow-hidden flex items-center justify-center">
+      <div className="h-[100dvh] max-h-screen w-full bg-slate-950 relative overflow-hidden flex flex-col justify-center items-center py-4 px-4 text-white">
         {/* Background Effects */}
         <div className="fixed inset-0 pointer-events-none z-0">
           <div className={`absolute top-0 right-0 w-[50%] h-[40%] rounded-full blur-[120px] ${isRejected ? 'bg-red-500/5' : isQuarantined ? 'bg-amber-500/5' : 'bg-green-500/5'}`} />
@@ -546,69 +546,69 @@ export default function CarbonLogPage() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4, ease: 'easeOut' }}
-          className="relative z-10 max-w-md mx-auto px-6 text-center"
+          className="relative z-10 w-full max-w-sm mx-auto px-4 text-center flex flex-col justify-center"
         >
           {/* Lock Icon */}
           <motion.div
-            animate={{ y: [0, -6, 0] }}
+            animate={{ y: [0, -4, 0] }}
             transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
-            className={`mx-auto mb-8 w-24 h-24 rounded-[32px] bg-gradient-to-br flex items-center justify-center ${
+            className={`mx-auto mb-4 w-16 h-16 md:w-20 md:h-20 rounded-[24px] md:rounded-[32px] bg-gradient-to-br flex items-center justify-center ${
               isRejected
-                ? 'from-red-600/20 to-red-600/10 border border-red-500/30 shadow-[0_0_40px_rgba(239,68,68,0.15)]'
+                ? 'from-red-600/20 to-red-600/10 border border-red-500/30 shadow-[0_0_30px_rgba(239,68,68,0.1)]'
                 : isQuarantined
-                ? 'from-amber-600/20 to-amber-600/10 border border-amber-500/30 shadow-[0_0_40px_rgba(245,158,11,0.15)]'
-                : 'from-green-600/20 to-emerald-600/10 border border-green-500/30 shadow-[0_0_40px_rgba(34,197,94,0.15)]'
+                ? 'from-amber-600/20 to-amber-600/10 border border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.1)]'
+                : 'from-green-600/20 to-emerald-600/10 border border-green-500/30 shadow-[0_0_30px_rgba(34,197,94,0.1)]'
             }`}
           >
-            <Shield size={40} className={isRejected ? 'text-red-500' : isQuarantined ? 'text-amber-500' : 'text-green-500'} />
+            <Shield size={28} className={isRejected ? 'text-red-500' : isQuarantined ? 'text-amber-500' : 'text-green-500'} />
           </motion.div>
 
           {/* Status Badge */}
           {isRejected ? (
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/20 mb-6">
-              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-              <span className="text-[9px] font-black text-red-400 uppercase tracking-[0.3em]">Log Rejected</span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 mb-3 mx-auto">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-[8px] font-black text-red-400 uppercase tracking-[0.25em]">Log Rejected</span>
             </div>
           ) : isQuarantined ? (
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 mb-6">
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-              <span className="text-[9px] font-black text-amber-400 uppercase tracking-[0.3em]">Under Review</span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 mb-3 mx-auto">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+              <span className="text-[8px] font-black text-amber-400 uppercase tracking-[0.25em]">Under Review</span>
             </div>
           ) : (
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20 mb-6">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-[9px] font-black text-green-400 uppercase tracking-[0.3em]">Log Synced Successfully</span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 mb-3 mx-auto">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-[8px] font-black text-green-400 uppercase tracking-[0.25em]">Log Synced Successfully</span>
             </div>
           )}
 
           {/* Title */}
-          <h1 className="text-2xl font-black text-white uppercase tracking-tight mb-2">
+          <h1 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight mb-1">
             {isRejected ? 'Log Rejected' : 'Daily Log Complete'}
           </h1>
-          <p className="text-sm text-gray-400 mb-8">
+          <p className="text-[10px] md:text-xs text-gray-400 mb-4 leading-normal px-2">
             {isRejected 
-              ? "Your carbon log was audited and rejected due to discrepancies. No XP was credited. If you believe this was an error, please contact faculty." 
+              ? "Your carbon log was audited and rejected. No XP was credited. If you believe this was an error, please contact faculty." 
               : isQuarantined
               ? "Your log is under audit review. XP will be credited once approved."
               : "Yesterday's carbon footprint has already been recorded. This page is locked until the next logging window opens."}
           </p>
 
           {/* Logged Data Summary */}
-          <div className={`border rounded-[32px] p-6 mb-6 backdrop-blur-xl ${
+          <div className={`border rounded-[24px] p-4 mb-4 backdrop-blur-xl ${
             isRejected ? 'bg-red-500/5 border-red-500/10' : 'bg-white/5 border-white/10'
           }`}>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-2">
               <div>
-                <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-2">Total CO₂</p>
-                <p className="text-2xl font-black text-white">{loggedTotal.toFixed(1)}<span className="text-xs text-gray-500 ml-1">kg</span></p>
+                <p className="text-[7px] font-black text-gray-500 uppercase tracking-widest mb-1">Total CO₂</p>
+                <p className="text-lg md:text-xl font-black text-white">{loggedTotal.toFixed(1)}<span className="text-[10px] text-gray-500 ml-0.5">kg</span></p>
               </div>
               <div>
-                <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-2">Eco Score</p>
-                <p className={`text-2xl font-black ${isRejected ? 'text-red-400' : 'text-green-400'}`}>{loggedScore}<span className={`text-xs ml-1 ${isRejected ? 'text-red-500' : 'text-green-500'}`}>%</span></p>
+                <p className="text-[7px] font-black text-gray-500 uppercase tracking-widest mb-1">Eco Score</p>
+                <p className={`text-lg md:text-xl font-black ${isRejected ? 'text-red-400' : 'text-green-400'}`}>{loggedScore}<span className={`text-[10px] ml-0.5 ${isRejected ? 'text-red-500' : 'text-green-500'}`}>%</span></p>
               </div>
               <div>
-                <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-2">{isRejected ? 'XP' : 'XP Earned'}</p>
-                <p className={`text-2xl font-black ${isRejected ? 'text-red-400' : 'text-yellow-400'}`}>
+                <p className="text-[7px] font-black text-gray-500 uppercase tracking-widest mb-1">{isRejected ? 'XP' : 'XP Earned'}</p>
+                <p className={`text-lg md:text-xl font-black ${isRejected ? 'text-red-400' : 'text-yellow-400'}`}>
                   {isRejected ? '0' : `+${loggedPoints}`}
                 </p>
               </div>
@@ -616,42 +616,42 @@ export default function CarbonLogPage() {
           </div>
 
           {/* Countdown Timer */}
-          <div className="bg-white/5 border border-white/10 rounded-[28px] p-5 mb-8 backdrop-blur-xl">
-            <div className="flex items-center justify-center gap-3 mb-3">
-              <Clock size={16} className="text-gray-400" />
-              <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em]">Unlocks In</p>
+          <div className="bg-white/5 border border-white/10 rounded-[24px] p-3 mb-5 backdrop-blur-xl">
+            <div className="flex items-center justify-center gap-1.5 mb-2">
+              <Clock size={12} className="text-gray-400" />
+              <p className="text-[8px] font-black text-gray-400 uppercase tracking-[0.25em]">Unlocks In</p>
             </div>
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex items-center justify-center gap-1.5">
               {countdown.split(':').map((segment, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <div className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 min-w-[60px]">
-                    <span className="text-2xl font-black text-white font-mono">{segment}</span>
-                    <p className="text-[7px] font-black text-gray-500 uppercase tracking-widest mt-1">
+                <div key={i} className="flex items-center gap-1.5">
+                  <div className="bg-white/5 border border-white/10 rounded-xl px-2.5 py-1.5 min-w-[45px] md:min-w-[50px]">
+                    <span className="text-lg font-black text-white font-mono">{segment}</span>
+                    <p className="text-[6px] font-black text-gray-500 uppercase tracking-widest mt-0.5">
                       {['Hours', 'Mins', 'Secs'][i]}
                     </p>
                   </div>
-                  {i < 2 && <span className="text-xl font-black text-gray-600">:</span>}
+                  {i < 2 && <span className="text-base font-black text-gray-600">:</span>}
                 </div>
               ))}
             </div>
-            <p className="text-[9px] text-gray-500 mt-3">Next logging window opens at midnight</p>
+            <p className="text-[8px] text-gray-500 mt-2">Next logging window opens at midnight</p>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
             <motion.button
               whileTap={{ scale: 0.97 }}
               onClick={() => navigate('/carbon/history')}
-              className="w-full py-4 rounded-2xl bg-green-600 text-white font-black text-[10px] uppercase tracking-[0.3em] shadow-xl shadow-green-600/20 hover:bg-green-500 transition-all flex items-center justify-center gap-3"
+              className="w-full py-3 rounded-xl bg-green-600 text-white font-black text-[9px] uppercase tracking-[0.25em] shadow-lg shadow-green-600/10 hover:bg-green-500 transition-all flex items-center justify-center gap-2"
             >
-              View Carbon History <ArrowRight size={14} />
+              View Carbon History <ArrowRight size={12} />
             </motion.button>
             <motion.button
               whileTap={{ scale: 0.97 }}
               onClick={() => navigate('/dashboard')}
-              className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-gray-400 font-black text-[10px] uppercase tracking-[0.3em] hover:bg-white/10 hover:text-white transition-all flex items-center justify-center gap-3"
+              className="w-full py-3 rounded-xl bg-white/5 border border-white/10 text-gray-400 font-black text-[9px] uppercase tracking-[0.25em] hover:bg-white/10 hover:text-white transition-all flex items-center justify-center gap-2"
             >
-              <ArrowLeft size={14} /> Back to Dashboard
+              <ArrowLeft size={12} /> Back to Dashboard
             </motion.button>
           </div>
         </motion.div>
