@@ -730,19 +730,24 @@ export default function EventsPage() {
 
         {/* CATEGORY TABS */}
         <div className="flex gap-2 overflow-x-auto no-scrollbar mb-6 md:mb-10 pb-2">
-          {EVENT_CATEGORIES.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`px-5 md:px-8 py-2 md:py-3 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${
-                activeCategory === cat 
-                  ? 'bg-blue-600 border-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)]' 
-                  : 'bg-white/5 border-white/10 text-gray-500'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+          {EVENT_CATEGORIES.map(cat => {
+            const count = cat === 'All' ? events.length
+              : cat === 'History' ? registeredEvents.length
+              : events.filter(e => e.category === cat).length;
+            return (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`px-5 md:px-8 py-2 md:py-3 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${
+                  activeCategory === cat 
+                    ? 'bg-blue-600 border-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)]' 
+                    : 'bg-white/5 border-white/10 text-gray-500 hover:text-white'
+                }`}
+              >
+                {cat} {count > 0 && <span className="ml-1.5 px-2 py-0.5 rounded-full bg-white/10 text-[8px] font-black">{count}</span>}
+              </button>
+            )
+          })}
         </div>
 
         {/* EVENT LIST */}
