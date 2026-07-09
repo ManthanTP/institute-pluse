@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, HelpCircle, ChevronDown, ChevronUp, Leaf, GraduationCap, LayoutGrid, MapPin, UtensilsCrossed, ShieldAlert, Zap, CalendarDays, BarChart3, Info } from 'lucide-react'
+import { ChevronLeft, HelpCircle, ChevronDown, ChevronUp, Leaf, GraduationCap, LayoutGrid, MapPin, UtensilsCrossed, ShieldAlert, Zap, CalendarDays, BarChart3, Info, Award } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store/index'
 
 const ICON_MAP = {
-  Leaf, GraduationCap, LayoutGrid, MapPin, UtensilsCrossed, ShieldAlert, Zap, CalendarDays, BarChart3
+  Leaf, GraduationCap, LayoutGrid, MapPin, UtensilsCrossed, ShieldAlert, Zap, CalendarDays, BarChart3, Award
 }
 
 export default function HelpPage() {
