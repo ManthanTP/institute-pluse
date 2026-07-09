@@ -567,6 +567,64 @@ export default function EventsPage() {
     : activeCategory === 'History' ? events.filter(e => registeredEvents.includes(e.id))
     : events.filter(e => e.category === activeCategory)
 
+  const getEventPriority = (e) => {
+    if (e.status === 'cancelled') return 5;
+    if (e.status === 'postponed') return 4;
+    
+    const now = new Date();
+    
+    // Parse time
+    let hours = 0;
+    let minutes = 0;
+    if (e.event_time) {
+      const timeMatch = e.event_time.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+      if (timeMatch) {
+        hours = parseInt(timeMatch[1], 10);
+        minutes = parseInt(timeMatch[2], 10);
+        const ampm = timeMatch[3];
+        if (ampm) {
+          if (ampm.toUpperCase() === 'PM' && hours < 12) hours += 12;
+          if (ampm.toUpperCase() === 'AM' && hours === 12) hours = 0;
+        }
+      }
+    }
+    const eventDateTime = new Date(`${e.event_date}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`);
+    
+    if (e.status === 'completed' || (!isNaN(eventDateTime.getTime()) && eventDateTime < now)) {
+      return 3;
+    }
+    
+    // Check if starts in < 24h
+    if (!isNaN(eventDateTime.getTime())) {
+      const diffMs = eventDateTime.getTime() - now.getTime();
+      if (diffMs > 0 && diffMs <= 24 * 60 * 60 * 1000) {
+        return 1; // Soon starting
+      }
+    }
+    
+    // Check if active today
+    const todayStr = now.toISOString().split('T')[0];
+    if (e.event_date === todayStr) {
+      return 1; // Live today
+    }
+    
+    return 2; // Upcoming
+  };
+
+  const sortedFiltered = [...filtered].sort((a, b) => {
+    const pA = getEventPriority(a);
+    const pB = getEventPriority(b);
+    if (pA !== pB) return pA - pB;
+    
+    const timeA = new Date(a.event_date).getTime();
+    const timeB = new Date(b.event_date).getTime();
+    if (pA === 1 || pA === 2) {
+      return timeA - timeB; // Closest first
+    } else {
+      return timeB - timeA; // Latest completed first
+    }
+  });
+
   async function handleRegister(event) {
     if (registeredEvents.includes(event.id)) return
     
@@ -624,10 +682,11 @@ export default function EventsPage() {
         {/* BROWSE BUTTON */}
         <motion.button 
           whileTap={{ scale: 0.98 }}
+          onClick={() => navigate('/navigation')}
           className="w-full bg-white rounded-2xl md:rounded-3xl py-4 md:py-6 flex items-center justify-center gap-2 md:gap-3 shadow-[0_0_30px_rgba(255,255,255,0.1)] mb-6 md:mb-10"
         >
           <span className="text-base md:text-lg">🗺️</span>
-          <span className="text-xs md:text-[13px] font-black text-black uppercase tracking-[0.2em]">Browse</span>
+          <span className="text-xs md:text-[13px] font-black text-black uppercase tracking-[0.2em]">Campus Map & Navigation</span>
         </motion.button>
 
         {/* TEAM INVITES SECTION */}
@@ -693,12 +752,12 @@ export default function EventsPage() {
                 <div className="w-10 h-10 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest italic">Synchronizing Core...</p>
              </div>
-          ) : filtered.length === 0 ? (
+          ) : sortedFiltered.length === 0 ? (
             <div className="py-20 text-center bg-white/5 border border-white/10 rounded-2xl md:rounded-[40px] backdrop-blur-xl">
                <div className="text-4xl mb-4 opacity-40">📅</div>
                <p className="text-xs font-black text-white uppercase tracking-widest italic">No Nodes Found</p>
             </div>
-          ) : filtered.map((event, i) => {
+          ) : sortedFiltered.map((event, i) => {
             const isRegistered = registeredEvents.includes(event.id)
             return (
               <motion.div
@@ -718,7 +777,15 @@ export default function EventsPage() {
                       Registered ✓
                     </span>
                   )}
-                  {getCountdownText(event.event_date, event.event_time) && (
+                  {event.status === 'cancelled' ? (
+                    <span className="px-4 py-1.5 rounded-full bg-red-500/10 border border-red-500/20 text-[9px] font-black text-red-500 uppercase tracking-widest">
+                      Cancelled ✕
+                    </span>
+                  ) : event.status === 'postponed' ? (
+                    <span className="px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-[9px] font-black text-amber-500 uppercase tracking-widest">
+                      Postponed ⏳
+                    </span>
+                  ) : getCountdownText(event.event_date, event.event_time) && (
                     <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${
                       getCountdownText(event.event_date, event.event_time).startsWith('Starts in')
                         ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-500'

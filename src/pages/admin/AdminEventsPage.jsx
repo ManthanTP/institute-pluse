@@ -187,7 +187,7 @@ export default function AdminEventsPage() {
     let query = supabase.from('events').select('*, profiles(full_name)')
     
     if (filter === 'upcoming') {
-      query = query.in('status', ['upcoming', 'ongoing'])
+      query = query.in('status', ['upcoming', 'ongoing', 'postponed'])
     } else {
       query = query.eq('status', filter)
     }
@@ -249,7 +249,7 @@ export default function AdminEventsPage() {
       event_time: formData.get('event_time'),
       max_participants: parseInt(formData.get('max_participants')),
       eco_points: parseInt(formData.get('eco_points')),
-      status: formData.get('status'),
+      status: selectedEvent ? (formData.get('status') || selectedEvent.status) : 'upcoming',
       banner_color: formData.get('banner_color') || '#dc2626',
       enable_chat: formData.get('enable_chat') === 'on',
       team_type: teamType,
@@ -271,6 +271,22 @@ export default function AdminEventsPage() {
       toast.success('Event registry synchronized')
       setIsModalOpen(false)
       fetchEvents()
+    }
+  }
+
+  async function quickUpdateStatus(eventId, newStatus) {
+    try {
+      const { error } = await supabase
+        .from('events')
+        .update({ status: newStatus })
+        .eq('id', eventId)
+        
+      if (error) throw error
+      toast.success(`Campaign successfully updated to ${newStatus}`)
+      fetchEvents()
+    } catch (err) {
+      console.error('Error updating status:', err)
+      toast.error('Failed to update campaign status')
     }
   }
 
@@ -391,6 +407,64 @@ export default function AdminEventsPage() {
 
   const filtered = events.filter(e => e.title.toLowerCase().includes(search.toLowerCase()))
 
+  const getEventPriority = (e) => {
+    if (e.status === 'cancelled') return 5;
+    if (e.status === 'postponed') return 4;
+    
+    const now = new Date();
+    
+    // Parse time
+    let hours = 0;
+    let minutes = 0;
+    if (e.event_time) {
+      const timeMatch = e.event_time.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+      if (timeMatch) {
+        hours = parseInt(timeMatch[1], 10);
+        minutes = parseInt(timeMatch[2], 10);
+        const ampm = timeMatch[3];
+        if (ampm) {
+          if (ampm.toUpperCase() === 'PM' && hours < 12) hours += 12;
+          if (ampm.toUpperCase() === 'AM' && hours === 12) hours = 0;
+        }
+      }
+    }
+    const eventDateTime = new Date(`${e.event_date}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`);
+    
+    if (e.status === 'completed' || (!isNaN(eventDateTime.getTime()) && eventDateTime < now)) {
+      return 3;
+    }
+    
+    // Check if starts in < 24h
+    if (!isNaN(eventDateTime.getTime())) {
+      const diffMs = eventDateTime.getTime() - now.getTime();
+      if (diffMs > 0 && diffMs <= 24 * 60 * 60 * 1000) {
+        return 1; // Soon starting
+      }
+    }
+    
+    // Check if active today
+    const todayStr = now.toISOString().split('T')[0];
+    if (e.event_date === todayStr) {
+      return 1; // Live today
+    }
+    
+    return 2; // Upcoming
+  };
+
+  const sortedFiltered = [...filtered].sort((a, b) => {
+    const pA = getEventPriority(a);
+    const pB = getEventPriority(b);
+    if (pA !== pB) return pA - pB;
+    
+    const timeA = new Date(a.event_date).getTime();
+    const timeB = new Date(b.event_date).getTime();
+    if (pA === 1 || pA === 2) {
+      return timeA - timeB; // Closest first
+    } else {
+      return timeB - timeA; // Latest completed first
+    }
+  });
+
   return (
     <AdminLayout>
       <div className="space-y-8 lg:space-y-10 pb-20">
@@ -448,11 +522,11 @@ export default function AdminEventsPage() {
                   <div className="w-10 h-10 border-2 border-red-500/20 border-t-red-500 rounded-full animate-spin" />
                   <p className="text-[9px] lg:text-[10px] font-black text-gray-500 uppercase tracking-widest">Accessing Event Core...</p>
                 </div>
-              ) : filtered.length === 0 ? (
+              ) : sortedFiltered.length === 0 ? (
                 <div className="col-span-full py-16 lg:py-20 text-center bg-white/5 border border-white/10 rounded-3xl lg:rounded-[40px] backdrop-blur-xl">
                    <p className="text-[10px] lg:text-xs font-black text-gray-600 uppercase tracking-widest italic">No Campaigns Found in Registry</p>
                 </div>
-              ) : filtered.map((event, i) => (
+              ) : sortedFiltered.map((event, i) => (
                 <motion.div
                   key={event.id}
                   initial={{ opacity: 0, y: 10 }}
@@ -468,10 +542,21 @@ export default function AdminEventsPage() {
                         >
                            <CalendarDays size={20} lg:size={24} />
                         </div>
-                        <div>
-                           <p className="text-[7px] lg:text-[9px] font-black text-red-500 uppercase tracking-[0.2em] mb-1">{event.category}</p>
-                           <h3 className="text-[11px] lg:text-lg font-black text-white uppercase tracking-tight leading-none line-clamp-1">{event.title}</h3>
-                        </div>
+                         <div>
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <p className="text-[7px] lg:text-[9px] font-black text-red-500 uppercase tracking-[0.2em]">{event.category}</p>
+                              {event.status === 'cancelled' ? (
+                                <span className="px-2 py-0.5 rounded bg-red-500/10 border border-red-500/20 text-red-500 text-[7px] font-black uppercase tracking-wider">Cancelled</span>
+                              ) : event.status === 'postponed' ? (
+                                <span className="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[7px] font-black uppercase tracking-wider">Postponed</span>
+                              ) : event.status === 'completed' ? (
+                                <span className="px-2 py-0.5 rounded bg-gray-500/10 border border-gray-500/20 text-gray-400 text-[7px] font-black uppercase tracking-wider">Completed</span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded bg-green-500/10 border border-green-500/20 text-green-500 text-[7px] font-black uppercase tracking-wider animate-pulse">Active</span>
+                              )}
+                            </div>
+                            <h3 className="text-[11px] lg:text-lg font-black text-white uppercase tracking-tight leading-none line-clamp-1">{event.title}</h3>
+                         </div>
                      </div>
                      <div className="flex gap-2">
                         <button 
@@ -522,9 +607,31 @@ export default function AdminEventsPage() {
                                 style={{ width: `${Math.min(100, (event.current_participants / event.max_participants) * 100)}%` }}
                               />
                            </div>
-                           <span className="text-[9px] lg:text-[10px] font-black text-white">{event.current_participants}/{event.max_participants}</span>
+                           <span className="text-[8px] lg:text-[10px] font-black text-white">{event.current_participants}/{event.max_participants}</span>
                         </div>
                      </div>
+                     <div className="flex items-center gap-2 ml-4 flex-wrap justify-end">
+                       {event.status === 'upcoming' && (
+                         <>
+                           <button 
+                             onClick={() => quickUpdateStatus(event.id, 'postponed')}
+                             className="px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 hover:bg-amber-600 hover:text-white transition-all text-[9px] font-black uppercase tracking-widest"
+                             title="Postpone Campaign"
+                           >
+                             Postpone
+                           </button>
+                           <button 
+                             onClick={() => quickUpdateStatus(event.id, 'cancelled')}
+                             className="px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-600 hover:text-white transition-all text-[9px] font-black uppercase tracking-widest"
+                             title="Cancel Campaign"
+                           >
+                             Cancel
+                           </button>
+                         </>
+                       )}
+                     </div>
+                  </div>
+                  <div className="pt-4 mt-4 border-t border-white/5 text-right">
                      <button 
                        onClick={() => deleteEvent(event.id)}
                        className="text-[8px] lg:text-[9px] font-black text-red-500 uppercase tracking-widest hover:text-red-400 transition-colors animate-pulse"
@@ -603,6 +710,7 @@ export default function AdminEventsPage() {
                       <select name="status" defaultValue={selectedEvent?.status || 'upcoming'} className="w-full bg-white/5 border border-white/10 rounded-xl lg:rounded-2xl p-4 lg:p-5 text-xs lg:text-sm text-white outline-none appearance-none cursor-pointer">
                         <option value="upcoming" className="bg-slate-900">Upcoming</option>
                         <option value="ongoing" className="bg-slate-900">Ongoing</option>
+                        <option value="postponed" className="bg-slate-900">Postponed</option>
                         <option value="completed" className="bg-slate-900">Completed</option>
                         <option value="cancelled" className="bg-slate-900">Cancelled</option>
                       </select>

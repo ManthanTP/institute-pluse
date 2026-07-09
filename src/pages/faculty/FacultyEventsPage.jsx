@@ -263,7 +263,7 @@ export default function FacultyEventsPage() {
       event_time: formData.get('event_time'),
       max_participants: parseInt(formData.get('max_participants')),
       eco_points: parseInt(formData.get('eco_points')),
-      status: 'upcoming',
+      status: selectedEvent ? (formData.get('status') || selectedEvent.status) : 'upcoming',
       banner_color: formData.get('banner_color') || '#3b82f6',
       created_by: profile.id,
       enable_chat: formData.get('enable_chat') === 'on',
@@ -302,6 +302,22 @@ export default function FacultyEventsPage() {
       toast.success('Event registry updated successfully')
       setIsModalOpen(false)
       fetchEvents()
+    }
+  }
+
+  async function quickUpdateStatus(eventId, newStatus) {
+    try {
+      const { error } = await supabase
+        .from('events')
+        .update({ status: newStatus })
+        .eq('id', eventId)
+        
+      if (error) throw error
+      toast.success(`Campaign successfully updated to ${newStatus}`)
+      fetchEvents()
+    } catch (err) {
+      console.error('Error updating status:', err)
+      toast.error('Failed to update campaign status')
     }
   }
 
@@ -422,6 +438,64 @@ export default function FacultyEventsPage() {
 
   const filtered = events.filter(e => e.title.toLowerCase().includes(search.toLowerCase()))
 
+  const getEventPriority = (e) => {
+    if (e.status === 'cancelled') return 5;
+    if (e.status === 'postponed') return 4;
+    
+    const now = new Date();
+    
+    // Parse time
+    let hours = 0;
+    let minutes = 0;
+    if (e.event_time) {
+      const timeMatch = e.event_time.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+      if (timeMatch) {
+        hours = parseInt(timeMatch[1], 10);
+        minutes = parseInt(timeMatch[2], 10);
+        const ampm = timeMatch[3];
+        if (ampm) {
+          if (ampm.toUpperCase() === 'PM' && hours < 12) hours += 12;
+          if (ampm.toUpperCase() === 'AM' && hours === 12) hours = 0;
+        }
+      }
+    }
+    const eventDateTime = new Date(`${e.event_date}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`);
+    
+    if (e.status === 'completed' || (!isNaN(eventDateTime.getTime()) && eventDateTime < now)) {
+      return 3;
+    }
+    
+    // Check if starts in < 24h
+    if (!isNaN(eventDateTime.getTime())) {
+      const diffMs = eventDateTime.getTime() - now.getTime();
+      if (diffMs > 0 && diffMs <= 24 * 60 * 60 * 1000) {
+        return 1; // Soon starting
+      }
+    }
+    
+    // Check if active today
+    const todayStr = now.toISOString().split('T')[0];
+    if (e.event_date === todayStr) {
+      return 1; // Live today
+    }
+    
+    return 2; // Upcoming
+  };
+
+  const sortedFiltered = [...filtered].sort((a, b) => {
+    const pA = getEventPriority(a);
+    const pB = getEventPriority(b);
+    if (pA !== pB) return pA - pB;
+    
+    const timeA = new Date(a.event_date).getTime();
+    const timeB = new Date(b.event_date).getTime();
+    if (pA === 1 || pA === 2) {
+      return timeA - timeB; // Closest first
+    } else {
+      return timeB - timeA; // Latest completed first
+    }
+  });
+
   return (
     <FacultyLayout>
       <div className="space-y-10">
@@ -461,9 +535,9 @@ export default function FacultyEventsPage() {
            <AnimatePresence mode="popLayout">
              {loading ? (
                 <div className="col-span-full py-20 text-center"><div className="w-10 h-10 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mx-auto" /></div>
-             ) : filtered.length === 0 ? (
+             ) : sortedFiltered.length === 0 ? (
                 <div className="col-span-full py-20 text-center glass-card"><p className="text-xs font-black text-gray-600 uppercase tracking-widest">No Active Campaigns</p></div>
-             ) : filtered.map((event, i) => (
+             ) : sortedFiltered.map((event, i) => (
                <motion.div
                  key={event.id}
                  initial={{ opacity: 0, y: 20 }}
@@ -480,7 +554,18 @@ export default function FacultyEventsPage() {
                           <CalendarDays size={28} />
                        </div>
                        <div>
-                          <p className="text-[9px] font-black text-blue-500 uppercase tracking-[0.2em] mb-1">{event.category}</p>
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <p className="text-[9px] font-black text-blue-500 uppercase tracking-[0.2em]">{event.category}</p>
+                            {event.status === 'cancelled' ? (
+                              <span className="px-2 py-0.5 rounded bg-red-500/10 border border-red-500/20 text-red-500 text-[7px] font-black uppercase tracking-wider">Cancelled</span>
+                            ) : event.status === 'postponed' ? (
+                              <span className="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[7px] font-black uppercase tracking-wider">Postponed</span>
+                            ) : event.status === 'completed' ? (
+                              <span className="px-2 py-0.5 rounded bg-gray-500/10 border border-gray-500/20 text-gray-400 text-[7px] font-black uppercase tracking-wider">Completed</span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded bg-green-500/10 border border-green-500/20 text-green-500 text-[7px] font-black uppercase tracking-wider animate-pulse">Active</span>
+                            )}
+                          </div>
                           <h3 className="text-xl font-black text-white uppercase tracking-tight leading-none">{event.title}</h3>
                        </div>
                     </div>
@@ -530,13 +615,33 @@ export default function FacultyEventsPage() {
                           />
                        </div>
                     </div>
-                    <button 
-                      onClick={() => { setSelectedEvent(event); fetchParticipants(event.id); setIsParticipantsModalOpen(true); }}
-                      className="ml-8 p-3 rounded-2xl bg-white/5 border border-white/10 text-blue-500 hover:bg-blue-600 hover:text-white transition-all flex items-center gap-2 group"
-                    >
-                       <Users size={18} />
-                       <span className="text-[9px] font-black uppercase tracking-widest">Manifest</span>
-                    </button>
+                    <div className="flex items-center gap-2 ml-4 flex-wrap justify-end">
+                      {event.status === 'upcoming' && event.created_by === profile.id && (
+                        <>
+                          <button 
+                            onClick={() => quickUpdateStatus(event.id, 'postponed')}
+                            className="px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 hover:bg-amber-600 hover:text-white transition-all text-[9px] font-black uppercase tracking-widest"
+                            title="Postpone Campaign"
+                          >
+                            Postpone
+                          </button>
+                          <button 
+                            onClick={() => quickUpdateStatus(event.id, 'cancelled')}
+                            className="px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-600 hover:text-white transition-all text-[9px] font-black uppercase tracking-widest"
+                            title="Cancel Campaign"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      )}
+                      <button 
+                        onClick={() => { setSelectedEvent(event); fetchParticipants(event.id); setIsParticipantsModalOpen(true); }}
+                        className="p-3 rounded-2xl bg-white/5 border border-white/10 text-blue-500 hover:bg-blue-600 hover:text-white transition-all flex items-center gap-2 group"
+                      >
+                         <Users size={18} />
+                         <span className="text-[9px] font-black uppercase tracking-widest">Manifest</span>
+                      </button>
+                    </div>
                  </div>
                </motion.div>
              ))}
@@ -641,6 +746,21 @@ export default function FacultyEventsPage() {
                       />
                     </div>
 
+                    {selectedEvent && (
+                      <div className="space-y-2 col-span-2">
+                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Campaign Operational Status</label>
+                        <select 
+                          name="status" 
+                          defaultValue={selectedEvent.status || 'upcoming'}
+                          className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-white outline-none appearance-none cursor-pointer"
+                        >
+                          <option value="upcoming" className="bg-slate-900 text-white">Upcoming / Active</option>
+                          <option value="postponed" className="bg-slate-900 text-white">Postponed</option>
+                          <option value="completed" className="bg-slate-900 text-white">Completed</option>
+                          <option value="cancelled" className="bg-slate-900 text-white">Cancelled</option>
+                        </select>
+                      </div>
+                    )}
                     <div className="space-y-2 col-span-2">
                       <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Campaign Narrative</label>
                       <textarea name="description" defaultValue={selectedEvent?.description} className="w-full bg-white/5 border border-white/10 rounded-3xl p-6 text-sm text-white outline-none min-h-[120px] shadow-inner" />
