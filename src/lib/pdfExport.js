@@ -9,7 +9,7 @@
  * - Multi-theme engine (Cyber Intelligence, Academic Excellence, Executive Analytics)
  */
 import { jsPDF } from 'jspdf'
-import 'jspdf-autotable'
+import autoTable from 'jspdf-autotable'
 import QRCode from 'qrcode'
 
 // Cross-platform PDF save: uses native Share sheet on Capacitor, standard download on web
@@ -683,7 +683,7 @@ export async function exportTablePDF({ title, subtitle, headers, rows, filename,
     startY += 34
   }
 
-  doc.autoTable({
+  autoTable(doc, {
     head: [headers.map(h => h.toUpperCase())],
     body: rows,
     startY,

@@ -271,41 +271,43 @@ export default function CarbonHistoryPage() {
         </div>
 
         {/* SPECIFIC PERIOD FILTER SELECTORS */}
-        <div className="bg-white/5 border border-white/10 rounded-[32px] p-6 mb-8 backdrop-blur-xl">
+        <div className="bg-white/5 border border-white/10 rounded-[24px] md:rounded-[32px] p-4 md:p-6 mb-8 backdrop-blur-xl">
           <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Filter Period Settings</p>
           
           {timeFrame === 0 && (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1.5">
               <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">Week Commencing (Start Date)</label>
               <input 
                 type="date" 
                 value={selectedWeekStart} 
                 onChange={e => setSelectedWeekStart(e.target.value)}
-                className="w-full bg-slate-900 border border-white/10 rounded-2xl py-3.5 px-4 text-xs text-white outline-none focus:border-green-500/50 cursor-pointer"
+                className="w-full bg-slate-900 border border-white/10 rounded-xl md:rounded-2xl py-2.5 px-3 md:py-3.5 md:px-4 text-[11px] md:text-xs text-white outline-none focus:border-green-500/50 cursor-pointer"
               />
             </div>
           )}
 
           {timeFrame === 1 && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-2">
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
+              <div className="flex flex-col gap-1.5">
                 <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">Select Month</label>
                 <select 
                   value={selectedMonth} 
                   onChange={e => setSelectedMonth(Number(e.target.value))}
-                  className="w-full bg-slate-900 border border-white/10 rounded-2xl py-3.5 px-4 text-xs text-white outline-none focus:border-green-500/50 cursor-pointer"
+                  className="w-full bg-slate-900 border border-white/10 rounded-xl md:rounded-2xl py-2.5 px-3 md:py-3.5 md:px-4 text-[11px] md:text-xs text-white outline-none focus:border-green-500/50 cursor-pointer appearance-none"
+                  style={{ backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`, backgroundPosition: 'right 12px center', backgroundSize: '12px', backgroundRepeat: 'no-repeat' }}
                 >
                   {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((m, idx) => (
                     <option key={idx} value={idx} className="bg-slate-900 text-white">{m}</option>
                   ))}
                 </select>
               </div>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1.5">
                 <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">Select Year</label>
                 <select 
                   value={selectedMonthYear} 
                   onChange={e => setSelectedMonthYear(Number(e.target.value))}
-                  className="w-full bg-slate-900 border border-white/10 rounded-2xl py-3.5 px-4 text-xs text-white outline-none focus:border-green-500/50 cursor-pointer"
+                  className="w-full bg-slate-900 border border-white/10 rounded-xl md:rounded-2xl py-2.5 px-3 md:py-3.5 md:px-4 text-[11px] md:text-xs text-white outline-none focus:border-green-500/50 cursor-pointer appearance-none"
+                  style={{ backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`, backgroundPosition: 'right 12px center', backgroundSize: '12px', backgroundRepeat: 'no-repeat' }}
                 >
                   {[2024, 2025, 2026, 2027].map(y => (
                     <option key={y} value={y} className="bg-slate-900 text-white">{y}</option>
@@ -316,12 +318,13 @@ export default function CarbonHistoryPage() {
           )}
 
           {timeFrame === 2 && (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1.5">
               <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">Select Year</label>
               <select 
                 value={selectedYear} 
                 onChange={e => setSelectedYear(Number(e.target.value))}
-                className="w-full bg-slate-900 border border-white/10 rounded-2xl py-3.5 px-4 text-xs text-white outline-none focus:border-green-500/50 cursor-pointer"
+                className="w-full bg-slate-900 border border-white/10 rounded-xl md:rounded-2xl py-2.5 px-3 md:py-3.5 md:px-4 text-[11px] md:text-xs text-white outline-none focus:border-green-500/50 cursor-pointer appearance-none"
+                style={{ backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`, backgroundPosition: 'right 12px center', backgroundSize: '12px', backgroundRepeat: 'no-repeat' }}
               >
                 {[2024, 2025, 2026, 2027].map(y => (
                   <option key={y} value={y} className="bg-slate-900 text-white">{y}</option>
