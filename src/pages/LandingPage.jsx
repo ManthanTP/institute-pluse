@@ -515,7 +515,7 @@ export default function LandingPage() {
         <nav className="relative z-50 p-4">
           <div className="flex items-center justify-between rounded-2xl bg-[#020617]/80 backdrop-blur-2xl border border-white/[0.06] px-4 py-3">
             <div className="flex items-center gap-2">
-              <img src={logo} alt="Logo" className="w-6 h-6 object-contain" />
+              <img src={logo} alt="Logo" className="w-9 h-9 object-contain" />
               <span className="text-xs font-black uppercase tracking-wider">
                 Institute<span className="text-green-500">PLUSE</span>
               </span>
@@ -742,7 +742,7 @@ export default function LandingPage() {
 
                 <div className="flex flex-col items-center text-center gap-3 w-full">
                   <div className="flex items-center gap-1.5">
-                    <img src={logo} alt="Logo" className="w-4 h-4 object-contain" />
+                    <img src={logo} alt="Logo" className="w-7 h-7 object-contain" />
                     <span className="text-[10px] font-black tracking-tighter uppercase">InstitutePLUSE</span>
                   </div>
                   
@@ -935,7 +935,7 @@ export default function LandingPage() {
         }`}>
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <motion.div whileHover={{ scale: 1.05 }} transition={{ duration: 0.3 }}>
-              <img src={logo} alt="Logo" className="w-7 h-7 md:w-8 md:h-8 object-contain drop-shadow-[0_0_12px_rgba(34,197,94,0.4)]" />
+              <img src={logo} alt="Logo" className="w-10 h-10 md:w-11 md:h-11 object-contain drop-shadow-[0_0_12px_rgba(34,197,94,0.4)]" />
             </motion.div>
             <span className="text-base md:text-lg font-black tracking-tighter uppercase">
               Institute<span className="text-green-500">PLUSE</span>
@@ -1642,7 +1642,7 @@ export default function LandingPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-14">
                <div className="col-span-2">
                   <div className="flex items-center gap-3 mb-4">
-                     <img src={logo} alt="Logo" className="w-8 h-8 object-contain" />
+                     <img src={logo} alt="Logo" className="w-11 h-11 object-contain" />
                      <span className="text-lg font-black tracking-tighter uppercase">InstitutePLUSE</span>
                   </div>
                   <p className="text-gray-500 text-sm max-w-sm font-medium leading-relaxed">

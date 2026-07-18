@@ -158,7 +158,7 @@ export default function StudentLayout({ children, title, showBack = false, hideC
         <div className="h-full bg-slate-950/40 backdrop-blur-3xl border-r border-white/5 flex flex-col">
           {/* Logo */}
           <div className="px-8 py-8 flex items-center gap-4 border-b border-white/5">
-            <img src={logo} alt="Logo" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(34,197,94,0.2)]" />
+            <img src={logo} alt="Logo" className="w-12 h-12 object-contain drop-shadow-[0_0_15px_rgba(34,197,94,0.2)]" />
             <div>
               <p className="text-white font-black text-sm uppercase tracking-tighter">InstitutePLUSE</p>
               <p className="text-green-500 font-black text-[9px] uppercase tracking-[0.3em]">Student Hub</p>
@@ -241,7 +241,7 @@ export default function StudentLayout({ children, title, showBack = false, hideC
             <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-colors">
               <Menu size={20} />
             </button>
-            <img src={logo} alt="Logo" className="w-8 h-8 object-contain drop-shadow-[0_0_10px_rgba(34,197,94,0.2)]" />
+            <img src={logo} alt="Logo" className="w-10 h-10 object-contain drop-shadow-[0_0_10px_rgba(34,197,94,0.2)]" />
             <div>
               <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest leading-none mb-1">{greeting}, {firstName} ✨</p>
               <h1 className="text-sm font-black text-white uppercase tracking-[0.15em]">{activeLabel}</h1>

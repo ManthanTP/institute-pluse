@@ -53,7 +53,7 @@ export default function AdminLayout({ children }) {
           {/* Logo */}
           <div className="px-8 py-10 flex items-center justify-between lg:justify-start gap-4 border-b border-white/5">
             <div className="flex items-center gap-4">
-              <img src={logo} alt="Admin Logo" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(239,68,68,0.3)]" />
+              <img src={logo} alt="Admin Logo" className="w-12 h-12 object-contain drop-shadow-[0_0_15px_rgba(239,68,68,0.3)]" />
               <div>
                 <p className="text-white font-black text-sm uppercase tracking-tighter">InstitutePLUSE</p>
                 <p className="text-red-500 font-black text-[9px] uppercase tracking-[0.3em]">Pulse Core</p>
