@@ -74,7 +74,7 @@ function addText(slide, text, opts) {
 }
 
 function slideNum(slide, num) {
-  addText(slide, `${num}/12`, {
+  addText(slide, `${num}/13`, {
     x: 11.8, y: 7.05, w: 1.3, h: 0.35,
     fontSize: 9, color: DIM, align: "right"
   });
@@ -94,13 +94,13 @@ function slide1() {
   addBar(s, 13.293, 0, 0.04, 7.5, BLUE);
 
   // App Name
-  addText(s, "InstitutePulse", {
+  addText(s, "InstitutePLUSE", {
     x: 0.5, y: 0.5, w: 12.3, h: 0.9,
     fontSize: 48, color: GREEN, bold: true, align: "center"
   });
 
   // Tagline
-  addText(s, "A Smart Campus App for Green Habits and Student Life", {
+  addText(s, "Platform for Learning, Utility, Sustainability & Engagement", {
     x: 1, y: 1.35, w: 11.3, h: 0.5,
     fontSize: 18, color: GRAY, align: "center"
   });
@@ -260,10 +260,75 @@ function contentSlide(num, title, subtitle, bullets, imgFile, accent, twoImgs) {
 }
 
 // ═══════════════════════════════════════════════════════
-// SLIDE 12 — THANK YOU
+// SLIDE 2 — BRAND MEANING
 // ═══════════════════════════════════════════════════════
 
-function slide12() {
+function slideBrandMeaning() {
+  const s = pptx.addSlide();
+  addBg(s);
+  topAccent(s, GREEN);
+  bottomAccent(s, BLUE);
+
+  // Header accent dot
+  addBar(s, 0.6, 0.45, 0.12, 0.35, GREEN);
+
+  // Title
+  addText(s, "Brand Identity & Vision", {
+    x: 0.9, y: 0.35, w: 11.5, h: 0.6,
+    fontSize: 28, color: WHITE, bold: true
+  });
+
+  // Subtitle
+  addText(s, "InstitutePLUSE: Building Smarter, Greener & More Connected Campuses.", {
+    x: 0.9, y: 0.95, w: 11.5, h: 0.4,
+    fontSize: 12, color: GREEN, bold: true
+  });
+
+  const cards = [
+    { letter: "P", name: "Platform", color: GREEN, desc: "A unified SaaS-grade portal connecting all students, faculty, and administrators." },
+    { letter: "L", name: "Learning", color: BLUE, desc: "Promoting educational growth with Focus Timers, Study Alarms, and Resource Hubs." },
+    { letter: "U", name: "Utility", color: AMBER, desc: "Simplifying campus life with QR Attendance, digital Canteen, and interactive maps." },
+    { letter: "S", name: "Sustainability", color: GREEN, desc: "Log carbon footprints, track campus green covers, and earn eco-points." },
+    { letter: "E", name: "Engagement", color: PURPLE, desc: "Motivating communities through team challenges, events, and live leaderboards." }
+  ];
+
+  const w = 2.2;
+  const h = 4.2;
+  const y = 1.8;
+  const spacing = 0.283;
+
+  cards.forEach((c, idx) => {
+    const x = 0.6 + idx * (w + spacing);
+    addCard(s, x, y, w, h, CARD_BG);
+    addBar(s, x, y, w, 0.05, c.color);
+
+    // Large letter
+    addText(s, c.letter, {
+      x: x + 0.1, y: y + 0.3, w: w - 0.2, h: 1.0,
+      fontSize: 54, color: c.color, bold: true, align: "center"
+    });
+
+    // Name
+    addText(s, c.name, {
+      x: x + 0.1, y: y + 1.4, w: w - 0.2, h: 0.4,
+      fontSize: 16, color: WHITE, bold: true, align: "center"
+    });
+
+    // Description
+    addText(s, c.desc, {
+      x: x + 0.15, y: y + 2.0, w: w - 0.3, h: 2.0,
+      fontSize: 11, color: GRAY, align: "center"
+    });
+  });
+
+  slideNum(s, 2);
+}
+
+// ═══════════════════════════════════════════════════════
+// SLIDE 13 — THANK YOU
+// ═══════════════════════════════════════════════════════
+
+function slide13() {
   const s = pptx.addSlide();
   addBg(s);
   topAccent(s, GREEN);
@@ -279,7 +344,7 @@ function slide12() {
   });
 
   // Tagline
-  addText(s, "InstitutePulse — Building Greener Campuses, One Log at a Time 🌱", {
+  addText(s, "InstitutePLUSE — Building Smarter, Greener & More Connected Campuses.", {
     x: 1, y: 2.9, w: 11.3, h: 0.5,
     fontSize: 20, color: GREEN, align: "center"
   });
@@ -320,18 +385,21 @@ function slide12() {
     fontSize: 10, color: DIM, align: "center"
   });
 
-  slideNum(s, 12);
+  slideNum(s, 13);
 }
 
 // ═══════════════════════════════════════════════════════
-// BUILD ALL 12 SLIDES
+// BUILD ALL 13 SLIDES
 // ═══════════════════════════════════════════════════════
 
 // Slide 1: Title
 slide1();
 
-// Slide 2: Landing Page
-contentSlide(2,
+// Slide 2: Brand Meaning
+slideBrandMeaning();
+
+// Slide 3: Landing Page
+contentSlide(3,
   "Landing Page",
   "The first impression — a premium, responsive web experience",
   [
@@ -347,8 +415,8 @@ contentSlide(2,
   "landing page IP.png", BLUE
 );
 
-// Slide 3: Authentication (2 images)
-contentSlide(3,
+// Slide 4: Authentication (2 images)
+contentSlide(4,
   "Authentication System",
   "Secure role-based sign-in & sign-up with brute-force protection",
   [
@@ -365,8 +433,8 @@ contentSlide(3,
   ["Signin Page IP.png", "Signup Page IP.png"]
 );
 
-// Slide 4: Student Dashboard
-contentSlide(4,
+// Slide 5: Student Dashboard
+contentSlide(5,
   "Student Dashboard",
   "A personalized command center for every student",
   [
@@ -382,8 +450,8 @@ contentSlide(4,
   "Student Dashboard.png", GREEN
 );
 
-// Slide 5: Carbon Footprint Tracker
-contentSlide(5,
+// Slide 6: Carbon Footprint Tracker
+contentSlide(6,
   "Carbon Footprint Tracker",
   "IPCC-standard daily carbon logging with gamified rewards",
   [
@@ -399,8 +467,8 @@ contentSlide(5,
   "carbon sycn IP.png", GREEN
 );
 
-// Slide 6: QR Attendance
-contentSlide(6,
+// Slide 7: QR Attendance
+contentSlide(7,
   "Timed QR Attendance",
   "Anti-proxy attendance with GPS verification & real-time tracking",
   [
@@ -416,8 +484,8 @@ contentSlide(6,
   "Attendence IP.png", BLUE
 );
 
-// Slide 7: Faculty Dashboard
-contentSlide(7,
+// Slide 8: Faculty Dashboard
+contentSlide(8,
   "Faculty Dashboard",
   "Complete class management & academic resource hub",
   [
@@ -433,8 +501,8 @@ contentSlide(7,
   "faculty dashboard IP.png", BLUE
 );
 
-// Slide 8: Eco-Cafeteria
-contentSlide(8,
+// Slide 9: Eco-Cafeteria
+contentSlide(9,
   "Eco-Cafeteria Hub",
   "Digital canteen ordering with carbon labels per menu item",
   [
@@ -450,8 +518,8 @@ contentSlide(8,
   "Cafeteria Hub Manage IP.png", AMBER
 );
 
-// Slide 9: Events (2 images)
-contentSlide(9,
+// Slide 10: Events (2 images)
+contentSlide(10,
   "Events & Team Registration",
   "Solo / Duo / Trio / Squad event registration with invite system",
   [
@@ -468,8 +536,8 @@ contentSlide(9,
   ["Mange Event IP.png", "invaition of event IP.png"]
 );
 
-// Slide 10: Owner Dashboard
-contentSlide(10,
+// Slide 11: Owner Dashboard
+contentSlide(11,
   "Canteen Owner Dashboard",
   "Real-time order management & menu control panel",
   [
@@ -485,8 +553,8 @@ contentSlide(10,
   "owner dasjboard IP.png", CYAN
 );
 
-// Slide 11: Admin Dashboard
-contentSlide(11,
+// Slide 12: Admin Dashboard
+contentSlide(12,
   "Admin Dashboard",
   "Campus-wide control center with real-time metrics & CMS",
   [
@@ -502,8 +570,8 @@ contentSlide(11,
   "Admin dashboard IP.png", PURPLE
 );
 
-// Slide 12: Thank You
-slide12();
+// Slide 13: Thank You
+slide13();
 
 // ═══════════════════════════════════════════════════════
 // SAVE
@@ -511,7 +579,7 @@ slide12();
 pptx.writeFile({ fileName: OUTPUT })
   .then(() => {
     console.log(`\n✅ Presentation saved to: ${OUTPUT}`);
-    console.log(`   12 slides generated with all screenshots!`);
+    console.log(`   13 slides generated with all screenshots!`);
   })
   .catch(err => {
     console.error("❌ Error:", err);

@@ -1,4 +1,4 @@
-Create a COMPLETE SMART TIMETABLE + QR ATTENDANCE MANAGEMENT SYSTEM for “InstitutePulse” using Supabase realtime backend.
+Create a COMPLETE SMART TIMETABLE + QR ATTENDANCE MANAGEMENT SYSTEM for “InstitutePLUSE” using Supabase realtime backend.
 
 IMPORTANT:
 The system must support:

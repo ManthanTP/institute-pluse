@@ -1,4 +1,4 @@
-# 🌿 InstitutePulse
+# 🌿 InstitutePLUSE
 
 > **Smart Campus Sustainability & Assistant System**
 
@@ -11,7 +11,7 @@ A premium SaaS-grade platform that combines environmental consciousness, campus 
 ```bash
 # Clone the repository
 git clone <repo-url>
-cd InstitutePulse
+cd InstitutePLUSE
 
 # Install dependencies
 npm install
@@ -30,7 +30,7 @@ npm run dev
 
 ### Role-Based Dashboard System
 
-InstitutePulse follows a **role-based dashboard architecture** where every authenticated user is redirected to a dedicated control panel:
+InstitutePLUSE follows a **role-based dashboard architecture** where every authenticated user is redirected to a dedicated control panel:
 
 | Role | Dashboard Route | Accent Color | Description |
 |------|----------------|-------------|-------------|

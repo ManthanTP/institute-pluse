@@ -1,5 +1,5 @@
 -- ══════════════════════════════════════════════════════════════════
--- INSTITUTEPULSE — CAMPUS GREEN COVER & CO2 NEUTRALIZATION TRACKER
+-- INSTITUTEPLUSE — CAMPUS GREEN COVER & CO2 NEUTRALIZATION TRACKER
 -- Run this entire script in Supabase SQL Editor
 -- ══════════════════════════════════════════════════════════════════
 

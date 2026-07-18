@@ -1,4 +1,4 @@
-# InstitutePulse — Product Requirements Document
+# InstitutePLUSE — Product Requirements Document
 
 **Version:** 1.0 | **Last Updated:** May 2026  
 **Developer:** Manthan Patel — CSE, Jain College of Engineering  
@@ -7,7 +7,7 @@
 
 ---
 
-## 1. What is InstitutePulse?
+## 1. What is InstitutePLUSE?
 
 - A smart campus app that combines sustainability tracking, attendance, cafeteria ordering, events, and student services into one platform
 - Replaces paper registers, scattered forms, and manual processes with a single digital system
@@ -536,7 +536,7 @@ Uses `AdminLayout.jsx` for sidebar (with restricted access for certain owner ema
 
 ## 16. Mobile (Android)
 
-- Build pipeline: `Vite Build → Capacitor Sync → Gradle JDK 21 → InstitutePulse.apk`
+- Build pipeline: `Vite Build → Capacitor Sync → Gradle JDK 21 → InstitutePLUSE.apk`
 - Wake Lock API keeps screen on during Pomodoro sessions (managed globally in `StudentLayout.jsx`)
 - Native file downloads via `@capacitor/filesystem`
 - Share feature via `@capacitor/share`

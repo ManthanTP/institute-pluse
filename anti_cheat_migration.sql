@@ -1,5 +1,5 @@
 -- ══════════════════════════════════════════════════════════════════
--- INSTITUTEPULSE — CARBON LOG INTEGRITY & ANTI-CHEAT SYSTEM
+-- INSTITUTEPLUSE — CARBON LOG INTEGRITY & ANTI-CHEAT SYSTEM
 -- Run this entire script in Supabase SQL Editor
 -- ══════════════════════════════════════════════════════════════════
 

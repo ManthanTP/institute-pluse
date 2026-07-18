@@ -1,5 +1,5 @@
 -- ══════════════════════════════════════════════════════════════════
--- INSTITUTEPULSE DATABASE SCHEMA
+-- INSTITUTEPLUSE DATABASE SCHEMA
 -- Run this entire script in Supabase SQL Editor
 -- ══════════════════════════════════════════════════════════════════
 

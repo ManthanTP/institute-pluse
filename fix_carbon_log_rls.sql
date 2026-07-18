@@ -1,5 +1,5 @@
 -- ══════════════════════════════════════════════════════════════════
--- INSTITUTEPULSE — CARBON LOG SAVE FIX
+-- INSTITUTEPLUSE — CARBON LOG SAVE FIX
 -- Copy ALL of this and paste into Supabase → SQL Editor → Run
 -- ══════════════════════════════════════════════════════════════════
 
