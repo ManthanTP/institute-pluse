@@ -134,7 +134,7 @@ function getDefaultContentForSection(key) {
     },
     footer: {
       tagline: "The complete campus ecosystem for modern education. Sustainable, intelligent, and built for everyone.",
-      copyright: "© 2026 InstitutePulse. Built for Jain College of Engineering.",
+      copyright: "© 2026 InstitutePLUSE. Built for Jain College of Engineering.",
       github: "https://github.com/manthantp",
       linkedin: "https://linkedin.com/in/manthantp",
       contactEmail: "manthantp.work@gmail.com",
@@ -159,7 +159,7 @@ function getDefaultContentForSection(key) {
     privacy: {
       sectionTitle: "Privacy Policy",
       items: [
-        { title: "1. Data Collection", content: "InstitutePulse securely logs carbon saving records (commute distances, vehicle modes, energy logs, and canteen meal choices) as well as class QR code check-ins." },
+        { title: "1. Data Collection", content: "InstitutePLUSE securely logs carbon saving records (commute distances, vehicle modes, energy logs, and canteen meal choices) as well as class QR code check-ins." },
         { title: "2. Secure Encryption", content: "All student and administrative data is transmitted via Secure Sockets Layer (SSL) and stored securely in our cloud database system, protected by row-level security (RLS)." },
         { title: "3. Data Ownership", content: "We do not share your campus logs with third-party service providers. All logged records remain property of Jain College of Engineering." }
       ]
@@ -167,7 +167,7 @@ function getDefaultContentForSection(key) {
     terms: {
       sectionTitle: "Terms of Service",
       items: [
-        { title: "1. Usage License", content: "Students and faculty members of Jain College of Engineering are granted permission to access InstitutePulse for academic, sustainability tracking, and coordination activities." },
+        { title: "1. Usage License", content: "Students and faculty members of Jain College of Engineering are granted permission to access InstitutePLUSE for academic, sustainability tracking, and coordination activities." },
         { title: "2. Accurate Reporting", content: "Users agree to log genuine, authentic commute methods and attendance sessions. Fraudulent logging of carbon logs or check-in credentials may result in account suspension." },
         { title: "3. Service Access", content: "While we target 99.9% operational uptime, access to dashboard features may occasionally be paused for system enhancements and database maintenance." }
       ]

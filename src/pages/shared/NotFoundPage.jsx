@@ -132,7 +132,7 @@ export default function NotFoundPage() {
         >
           <Shield size={12} className="text-gray-700" />
           <span className="text-[8px] font-black text-gray-700 uppercase tracking-[0.3em]">
-            InstitutePulse Core • Error Protocol Active
+            InstitutePLUSE Core • Error Protocol Active
           </span>
         </motion.div>
 

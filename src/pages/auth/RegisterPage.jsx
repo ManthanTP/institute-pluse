@@ -491,7 +491,7 @@ export default function RegisterPage() {
               </div>
               <div className="text-xs text-gray-400 space-y-5 leading-relaxed font-medium">
                 {(termsContent.items || [
-                  { title: '1. Usage License', content: 'Students and faculty members are granted permission to access InstitutePulse for academic, sustainability tracking, and coordination activities.' },
+                  { title: '1. Usage License', content: 'Students and faculty members are granted permission to access InstitutePLUSE for academic, sustainability tracking, and coordination activities.' },
                   { title: '2. Accurate Reporting', content: 'Users agree to log genuine, authentic commute methods and attendance sessions. Fraudulent logging may result in account suspension.' },
                   { title: '3. Service Access', content: 'While we target 99.9% operational uptime, access to dashboard features may occasionally be paused for system enhancements.' }
                 ]).map((item, idx) => (
@@ -530,7 +530,7 @@ export default function RegisterPage() {
               </div>
               <div className="text-xs text-gray-400 space-y-5 leading-relaxed font-medium">
                 {(privacyContent.items || [
-                  { title: '1. Data Collection', content: 'InstitutePulse securely logs carbon saving records and class QR code check-ins.' },
+                  { title: '1. Data Collection', content: 'InstitutePLUSE securely logs carbon saving records and class QR code check-ins.' },
                   { title: '2. Secure Encryption', content: 'All data is transmitted via SSL and stored securely, protected by row-level security (RLS).' },
                   { title: '3. Data Ownership', content: 'We do not share your campus logs with third-party service providers.' }
                 ]).map((item, idx) => (

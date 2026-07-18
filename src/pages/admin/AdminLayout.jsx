@@ -55,7 +55,7 @@ export default function AdminLayout({ children }) {
             <div className="flex items-center gap-4">
               <img src={logo} alt="Admin Logo" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(239,68,68,0.3)]" />
               <div>
-                <p className="text-white font-black text-sm uppercase tracking-tighter">InstitutePulse</p>
+                <p className="text-white font-black text-sm uppercase tracking-tighter">InstitutePLUSE</p>
                 <p className="text-red-500 font-black text-[9px] uppercase tracking-[0.3em]">Pulse Core</p>
               </div>
             </div>

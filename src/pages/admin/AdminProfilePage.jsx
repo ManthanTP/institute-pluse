@@ -18,9 +18,9 @@ export default function AdminProfilePage() {
 
   // Institution settings state
   const [instSettings, setInstSettings] = useState({
-    name: 'InstitutePulse Academy',
+    name: 'InstitutePLUSE Academy',
     logo_url: 'https://pulse-core.local/logo.png',
-    contact_email: 'contact@institutepulse.edu',
+    contact_email: 'contact@institutepluse.edu',
     contact_phone: '+91 98765 43210',
     address: '123 Cyberpunk Enclave, Bengaluru, India',
     carbon_config: null

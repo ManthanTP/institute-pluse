@@ -79,8 +79,8 @@ export default function CarbonBalancePage() {
 
   const handleShare = async () => {
     const text = greenTier
-      ? `🌍 Our campus has a Green Score of ${greenScore?.score}/100 — ${greenTier.label}! Track sustainability on InstitutePulse!`
-      : '🌱 Track campus sustainability on InstitutePulse!'
+      ? `🌍 Our campus has a Green Score of ${greenScore?.score}/100 — ${greenTier.label}! Track sustainability on InstitutePLUSE!`
+      : '🌱 Track campus sustainability on InstitutePLUSE!'
     try {
       await navigator.share({ title: 'Campus Green Score', text, url: window.location.href })
     } catch {
@@ -349,7 +349,7 @@ export default function CarbonBalancePage() {
         </motion.div>
 
         <p className="text-center text-[9px] font-black text-gray-700 uppercase tracking-[0.4em] mb-4">
-          InstitutePulse • Campus Green Cover Module
+          InstitutePLUSE • Campus Green Cover Module
         </p>
       </div>
     </div>

@@ -81,7 +81,7 @@ export default function HelpPage() {
                 <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em]">Protocol Instructions</span>
               </div>
               <p className="text-gray-400 text-sm font-medium leading-relaxed">
-                Welcome to the InstitutePulse manual. Here you can find detailed operating procedures for each node in the ecosystem.
+                Welcome to the InstitutePLUSE manual. Here you can find detailed operating procedures for each node in the ecosystem.
               </p>
             </div>
 

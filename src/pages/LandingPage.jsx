@@ -517,7 +517,7 @@ export default function LandingPage() {
             <div className="flex items-center gap-2">
               <img src={logo} alt="Logo" className="w-6 h-6 object-contain" />
               <span className="text-xs font-black uppercase tracking-wider">
-                Institute<span className="text-green-500">Pulse</span>
+                Institute<span className="text-green-500">PLUSE</span>
               </span>
             </div>
             <div>
@@ -580,8 +580,8 @@ export default function LandingPage() {
                     </button>
                   </div>
                   <a 
-                    href="/InstitutePulse.apk"
-                    download="InstitutePulse.apk"
+                    href="/InstitutePLUSE.apk"
+                    download="InstitutePLUSE.apk"
                     className="w-full py-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-black text-[8px] uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5"
                   >
                     <Download size={10} /> Download Android App (APK)
@@ -743,7 +743,7 @@ export default function LandingPage() {
                 <div className="flex flex-col items-center text-center gap-3 w-full">
                   <div className="flex items-center gap-1.5">
                     <img src={logo} alt="Logo" className="w-4 h-4 object-contain" />
-                    <span className="text-[10px] font-black tracking-tighter uppercase">InstitutePulse</span>
+                    <span className="text-[10px] font-black tracking-tighter uppercase">InstitutePLUSE</span>
                   </div>
                   
                   <p className="text-gray-500 text-[8px] max-w-xs leading-relaxed font-medium">
@@ -762,7 +762,7 @@ export default function LandingPage() {
 
                   <div className="w-full border-t border-white/[0.04] pt-2">
                     <p className="text-[6px] font-black text-gray-600 uppercase tracking-widest">
-                      {footerContent.copyright || '© 2026 InstitutePulse.'}
+                      {footerContent.copyright || '© 2026 InstitutePLUSE.'}
                     </p>
                   </div>
                   
@@ -938,7 +938,7 @@ export default function LandingPage() {
               <img src={logo} alt="Logo" className="w-7 h-7 md:w-8 md:h-8 object-contain drop-shadow-[0_0_12px_rgba(34,197,94,0.4)]" />
             </motion.div>
             <span className="text-base md:text-lg font-black tracking-tighter uppercase">
-              Institute<span className="text-green-500">Pulse</span>
+              Institute<span className="text-green-500">PLUSE</span>
             </span>
           </div>
           
@@ -1092,8 +1092,8 @@ export default function LandingPage() {
                 {hero.ctaSecondary || 'Explore Features'}
               </button>
               <a 
-                href="/InstitutePulse.apk"
-                download="InstitutePulse.apk"
+                href="/InstitutePLUSE.apk"
+                download="InstitutePLUSE.apk"
                 className="px-9 py-4.5 rounded-2xl bg-cyan-500/10 border border-cyan-500/35 hover:bg-cyan-500/20 text-cyan-400 font-black text-[10px] uppercase tracking-[0.25em] transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
               >
                 <Download size={14} /> Download APK
@@ -1643,7 +1643,7 @@ export default function LandingPage() {
                <div className="col-span-2">
                   <div className="flex items-center gap-3 mb-4">
                      <img src={logo} alt="Logo" className="w-8 h-8 object-contain" />
-                     <span className="text-lg font-black tracking-tighter uppercase">InstitutePulse</span>
+                     <span className="text-lg font-black tracking-tighter uppercase">InstitutePLUSE</span>
                   </div>
                   <p className="text-gray-500 text-sm max-w-sm font-medium leading-relaxed">
                      {footerContent.tagline || 'The complete campus ecosystem for modern education. Sustainable, intelligent, and built for everyone.'}
@@ -1680,7 +1680,7 @@ export default function LandingPage() {
 
             <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-t border-white/[0.04] pt-8">
                <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">
-                  {footerContent.copyright || '© 2026 InstitutePulse. Built for Jain College of Engineering.'}
+                  {footerContent.copyright || '© 2026 InstitutePLUSE. Built for Jain College of Engineering.'}
                </p>
                <div className="flex gap-6">
                    <a 
@@ -1813,7 +1813,7 @@ export default function LandingPage() {
               </div>
               <div className="text-xs text-gray-400 space-y-4 leading-relaxed font-medium">
                 {(privacyContent.items || [
-                  { title: "1. Data Collection", content: "InstitutePulse securely logs carbon saving records (commute distances, vehicle modes, energy logs, and canteen meal choices) as well as class QR code check-ins." },
+                  { title: "1. Data Collection", content: "InstitutePLUSE securely logs carbon saving records (commute distances, vehicle modes, energy logs, and canteen meal choices) as well as class QR code check-ins." },
                   { title: "2. Secure Encryption", content: "All student and administrative data is transmitted via Secure Sockets Layer (SSL) and stored securely in our cloud database system, protected by row-level security (RLS)." },
                   { title: "3. Data Ownership", content: "We do not share your campus logs with third-party service providers. All logged records remain property of Jain College of Engineering." }
                 ]).map((item, idx) => (
@@ -1854,7 +1854,7 @@ export default function LandingPage() {
               </div>
               <div className="text-xs text-gray-400 space-y-4 leading-relaxed font-medium">
                 {(termsContent.items || [
-                  { title: "1. Usage License", content: "Students and faculty members of Jain College of Engineering are granted permission to access InstitutePulse for academic, sustainability tracking, and coordination activities." },
+                  { title: "1. Usage License", content: "Students and faculty members of Jain College of Engineering are granted permission to access InstitutePLUSE for academic, sustainability tracking, and coordination activities." },
                   { title: "2. Accurate Reporting", content: "Users agree to log genuine, authentic commute methods and attendance sessions. Fraudulent logging of carbon logs or check-in credentials may result in account suspension." },
                   { title: "3. Service Access", content: "While we target 99.9% operational uptime, access to dashboard features may occasionally be paused for system enhancements and database maintenance." }
                 ]).map((item, idx) => (

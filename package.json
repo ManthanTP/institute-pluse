@@ -1,7 +1,7 @@
 {
-  "name": "institutepulse",
+  "name": "institutepluse",
   "version": "1.0.0",
-  "description": "Smart Campus Sustainability & Assistant System",
+  "description": "InstitutePLUSE — Platform for Learning, Utility, Sustainability & Engagement",
   "type": "module",
   "scripts": {
     "dev": "vite",

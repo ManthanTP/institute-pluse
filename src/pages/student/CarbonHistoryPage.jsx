@@ -107,11 +107,11 @@ export default function CarbonHistoryPage() {
     try {
       await navigator.share({
         title: 'My Carbon Footprint',
-        text: `I've saved ${totalSaved.toFixed(1)}kg of CO2 on InstitutePulse! Join the mission.`,
+        text: `I've saved ${totalSaved.toFixed(1)}kg of CO2 on InstitutePLUSE! Join the mission.`,
         url: window.location.href
       })
     } catch (err) {
-      navigator.clipboard.writeText(`I've saved ${totalSaved.toFixed(1)}kg of CO2 on InstitutePulse!`)
+      navigator.clipboard.writeText(`I've saved ${totalSaved.toFixed(1)}kg of CO2 on InstitutePLUSE!`)
       alert('Stats copied to clipboard!')
     }
   }
@@ -567,7 +567,7 @@ export default function CarbonHistoryPage() {
            <div className="absolute top-0 right-0 p-4">
               <Info size={24} className="text-blue-500 opacity-20" />
            </div>
-           <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em] mb-2">InstitutePulseAI Insight</h4>
+           <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em] mb-2">InstitutePLUSE AI Insight</h4>
            <p className="text-[12px] font-medium text-white/80 leading-relaxed max-w-[80%]">
              Reducing your meal's carbon footprint by switching to vegetarian options can save up to 1.2 kg of CO2 per meal!
            </p>

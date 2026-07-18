@@ -245,7 +245,7 @@ export default function DashboardPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
             <div>
-               <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] mb-1">InstitutePulse Node Active</p>
+               <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] mb-1">InstitutePLUSE Node Active</p>
                <h1 className="text-xl font-black text-white tracking-tighter">Welcome, {profile?.full_name?.split(' ')[0]}</h1>
             </div>
            <button 

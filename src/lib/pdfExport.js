@@ -1,5 +1,5 @@
 /**
- * InstitutePulse — Premium Enterprise-Grade PDF Report Engine v3
+ * InstitutePLUSE — Premium Enterprise-Grade PDF Report Engine v3
  * 
  * Generates high-end system intelligence dossiers with:
  * - Corner-positioned watermarks (logo + name + date)
@@ -469,7 +469,7 @@ function drawCoverPage(doc, { title, subtitle, docId, dateStr, name, summaryCard
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(5.5)
   doc.setTextColor(...colors.textMuted)
-  doc.text('THIS DOCUMENT IS DIGITALLY SECURED AND VERIFIED BY INSTITUTEPULSE CORE', w / 2, h - 18, { align: 'center' })
+  doc.text('THIS DOCUMENT IS DIGITALLY SECURED AND VERIFIED BY INSTITUTEPLUSE CORE', w / 2, h - 18, { align: 'center' })
 }
 
 // Content page header
@@ -587,7 +587,7 @@ export async function drawVerificationPage(doc, docId, dateStr, studentName, col
   }
 
   addDetailRow('Document Token', docId)
-  addDetailRow('Verified By', studentName || 'INSTITUTEPULSE IDENTITY')
+  addDetailRow('Verified By', studentName || 'INSTITUTEPLUSE IDENTITY')
   addDetailRow('Cryptographic Seal', `SHA-256: ${checksum}`)
   addDetailRow('Timestamp', dateStr)
   addDetailRow('Report Status', 'VERIFIED GENUINE')
@@ -607,7 +607,7 @@ export async function drawVerificationPage(doc, docId, dateStr, studentName, col
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(5.5)
   doc.setTextColor(...colors.secondary)
-  doc.text('INSTITUTEPULSE', midX, h - 52, { align: 'center' })
+  doc.text('INSTITUTEPLUSE', midX, h - 52, { align: 'center' })
   doc.setFontSize(4.5)
   doc.setTextColor(...colors.textMuted)
   doc.text('SECURE REPORT ENGINE', midX, h - 48, { align: 'center' })
@@ -641,7 +641,7 @@ function drawFooter(doc, docId, dateStr, studentName, colors) {
     } else {
       doc.text(docId, 14, h - 12)
     }
-    doc.text('INSTITUTEPULSE CORE // VERIFIED REPORT', 14, h - 7)
+    doc.text('INSTITUTEPLUSE CORE // VERIFIED REPORT', 14, h - 7)
 
     // Bottom-right: Page + Date
     doc.text(`PAGE ${i} OF ${pageCount}`, w - 14, h - 12, { align: 'right' })

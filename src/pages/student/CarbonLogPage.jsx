@@ -1133,7 +1133,7 @@ export default function CarbonLogPage() {
         </section>
 
         <p className="text-center text-[10px] font-black text-gray-600 uppercase tracking-[0.4em] mt-10 opacity-50">
-          Project InstitutePulse • Pulse Node
+          Project InstitutePLUSE • PLUSE Node
         </p>
       </main>
     </div>

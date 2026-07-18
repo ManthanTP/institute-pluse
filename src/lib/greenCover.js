@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// GREEN COVER UTILITY LIBRARY — InstitutePulse
+// GREEN COVER UTILITY LIBRARY — InstitutePLUSE
 // Campus CO2 Absorption Calculations
 // ══════════════════════════════════════════════════════════════
 

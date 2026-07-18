@@ -96,7 +96,7 @@ function PageLoader() {
           <div className="absolute inset-0 border-4 border-green-500/20 rounded-full" />
           <div className="absolute inset-0 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
         </div>
-        <p className="text-[10px] font-black text-white uppercase tracking-[0.3em] animate-pulse">Syncing InstitutePulse</p>
+        <p className="text-[10px] font-black text-white uppercase tracking-[0.3em] animate-pulse">Syncing InstitutePLUSE</p>
       </div>
     </div>
   )
