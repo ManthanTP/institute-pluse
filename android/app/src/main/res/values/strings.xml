@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">InstitutePulse</string>
-    <string name="title_activity_main">InstitutePulse</string>
+    <string name="app_name">InstitutePLUSE</string>
+    <string name="title_activity_main">InstitutePLUSE</string>
     <string name="package_name">com.institutepulse.app</string>
     <string name="custom_url_scheme">com.institutepulse.app</string>
 </resources>

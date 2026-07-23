@@ -1591,7 +1591,7 @@ export default function LandingPage() {
               { question: 'How does QR Smart Attendance work?', answer: 'Instructors generate a time-restricted check-in QR code on the lecture hall screen. Students scan the QR code via their Attendance page. The system checks location validity and student identity to log the attendance record instantly.' },
               { question: 'What are Eco Points and how are they calculated?', answer: 'Eco Points are rewarded for green actions like ridesharing, selecting vegetarian canteen meals, and recycling items. Point values are defined in the sustainability guidelines (e.g. +20 pts for canteen veg selection).' },
               { question: 'Is my personal study and logging data secure?', answer: 'Yes. All authentication and data transfers are protected under Supabase security protocols, and student records are kept private and accessible only to authorized administrators and the student themselves.' },
-              { question: 'Can other colleges adopt the Institute Pulse platform?', answer: 'Yes, the core system is modularized and can be configured with semester tables, location maps, bus routes, and cafeteria items for any educational institute.' },
+              { question: 'Can other colleges adopt the InstitutePLUSE platform?', answer: 'Yes, the core system is modularized and can be configured with semester tables, location maps, bus routes, and cafeteria items for any educational institute.' },
             ]).map((faq, idx) => (
               <FaqItem key={faq.question || faq.q} question={faq.question || faq.q} answer={faq.answer || faq.a} />
             ))}

@@ -2,11 +2,11 @@ const PptxGenJS = require("pptxgenjs");
 const fs = require("fs");
 const path = require("path");
 
-// ── Config ──
+// ΓöÇΓöÇ Config ΓöÇΓöÇ
 const SCREENSHOT_DIR = path.join(__dirname, "screenshoot");
 const OUTPUT = path.join(__dirname, "InstitutePulse_Presentation.pptx");
 
-// ── Colors (hex without #) ──
+// ΓöÇΓöÇ Colors (hex without #) ΓöÇΓöÇ
 const BG      = "020617";
 const CARD_BG = "0F172A";
 const WHITE   = "F8FAFC";
@@ -18,14 +18,14 @@ const PURPLE  = "8B5CF6";
 const CYAN    = "06B6D4";
 const DIM     = "64748B";
 
-// ── Create presentation ──
+// ΓöÇΓöÇ Create presentation ΓöÇΓöÇ
 const pptx = new PptxGenJS();
 pptx.defineLayout({ name: "WIDE", width: 13.333, height: 7.5 });
 pptx.layout = "WIDE";
 
-// ═══════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // HELPERS
-// ═══════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 function addBg(slide) {
   slide.background = { color: BG };
@@ -80,9 +80,9 @@ function slideNum(slide, num) {
   });
 }
 
-// ═══════════════════════════════════════════════════════
-// SLIDE 1 — TITLE
-// ═══════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+// SLIDE 1 ΓÇö TITLE
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 function slide1() {
   const s = pptx.addSlide();
   addBg(s);
@@ -113,12 +113,12 @@ function slide1() {
     x: 1, y: 2.15, w: 11.3, h: 0.35,
     fontSize: 14, color: BLUE, bold: true, align: "center"
   });
-  addText(s, "Interdisciplinary Project-Based Learning  |  Week 15–16", {
+  addText(s, "Interdisciplinary Project-Based Learning  |  Week 15ΓÇô16", {
     x: 1, y: 2.5, w: 11.3, h: 0.35,
     fontSize: 13, color: AMBER, align: "center"
   });
 
-  // ── Team Members Card ──
+  // ΓöÇΓöÇ Team Members Card ΓöÇΓöÇ
   addCard(s, 0.8, 3.15, 5.8, 3.6);
   addBar(s, 0.8, 3.15, 5.8, 0.04, GREEN);
 
@@ -128,12 +128,12 @@ function slide1() {
   });
 
   const members = [
-    { name: "Mallikarjun B Chikkabasur  —  CS",  dot: GREEN },
-    { name: "Manoj G Raikar  —  CS",              dot: GREEN },
-    { name: "Manthan T Patel  —  CS",             dot: GREEN },
-    { name: "Bheemappa Talawar  —  AIML",         dot: PURPLE },
-    { name: "Kasirayagouda Umannavar  —  E&C",    dot: AMBER },
-    { name: "Premkumar S Koppal  —  ME",          dot: CYAN },
+    { name: "Mallikarjun B Chikkabasur  ΓÇö  CS",  dot: GREEN },
+    { name: "Manoj G Raikar  ΓÇö  CS",              dot: GREEN },
+    { name: "Manthan T Patel  ΓÇö  CS",             dot: GREEN },
+    { name: "Bheemappa Talawar  ΓÇö  AIML",         dot: PURPLE },
+    { name: "Kasirayagouda Umannavar  ΓÇö  E&C",    dot: AMBER },
+    { name: "Premkumar S Koppal  ΓÇö  ME",          dot: CYAN },
   ];
 
   members.forEach((m, i) => {
@@ -144,7 +144,7 @@ function slide1() {
     });
   });
 
-  // ── Guide Card ──
+  // ΓöÇΓöÇ Guide Card ΓöÇΓöÇ
   addCard(s, 6.8, 3.15, 5.8, 3.6);
   addBar(s, 6.8, 3.15, 5.8, 0.04, BLUE);
 
@@ -178,9 +178,9 @@ function slide1() {
   slideNum(s, 1);
 }
 
-// ═══════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // CONTENT SLIDE BUILDER
-// ═══════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 function contentSlide(num, title, subtitle, bullets, imgFile, accent, twoImgs) {
   const s = pptx.addSlide();
@@ -217,94 +217,41 @@ function contentSlide(num, title, subtitle, bullets, imgFile, accent, twoImgs) {
     const img1 = path.join(SCREENSHOT_DIR, twoImgs[0]);
     const img2 = path.join(SCREENSHOT_DIR, twoImgs[1]);
 
-    // Card backgrounds for vertical phone mockups
-    addCard(s, 6.2, 0.5, 3.3, 6.5, CARD_BG);
-    addCard(s, 9.7, 0.5, 3.3, 6.5, CARD_BG);
-
-    // Phone notches
-    s.addShape(pptx.ShapeType.roundRect, {
-      x: 7.35, y: 0.62, w: 1.0, h: 0.12,
-      fill: { color: "1E293B" }, line: { width: 0 }, rectRadius: 0.3
-    });
-    s.addShape(pptx.ShapeType.roundRect, {
-      x: 10.85, y: 0.62, w: 1.0, h: 0.12,
-      fill: { color: "1E293B" }, line: { width: 0 }, rectRadius: 0.3
-    });
+    // Card backgrounds for images
+    addCard(s, 6.2, 0.3, 3.3, 6.8, CARD_BG);
+    addCard(s, 9.7, 0.3, 3.3, 6.8, CARD_BG);
 
     if (fs.existsSync(img1)) {
       s.addImage({
         path: img1,
-        x: 6.35, y: 0.9,
-        w: 3.0, h: 5.9,
-        sizing: { type: "contain", w: 3.0, h: 5.9 },
+        x: 6.35, y: 0.5,
+        w: 3.0, h: 6.4,
+        sizing: { type: "contain", w: 3.0, h: 6.4 },
         rounding: true
       });
     }
     if (fs.existsSync(img2)) {
       s.addImage({
         path: img2,
-        x: 9.85, y: 0.9,
-        w: 3.0, h: 5.9,
-        sizing: { type: "contain", w: 3.0, h: 5.9 },
+        x: 9.85, y: 0.5,
+        w: 3.0, h: 6.4,
+        sizing: { type: "contain", w: 3.0, h: 6.4 },
         rounding: true
       });
     }
   } else if (imgFile) {
     const imgPath = path.join(SCREENSHOT_DIR, imgFile);
 
-    // Laptop Mockup Frame (MacBook Space Gray Style)
-    const frameX = 6.3;
-    const frameY = 1.6;
-    const frameW = 6.6; // Screen bezel width
-    const frameH = 4.05; // Screen bezel height (screen is 3.7, bezel is 0.35 total)
-
-    // Bezel card (Dark Grey / Black Laptop Screen Frame)
-    s.addShape(pptx.ShapeType.roundRect, {
-      x: frameX, y: frameY, w: frameW, h: frameH,
-      fill: { color: "1E293B" }, line: { width: 0 }, rectRadius: 0.08
-    });
-
-    // Screen display area (where the screenshot goes)
-    const imgX = frameX + 0.15;
-    const imgY = frameY + 0.15;
-    const imgW = frameW - 0.3; // 6.3
-    const imgH = frameH - 0.35; // 3.7 (perfect 16:9 aspect ratio!)
-
-    // Display screen background (Black)
-    s.addShape(pptx.ShapeType.rect, {
-      x: imgX, y: imgY, w: imgW, h: imgH,
-      fill: { color: "000000" }, line: { width: 0 }
-    });
-
-    // Laptop Base (Keyboard area at the bottom)
-    const baseW = 7.2; // Slightly wider than the screen bezel
-    const baseH = 0.14;
-    const baseX = frameX - (baseW - frameW) / 2; // Center base relative to bezel
-    const baseY = frameY + frameH;
-
-    // Laptop bottom base shape
-    s.addShape(pptx.ShapeType.roundRect, {
-      x: baseX, y: baseY, w: baseW, h: baseH,
-      fill: { color: "475569" }, line: { width: 0 }, rectRadius: 0.2
-    });
-    // Flatten top of the base shape so it meets the screen flush
-    s.addShape(pptx.ShapeType.rect, {
-      x: baseX, y: baseY, w: baseW, h: 0.06,
-      fill: { color: "475569" }, line: { width: 0 }
-    });
-
-    // Laptop trackpad indent
-    s.addShape(pptx.ShapeType.rect, {
-      x: baseX + (baseW - 0.8) / 2, y: baseY, w: 0.8, h: 0.04,
-      fill: { color: "1E293B" }, line: { width: 0 }
-    });
+    // Card background for image
+    addCard(s, 6.2, 0.3, 6.8, 6.8, CARD_BG);
 
     if (fs.existsSync(imgPath)) {
       s.addImage({
         path: imgPath,
-        x: imgX, y: imgY,
-        w: imgW, h: imgH,
-        sizing: { type: "contain", w: imgW, h: imgH }
+        x: 6.4, y: 0.5,
+        w: 6.4, h: 6.4,
+        sizing: { type: "contain", w: 6.4, h: 6.4 },
+        rounding: true
       });
     }
   }
@@ -312,9 +259,9 @@ function contentSlide(num, title, subtitle, bullets, imgFile, accent, twoImgs) {
   slideNum(s, num);
 }
 
-// ═══════════════════════════════════════════════════════
-// SLIDE 2 — BRAND MEANING
-// ═══════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+// SLIDE 2 ΓÇö BRAND MEANING
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 function slideBrandMeaning() {
   const s = pptx.addSlide();
@@ -377,9 +324,9 @@ function slideBrandMeaning() {
   slideNum(s, 2);
 }
 
-// ═══════════════════════════════════════════════════════
-// SLIDE 13 — THANK YOU
-// ═══════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+// SLIDE 13 ΓÇö THANK YOU
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 function slide13() {
   const s = pptx.addSlide();
@@ -397,7 +344,7 @@ function slide13() {
   });
 
   // Tagline
-  addText(s, "InstitutePLUSE — Building Smarter, Greener & More Connected Campuses.", {
+  addText(s, "InstitutePLUSE ΓÇö Building Smarter, Greener & More Connected Campuses.", {
     x: 1, y: 2.9, w: 11.3, h: 0.5,
     fontSize: 20, color: GREEN, align: "center"
   });
@@ -406,13 +353,13 @@ function slide13() {
   addBar(s, 5, 3.6, 3.333, 0.03, DIM);
 
   // Tech stack
-  addText(s, "React + Vite  •  Tailwind CSS v4  •  Supabase  •  Capacitor  •  Framer Motion", {
+  addText(s, "React + Vite  ΓÇó  Tailwind CSS v4  ΓÇó  Supabase  ΓÇó  Capacitor  ΓÇó  Framer Motion", {
     x: 1, y: 3.85, w: 11.3, h: 0.4,
     fontSize: 12, color: GRAY, align: "center"
   });
 
   // SDGs
-  addText(s, "🎯 UN SDG: Goal 4 (Education)  •  Goal 11 (Sustainable Cities)  •  Goal 12 (Responsible Consumption)  •  Goal 13 (Climate Action)", {
+  addText(s, "≡ƒÄ» UN SDG: Goal 4 (Education)  ΓÇó  Goal 11 (Sustainable Cities)  ΓÇó  Goal 12 (Responsible Consumption)  ΓÇó  Goal 13 (Climate Action)", {
     x: 1, y: 4.35, w: 11.3, h: 0.4,
     fontSize: 11, color: AMBER, align: "center"
   });
@@ -421,7 +368,7 @@ function slide13() {
   addCard(s, 3.5, 5.1, 6.333, 1.7);
   addBar(s, 3.5, 5.1, 6.333, 0.03, GREEN);
 
-  addText(s, "Subject: 1BPRJ258 — Interdisciplinary Project-Based Learning", {
+  addText(s, "Subject: 1BPRJ258 ΓÇö Interdisciplinary Project-Based Learning", {
     x: 3.7, y: 5.2, w: 5.9, h: 0.3,
     fontSize: 11, color: BLUE, bold: true, align: "center"
   });
@@ -433,7 +380,7 @@ function slide13() {
     x: 3.7, y: 5.85, w: 5.9, h: 0.3,
     fontSize: 11, color: GRAY, align: "center"
   });
-  addText(s, "Week 15–16  |  2025–26", {
+  addText(s, "Week 15ΓÇô16  |  2025ΓÇô26", {
     x: 3.7, y: 6.2, w: 5.9, h: 0.3,
     fontSize: 10, color: DIM, align: "center"
   });
@@ -441,9 +388,9 @@ function slide13() {
   slideNum(s, 13);
 }
 
-// ═══════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // BUILD ALL 13 SLIDES
-// ═══════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 // Slide 1: Title
 slide1();
@@ -454,7 +401,7 @@ slideBrandMeaning();
 // Slide 3: Landing Page
 contentSlide(3,
   "Landing Page",
-  "The first impression — a premium, responsive web experience",
+  "The first impression ΓÇö a premium, responsive web experience",
   [
     "Dark futuristic design with gradient accents",
     "App download (Android APK) with one click",
@@ -463,7 +410,7 @@ contentSlide(3,
     "Real-time campus statistics counter",
     "Interactive navigation with smooth scrolling",
     "UN SDG alignment badges displayed",
-    "Fully responsive — mobile & desktop",
+    "Fully responsive ΓÇö mobile & desktop",
   ],
   "landing page IP.png", BLUE
 );
@@ -475,7 +422,7 @@ contentSlide(4,
   [
     "Role-based routing: Student / Faculty / Admin / Owner",
     "Supabase Auth with PostgreSQL RLS security",
-    "Brute-force lockout — 3 attempts → 60s block",
+    "Brute-force lockout ΓÇö 3 attempts ΓåÆ 60s block",
     "Hidden admin URL path for extra security",
     "Batch & department selection on sign-up",
     "Profile avatar upload with real-time preview",
@@ -508,11 +455,11 @@ contentSlide(6,
   "Carbon Footprint Tracker",
   "IPCC-standard daily carbon logging with gamified rewards",
   [
-    "Log travel: Car, Bike, Bus, Walk (per-km CO₂ factors)",
-    "Electricity: Indian Grid factor 0.82 kg CO₂/kWh",
+    "Log travel: Car, Bike, Bus, Walk (per-km COΓéé factors)",
+    "Electricity: Indian Grid factor 0.82 kg COΓéé/kWh",
     "Meals: Veg / Vegan / Non-Veg carbon values",
     "Water usage & waste generation tracking",
-    "Eco Score = max(0, 100 − (Emissions/5.0) × 100)",
+    "Eco Score = max(0, 100 ΓêÆ (Emissions/5.0) ├ù 100)",
     "XP rewards: +10 base, +60 perfect, +15 walk/vegan",
     "Streaks: 3-day (+30), 7-day (+75), 30-day (+200 XP)",
     "Anti-cheat: yesterday-only, hard limits, cross-check",
@@ -527,8 +474,8 @@ contentSlide(7,
   [
     "Batch-specific QR codes tied to class timetable",
     "QR codes cycle every 10 seconds",
-    "GPS geolocation verification — campus fence",
-    "One scan per device — prevents proxy sharing",
+    "GPS geolocation verification ΓÇö campus fence",
+    "One scan per device ΓÇö prevents proxy sharing",
     "Faculty: real-time present/absent list",
     "Extend timers, assign substitutes, cancel classes",
     "Attendance analytics with date-range filtering",
@@ -560,10 +507,10 @@ contentSlide(9,
   "Digital canteen ordering with carbon labels per menu item",
   [
     "Full digital menu with pricing & carbon weight",
-    "Carbon labels: Idli (0.3 kg), Egg Rice (1.0 kg CO₂)",
-    "Cart shows cumulative price + CO₂ impact",
+    "Carbon labels: Idli (0.3 kg), Egg Rice (1.0 kg COΓéé)",
+    "Cart shows cumulative price + COΓéé impact",
     "QR receipt generation for pickup",
-    "Real-time order status: Pending → Ready → Done",
+    "Real-time order status: Pending ΓåÆ Ready ΓåÆ Done",
     "Canteen owner scanner for instant fulfillment",
     "Anti-cheat cross-reference with carbon logs",
     "Category-wise filtering & search",
@@ -612,9 +559,9 @@ contentSlide(12,
   "Campus-wide control center with real-time metrics & CMS",
   [
     "Real-time campus sustainability metrics",
-    "Landing page CMS editor — live updates",
+    "Landing page CMS editor ΓÇö live updates",
     "Student & faculty user management",
-    "Anti-cheat quarantine panel — ban cheaters",
+    "Anti-cheat quarantine panel ΓÇö ban cheaters",
     "Green Cover inventory: trees, grass, absorption",
     "Sustainability audit logs with export",
     "Broadcast system: urgent/warning/info alerts",
@@ -626,26 +573,14 @@ contentSlide(12,
 // Slide 13: Thank You
 slide13();
 
-// ═══════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // SAVE
-// ═══════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 pptx.writeFile({ fileName: OUTPUT })
   .then(() => {
-    console.log(`\n✅ Presentation saved to: ${OUTPUT}`);
+    console.log(`\nΓ£à Presentation saved to: ${OUTPUT}`);
     console.log(`   13 slides generated with all screenshots!`);
   })
   .catch(err => {
-    if (err.code === 'EBUSY' || err.toString().includes('EBUSY')) {
-      const fallbackPath = OUTPUT.replace(".pptx", "_NEW.pptx");
-      console.log(`\n⚠️ Original file is locked (likely open in PowerPoint). Saving to: ${fallbackPath}`);
-      pptx.writeFile({ fileName: fallbackPath })
-        .then(() => {
-          console.log(`✅ Presentation saved successfully to fallback path: ${fallbackPath}`);
-        })
-        .catch(err2 => {
-          console.error("❌ Error writing to fallback path:", err2);
-        });
-    } else {
-      console.error("❌ Error:", err);
-    }
+    console.error("Γ¥î Error:", err);
   });

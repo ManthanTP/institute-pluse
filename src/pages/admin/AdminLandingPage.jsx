@@ -123,7 +123,7 @@ function getDefaultContentForSection(key) {
         { question: "How does QR Smart Attendance work?", answer: "Instructors generate a time-restricted check-in QR code on the lecture hall screen. Students scan the QR code via their Attendance page. The system checks location validity and student identity to log the attendance record instantly." },
         { question: "What are Eco Points and how are they calculated?", answer: "Eco Points are rewarded for sustainable campus actions. Points include: Base Logging (+10 XP), Eco Score tier bonuses (+20/40/60 XP), Active Transit (+15 XP walking/cycling, +12 XP college bus), Canteen vegetarian/vegan selections (+10/15 XP), consistent logging streaks (+30 XP for 3 days, +75 XP for 7 days, +200 XP for 30 days), and a first log bonus (+50 XP)." },
         { question: "Is my personal study and logging data secure?", answer: "Yes. All authentication and data transfers are protected under Supabase security protocols, and student records are kept private and accessible only to authorized administrators and the student themselves." },
-        { question: "Can other colleges adopt the Institute Pulse platform?", answer: "Yes, the core system is modularized and can be configured with semester tables, location maps, bus routes, and cafeteria items for any educational institute." }
+        { question: "Can other colleges adopt the InstitutePLUSE platform?", answer: "Yes, the core system is modularized and can be configured with semester tables, location maps, bus routes, and cafeteria items for any educational institute." }
       ]
     },
     cta: {
