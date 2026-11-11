@@ -5,6 +5,10 @@ on:
     - cron: '0 0 */3 * *'   # Every 3 days at midnight UTC
   workflow_dispatch:          # Manual trigger from Actions tab
 
+env:
+  SUPABASE_URL: https://dctrlbxftgvfeqbkatgr.supabase.co
+  SUPABASE_ANON_KEY: sb_publishable_1cOD0ZWQDuZfyRuGgniN5A_za40rUgr
+
 jobs:
   keep-alive:
     runs-on: ubuntu-latest
@@ -12,7 +16,10 @@ jobs:
       - name: Ping Supabase to prevent pausing
         run: |
           echo "Pinging Supabase at $(date)"
-          response=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.SUPABASE_URL }}/rest/v1/")
+          response=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            "$SUPABASE_URL/rest/v1/")
           echo "Response status: $response"
           if [ "$response" -ge 200 ] && [ "$response" -lt 500 ]; then
             echo "✅ Supabase is active!"
