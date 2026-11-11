@@ -1,0 +1,22 @@
+name: Supabase Keep Alive
+
+on:
+  schedule:
+    - cron: '0 0 */3 * *'   # Every 3 days at midnight UTC
+  workflow_dispatch:          # Manual trigger from Actions tab
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase to prevent pausing
+        run: |
+          echo "Pinging Supabase at $(date)"
+          response=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.SUPABASE_URL }}/rest/v1/")
+          echo "Response status: $response"
+          if [ "$response" -ge 200 ] && [ "$response" -lt 500 ]; then
+            echo "✅ Supabase is active!"
+          else
+            echo "⚠️ Unexpected response: $response"
+          fi
+
